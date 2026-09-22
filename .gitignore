@@ -1,0 +1,5 @@
+# Intermediate OCR scratch
+student_handbook_pages/
+*.log
+.DS_Store
+Thumbs.db
