@@ -2927,6 +2927,390 @@
     }
   }
 
+
+/* ==========================================================================
+   Ant Design 5.0 + Material Design 3 (M3) Component Fusion System
+   ========================================================================== */
+
+/* Ant Design 5.0 Color Palette Tokens */
+:root {
+  --ant-primary: #1677ff;
+  --ant-primary-hover: #4096ff;
+  --ant-primary-active: #0958d9;
+  --ant-primary-bg: #e6f4ff;
+  --ant-primary-border: #91caff;
+
+  --ant-success: #52c41a;
+  --ant-success-bg: #f6ffed;
+  --ant-success-border: #b7eb8f;
+
+  --ant-warning: #faad14;
+  --ant-warning-bg: #fffbe6;
+  --ant-warning-border: #ffe58f;
+
+  --ant-error: #ff4d4f;
+  --ant-error-bg: #fff2f0;
+  --ant-error-border: #ffccc7;
+
+  --ant-info: #1677ff;
+  --ant-info-bg: #e6f4ff;
+  --ant-info-border: #91caff;
+
+  --ant-border-color: #d9d9d9;
+  --ant-border-color-split: #f0f0f0;
+  --ant-bg-container: #ffffff;
+  --ant-bg-layout: #f5f5f5;
+  --ant-text: rgba(0, 0, 0, 0.88);
+  --ant-text-secondary: rgba(0, 0, 0, 0.65);
+  --ant-text-tertiary: rgba(0, 0, 0, 0.45);
+  --ant-text-disabled: rgba(0, 0, 0, 0.25);
+  
+  --ant-radius-xs: 2px;
+  --ant-radius-sm: 4px;
+  --ant-radius: 6px;
+  --ant-radius-lg: 8px;
+  --ant-radius-xl: 12px;
+}
+
+/* Ant Design 5.0 Statistic Grid (Tab 1 Top Banner) */
+.ant-statistic-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.ant-stat-card {
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: var(--ant-radius-lg);
+  padding: 16px 20px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.ant-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+}
+
+.ant-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.ant-stat-title {
+  font-size: 13.5px;
+  color: var(--ant-text-tertiary);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ant-stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--ant-text);
+  line-height: 1.2;
+  font-family: var(--font-sans);
+  margin-bottom: 8px;
+}
+
+.ant-stat-suffix {
+  font-size: 13px;
+  font-weight: normal;
+  color: var(--ant-text-tertiary);
+  margin-left: 4px;
+}
+
+.ant-stat-desc {
+  font-size: 12px;
+  color: var(--ant-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ant-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.ant-status-dot.blue { background: #1677ff; box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.2); }
+.ant-status-dot.green { background: #52c41a; box-shadow: 0 0 0 2px rgba(82, 196, 26, 0.2); }
+.ant-status-dot.gold { background: #faad14; box-shadow: 0 0 0 2px rgba(250, 173, 20, 0.2); }
+.ant-status-dot.purple { background: #722ed1; box-shadow: 0 0 0 2px rgba(114, 46, 209, 0.2); }
+
+/* Ant Design 5.0 Tag System */
+.ant-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 7px;
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+  border-radius: var(--ant-radius-sm);
+  border: 1px solid transparent;
+  font-weight: 500;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+.ant-tag-blue { color: #0958d9; background: #e6f4ff; border-color: #91caff; }
+.ant-tag-geekblue { color: #1d39c4; background: #f0f5ff; border-color: #adc6ff; }
+.ant-tag-purple { color: #531dab; background: #f9f0ff; border-color: #d3adf7; }
+.ant-tag-cyan { color: #08979c; background: #e6fffb; border-color: #87e8de; }
+.ant-tag-green { color: #389e0d; background: #f6ffed; border-color: #b7eb8f; }
+.ant-tag-gold { color: #d48806; background: #fffbe6; border-color: #ffe58f; }
+.ant-tag-orange { color: #d4380d; background: #fff2e8; border-color: #ffbb96; }
+.ant-tag-red { color: #cf1322; background: #fff1f0; border-color: #ffa39e; }
+.ant-tag-default { color: rgba(0, 0, 0, 0.88); background: rgba(0, 0, 0, 0.02); border-color: #d9d9d9; }
+
+/* Refined Badge Classes mapped to Ant Design Tags */
+.badge-a1 { color: #1d39c4 !important; background: #f0f5ff !important; border: 1px solid #adc6ff !important; }
+.badge-a2 { color: #0958d9 !important; background: #e6f4ff !important; border: 1px solid #91caff !important; }
+.badge-b { color: #08979c !important; background: #e6fffb !important; border: 1px solid #87e8de !important; }
+.badge-c { color: #531dab !important; background: #f9f0ff !important; border: 1px solid #d3adf7 !important; }
+.badge-2 { color: #d48806 !important; background: #fffbe6 !important; border: 1px solid #ffe58f !important; }
+.badge-3 { color: #d4380d !important; background: #fff2e8 !important; border: 1px solid #ffbb96 !important; }
+.badge-warning { color: #d48806 !important; background: #fffbe6 !important; border: 1px solid #ffe58f !important; }
+
+/* Ant Design Table Modernization */
+.comp-table th {
+  background: #fafafa !important;
+  color: rgba(0, 0, 0, 0.88) !important;
+  font-weight: 600 !important;
+  border-bottom: 1px solid #f0f0f0 !important;
+  padding: 12px 14px !important;
+  font-size: 13px !important;
+  letter-spacing: 0.01em;
+}
+
+.comp-table td {
+  border-bottom: 1px solid #f0f0f0 !important;
+  padding: 12px 14px !important;
+  font-size: 13px !important;
+  color: rgba(0, 0, 0, 0.88) !important;
+}
+
+.comp-table tbody tr {
+  transition: background-color 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.comp-table tbody tr:hover {
+  background-color: #f7f9fc !important;
+}
+
+/* Ant Design Button Hierarchy */
+.ant-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 500;
+  white-space: nowrap;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+  user-select: none;
+  touch-action: manipulation;
+  box-sizing: border-box;
+}
+
+.ant-btn-primary {
+  color: #fff !important;
+  background: #1677ff !important;
+  border: 1px solid #1677ff !important;
+  box-shadow: 0 2px 0 rgba(5, 145, 255, 0.1);
+}
+.ant-btn-primary:hover {
+  background: #4096ff !important;
+  border-color: #4096ff !important;
+}
+.ant-btn-primary:active {
+  background: #0958d9 !important;
+  border-color: #0958d9 !important;
+}
+
+.ant-btn-default {
+  color: rgba(0, 0, 0, 0.88) !important;
+  background: #fff !important;
+  border: 1px solid #d9d9d9 !important;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.02);
+}
+.ant-btn-default:hover {
+  color: #4096ff !important;
+  border-color: #4096ff !important;
+}
+.ant-btn-default:active {
+  color: #0958d9 !important;
+  border-color: #0958d9 !important;
+}
+
+.ant-btn-link {
+  color: #1677ff !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  text-decoration: none !important;
+}
+.ant-btn-link:hover {
+  color: #4096ff !important;
+}
+
+/* Ant Design Pro CheckCard Option (Tab 2) */
+.opt-btn {
+  position: relative;
+  background: #ffffff !important;
+  border: 1px solid #d9d9d9 !important;
+  border-radius: var(--ant-radius-lg) !important;
+  padding: 12px 14px !important;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+  overflow: hidden;
+}
+
+.opt-btn:hover {
+  border-color: #1677ff !important;
+  background: #fafafa !important;
+}
+
+.opt-btn.active {
+  border-color: #1677ff !important;
+  background: #f0f7ff !important;
+  box-shadow: 0 0 0 1px #1677ff !important;
+}
+
+/* Ant Design Checkmark Ribbon on Active Card */
+.opt-btn.active::after {
+  content: "✓";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 18px;
+  height: 18px;
+  background: #1677ff;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  border-bottom-left-radius: 6px;
+  border-top-right-radius: 6px;
+}
+
+/* Ant Design Steps Component (Tab 2 Header) */
+.ant-steps-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 14px 20px;
+  border: 1px solid #f0f0f0;
+  border-radius: var(--ant-radius-lg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.ant-step-node {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  position: relative;
+}
+
+.ant-step-node:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  width: calc(100% - 140px);
+  height: 1px;
+  background: #f0f0f0;
+}
+
+.ant-step-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 12.5px;
+  font-weight: 600;
+  background: #f5f5f5;
+  color: rgba(0, 0, 0, 0.45);
+  border: 1px solid #d9d9d9;
+  flex-shrink: 0;
+}
+
+.ant-step-node.active .ant-step-icon {
+  background: #1677ff;
+  color: #ffffff;
+  border-color: #1677ff;
+  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.15);
+}
+
+.ant-step-node.finished .ant-step-icon {
+  background: #f6ffed;
+  color: #52c41a;
+  border-color: #b7eb8f;
+}
+
+.ant-step-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.88);
+  line-height: 1.3;
+}
+
+.ant-step-desc {
+  font-size: 11.5px;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+/* Ant Design Ribbon for 4-Tier Recommendation Cards */
+.bundle-card {
+  position: relative;
+  background: #ffffff !important;
+  border: 1px solid #f0f0f0 !important;
+  border-radius: var(--ant-radius-lg) !important;
+  padding: 16px 18px !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.2s cubic-bezier(0.2, 0, 0, 1) !important;
+}
+
+.bundle-card:hover {
+  border-color: #91caff !important;
+  box-shadow: 0 6px 16px -2px rgba(15, 23, 42, 0.08) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Ant Design Alert Callout */
+.ant-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--ant-radius-lg);
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 14px;
+  border: 1px solid transparent;
+}
+.ant-alert-info { background: #e6f4ff; border-color: #91caff; color: rgba(0, 0, 0, 0.88); }
+.ant-alert-warning { background: #fffbe6; border-color: #ffe58f; color: rgba(0, 0, 0, 0.88); }
+.ant-alert-success { background: #f6ffed; border-color: #b7eb8f; color: rgba(0, 0, 0, 0.88); }
+
 </style>
 </head>
 <body>
@@ -3042,6 +3426,45 @@
 
   <!-- TAB 1: 竞赛智搜与图谱 -->
   <div id="tab-explorer" class="module-pane active">
+
+    <!-- Ant Design 5.0 Statistic Metrics Grid -->
+    <div class="ant-statistic-grid">
+      <div class="ant-stat-card">
+        <div class="ant-stat-header">
+          <span class="ant-stat-title"><span class="ant-status-dot blue"></span> 官方目录收录总数</span>
+          <span class="ant-tag ant-tag-blue">2025 官方目录</span>
+        </div>
+        <div class="ant-stat-value">247 <span class="ant-stat-suffix">项</span></div>
+        <div class="ant-stat-desc">完整覆盖国际、国家及省部级学科赛事</div>
+      </div>
+
+      <div class="ant-stat-card">
+        <div class="ant-stat-header">
+          <span class="ant-stat-title"><span class="ant-status-dot purple"></span> A类 / 顶格国赛</span>
+          <span class="ant-tag ant-tag-geekblue">保研顶格加分</span>
+        </div>
+        <div class="ant-stat-value">38 <span class="ant-stat-suffix">项</span></div>
+        <div class="ant-stat-desc">建大认可的一类A1/A2顶级冲优赛道</div>
+      </div>
+
+      <div class="ant-stat-card">
+        <div class="ant-stat-header">
+          <span class="ant-stat-title"><span class="ant-status-dot green"></span> 官方报名直通入口</span>
+          <span class="ant-tag ant-tag-green">100% 直通</span>
+        </div>
+        <div class="ant-stat-value">247 <span class="ant-stat-suffix">处</span></div>
+        <div class="ant-stat-desc">经教务处与教研室核验，含全年4阶段赛程</div>
+      </div>
+
+      <div class="ant-stat-card">
+        <div class="ant-stat-header">
+          <span class="ant-stat-title"><span class="ant-status-dot gold"></span> 认定规则与暗坑预警</span>
+          <span class="ant-tag ant-tag-gold">15 项特殊条款</span>
+        </div>
+        <div class="ant-stat-value">双轨 <span class="ant-stat-suffix">穿透</span></div>
+        <div class="ant-stat-desc">智能扫描三等奖降级、限项与组别扣减</div>
+      </div>
+    </div>
     <div class="panel">
       <div class="panel-header">
         <div>
@@ -3270,6 +3693,31 @@
       </div>
     </div>
 
+    
+    <!-- Ant Design 5.0 Steps Navigation Bar -->
+    <div class="ant-steps-bar">
+      <div class="ant-step-node finished">
+        <div class="ant-step-icon">✓</div>
+        <div>
+          <div class="ant-step-title">01 意向调研</div>
+          <div class="ant-step-desc">学籍年级与学科专业</div>
+        </div>
+      </div>
+      <div class="ant-step-node active">
+        <div class="ant-step-icon">2</div>
+        <div>
+          <div class="ant-step-title">02 能力匹配</div>
+          <div class="ant-step-desc">技能特长与备赛诉求</div>
+        </div>
+      </div>
+      <div class="ant-step-node">
+        <div class="ant-step-icon">3</div>
+        <div>
+          <div class="ant-step-title">03 梯队方案</div>
+          <div class="ant-step-desc">4项推荐组合与注意事项</div>
+        </div>
+      </div>
+    </div>
     <div class="custom-layout">
       <!-- Left Column: Interactive Questionnaire -->
       <div class="question-card">
