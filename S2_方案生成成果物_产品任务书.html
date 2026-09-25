@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh" data-page-node-id="FxdzSU6j1zdbscxxm1FG1h">
+<head data-page-node-id="SSUJETU5MZBx718a6N5Bmb">
+<meta charset="UTF-8" data-page-node-id="yEAPI0oVubMfwnaD7bpWfx">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="YAFI4AGX3BGxdlA98R8CjL">
+<title>产品任务书｜建大竞赛罗盘 XAUAT-COMPASS</title>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+  :root{
+    --bg:#0e1114;
+    --bg-2:#14181d;
+    --card:#191e24;
+    --card-2:#1f252c;
+    --ink:#eef2f5;
+    --ink-2:#b9c4cf;
+    --dim:#7d8b98;
+    --line:rgba(238,242,245,.10);
+    --line-2:rgba(238,242,245,.18);
+    --accent:#29a3a3;
+    --accent-2:#c9a961;
+    --accent-soft:rgba(41,163,163,.12);
+    --warn:#d98b4a;
+    --ok:#5fae7f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.7;-webkit-font-smoothing:antialiased;overflow-x:hidden;
+  }
+  .grid-bg{
+    position:fixed;inset:0;pointer-events:none;z-index:0;
+    background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+    background-size:64px 64px;
+    mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 20%,transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse 80% 60% at 50% 0%,#000 20%,transparent 75%);
+  }
+  .wrap{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 24px 80px}
+
+  nav{
+    position:sticky;top:0;z-index:50;backdrop-filter:blur(14px);
+    background:rgba(14,17,20,.82);border-bottom:1px solid var(--line);
+  }
+  .nav-in{max-width:1080px;margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .nav-brand{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:700;letter-spacing:.1em;color:var(--accent)}
+  .nav-links{display:flex;gap:18px;flex-wrap:wrap;margin-left:auto}
+  .nav-links a{color:var(--dim);text-decoration:none;font-size:12.5px;font-family:ui-monospace,Menlo,monospace;transition:color .2s}
+  .nav-links a:hover{color:var(--ink)}
+  @media(max-width:720px){.nav-links{display:none}}
+
+  .hero{padding:96px 0 64px;border-bottom:1px solid var(--line)}
+  .tag-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px}
+  .tag{
+    font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:700;letter-spacing:.06em;
+    padding:5px 11px;border:1px solid var(--line-2);border-radius:3px;color:var(--ink-2);
+  }
+  .tag.on{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+  h1{
+    font-size:clamp(44px,9vw,104px);line-height:.94;font-weight:800;letter-spacing:-.03em;
+    margin-bottom:8px;
+  }
+  h1 .outline{
+    -webkit-text-stroke:1.5px var(--ink-2);color:transparent;
+  }
+  .hero-sub{font-size:clamp(15px,2.2vw,19px);color:var(--ink-2);max-width:720px;margin-top:26px;line-height:1.75}
+  .hero-meta{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;
+    background:var(--line);border:1px solid var(--line);margin-top:44px;border-radius:4px;overflow:hidden;
+  }
+  .hero-meta div{background:var(--card);padding:18px 20px}
+  .hero-meta dt{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:7px}
+  .hero-meta dd{font-size:15px;font-weight:600;color:var(--ink)}
+
+  .section{padding:72px 0;border-bottom:1px solid var(--line)}
+  .sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:34px;flex-wrap:wrap}
+  .sec-no{font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:700;color:var(--accent);letter-spacing:.1em}
+  .sec-title{font-size:clamp(24px,4vw,38px);font-weight:750;letter-spacing:-.02em;line-height:1.15}
+  .sec-desc{width:100%;color:var(--dim);font-size:13.5px;margin-top:2px}
+
+  .quote{
+    background:var(--card);border-left:3px solid var(--accent);border-radius:3px;
+    padding:30px 34px;margin:24px 0;
+  }
+  .quote-label{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase;margin-bottom:14px}
+  .quote p{font-size:clamp(17px,2.4vw,21px);font-weight:600;line-height:1.68;color:var(--ink)}
+  .quote cite{display:block;margin-top:16px;font-size:12.5px;color:var(--dim);font-style:normal;font-family:ui-monospace,Menlo,monospace}
+
+  .tri{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:28px 0}
+  .tri-card{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:24px;position:relative;transition:border-color .25s,transform .25s}
+  .tri-card:hover{border-color:var(--line-2);transform:translateY(-3px)}
+  .tri-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent);opacity:.5}
+  .tri-k{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;margin-bottom:10px}
+  .tri-v{font-size:15px;color:var(--ink-2);line-height:1.72}
+  .tri-v strong{color:var(--ink);font-weight:650}
+
+  .cand-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+  .cand{background:var(--card);border:1px solid var(--line);border-radius:5px;padding:26px;display:flex;flex-direction:column;gap:14px;transition:border-color .25s,transform .25s}
+  .cand:hover{border-color:var(--accent);transform:translateY(-3px)}
+  .cand-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+  .cand-name{font-size:17px;font-weight:700;letter-spacing:-.01em}
+  .cand-code{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:3px;background:var(--accent-soft);color:var(--accent);border:1px solid rgba(41,163,163,.3);white-space:nowrap}
+  .cand-code.alt{background:rgba(201,169,97,.1);color:var(--accent-2);border-color:rgba(201,169,97,.3)}
+  .cand-row{font-size:13.5px;color:var(--ink-2);line-height:1.65;padding-left:14px;position:relative}
+  .cand-row::before{content:'';position:absolute;left:0;top:9px;width:5px;height:1px;background:var(--dim)}
+  .cand-row b{color:var(--ink);font-weight:600}
+  .cand-row.risk b{color:var(--warn)}
+
+  table{width:100%;border-collapse:collapse;font-size:13.8px;margin:22px 0;border:1px solid var(--line);border-radius:4px;overflow:hidden}
+  th{background:var(--card-2);text-align:left;padding:14px 18px;font-family:ui-monospace,Menlo,monospace;font-size:11px;letter-spacing:.06em;color:var(--dim);text-transform:uppercase;border-bottom:1px solid var(--line-2);font-weight:700}
+  td{padding:15px 18px;border-bottom:1px solid var(--line);color:var(--ink-2);vertical-align:top;line-height:1.65}
+  tr:last-child td{border-bottom:none}
+  tbody tr{transition:background .18s}
+  tbody tr:hover{background:var(--card-2)}
+  td strong{color:var(--ink);font-weight:650}
+  .num{font-family:ui-monospace,Menlo,monospace;font-weight:700;color:var(--accent)}
+
+  .src{display:inline-block;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:3px;margin-right:6px;vertical-align:baseline;white-space:nowrap}
+  .src.mine{background:rgba(201,169,97,.14);color:var(--accent-2);border:1px solid rgba(201,169,97,.32)}
+  .src.diff{background:var(--accent-soft);color:var(--accent);border:1px solid rgba(41,163,163,.3)}
+  .src.gap{background:rgba(95,174,127,.12);color:var(--ok);border:1px solid rgba(95,174,127,.3)}
+
+  .elems{counter-reset:e;display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+  .elem{background:var(--card);padding:26px 30px;display:grid;grid-template-columns:56px 1fr;gap:20px;transition:background .2s}
+  .elem:hover{background:var(--card-2)}
+  .elem-no{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:800;color:var(--accent);opacity:.55;line-height:1}
+  .elem-k{font-size:16px;font-weight:700;margin-bottom:9px;letter-spacing:-.01em}
+  .elem-v{font-size:14.2px;color:var(--ink-2);line-height:1.75}
+  .elem-v ul{list-style:none;margin-top:6px}
+  .elem-v li{padding-left:16px;position:relative;margin-top:5px}
+  .elem-v li::before{content:'';position:absolute;left:0;top:10px;width:5px;height:1px;background:var(--accent)}
+  .elem-v b{color:var(--ink);font-weight:650}
+  @media(max-width:600px){.elem{grid-template-columns:1fr;gap:8px}}
+
+  .reflection{background:linear-gradient(180deg,var(--bg-2),var(--bg))}
+  .qa{background:var(--card);border:1px solid var(--line);border-radius:5px;margin-bottom:16px;overflow:hidden}
+  .qa-q{padding:20px 26px;background:var(--card-2);display:flex;gap:14px;align-items:flex-start;border-bottom:1px solid var(--line)}
+  .qa-idx{font-family:ui-monospace,Menlo,monospace;font-size:11px;font-weight:800;color:var(--accent);border:1px solid rgba(41,163,163,.35);border-radius:3px;padding:2px 7px;flex-shrink:0;margin-top:3px}
+  .qa-q span{font-size:15px;font-weight:650;line-height:1.6}
+  .qa-a{padding:22px 26px;font-size:14.2px;color:var(--ink-2);line-height:1.8}
+  .qa-a b{color:var(--ink);font-weight:650}
+  .qa-a .ask{display:block;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line-2);color:var(--dim);font-size:13px}
+
+  .note{background:var(--card);border:1px dashed var(--line-2);border-radius:4px;padding:20px 24px;font-size:13.2px;color:var(--dim);line-height:1.75;margin:22px 0}
+  .note strong{color:var(--ink-2)}
+
+  .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  footer{border-top:1px solid var(--line);padding:40px 0 20px;margin-top:20px}
+  .footer{text-align:center;font-size:12px;color:var(--dim);letter-spacing:.04em}
+</style>
+</head>
+<body data-page-node-id="GdFJBQolAmT7H1VWyX6DCy">
+<div class="grid-bg" data-page-node-id="DPCxnTJVHTeIas7LJcA8BO"></div>
+
+<nav data-page-node-id="Obo4KQ6oTZLN7Ec0iap9TY">
+  <div class="nav-in" data-page-node-id="bJteHeJOd1YdR0QfgaXDSr">
+    <span class="nav-brand" data-page-node-id="Qsgg553GzY2FjD0bhNt3fa">S2 / PRODUCT SPEC</span>
+    <div class="nav-links" data-page-node-id="hML1R118s7PjllFnkQjT0I">
+      <a href="#s1" data-page-node-id="4U51JvX2d00tJEABtAnVgA">问题锚点</a>
+      <a href="#s2" data-page-node-id="at58iy89C5SM9E9WzBSxNj">候选方案</a>
+      <a href="#s3" data-page-node-id="eIHpDJi03IltvNGRzXBen8">评分选定</a>
+      <a href="#s4" data-page-node-id="FETPUST5X2bIMS2MyfpO07">匹配复核</a>
+      <a href="#s5" data-page-node-id="ko0VQkTwGxbnbR94KVDOtf">共创记录</a>
+      <a href="#s6" data-page-node-id="0R17qVUqHEfCfTuCqiZFQ9">功能拆解</a>
+      <a href="#s7" data-page-node-id="9OgaoIkLfo7bgYCpABvFMZ">责任审查</a>
+      <a href="#s8" data-page-node-id="LgmTH0ehPlkMxiXrR9mCWo">任务书</a>
+      <a href="#s9" data-page-node-id="SaepDO0N97bnbuiU7Dv2tS">反思记录</a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap" data-page-node-id="gs4iFZsT8YUvNtM5r8GPkT">
+
+  <section class="hero reveal" data-page-node-id="EJyMWrWm2VlIGHXCAytm7t">
+    <div class="tag-row" data-page-node-id="eJOp8Lhs30NV57xgvseA37">
+      <span class="tag on" data-page-node-id="0GWlZ43rsLNM1pVR4B2q3U">S2 方案生成</span>
+      <span class="tag" data-page-node-id="bIu8GqglFmKUBVn8vuyLc3">《创新创业基础（思维）》第 4 讲</span>
+      <span class="tag" data-page-node-id="IsZlFtClIxD5q9CixrBbPM">一人一产品</span>
+    </div>
+    <h1 data-page-node-id="IbHQZI9K2YoxTBScbECKde">产品<span class="outline" data-page-node-id="K87ql0rIQF5nK6VeDCm6B3">任务书</span></h1>
+    <p class="hero-sub" data-page-node-id="3Pv72Gc31V8jhqOe3FL3Rw">建大竞赛罗盘 XAUAT-COMPASS —— 面向西安建筑科技大学本科生的一站式学科竞赛导航与学分精算系统。本文件为第 4 讲最终交付成果物，九要素齐全。</p>
+    <dl class="hero-meta" data-page-node-id="N06GbgbVL4ydDZg4WDUKEA">
+      <div data-page-node-id="dPAFEDp2NYy1PTmzep5miv"><dt data-page-node-id="BBS7d2GqdO8LNXnAoN98PW">产品名称</dt><dd data-page-node-id="iNHDgkfbn1jk0IqOFBkJoA">建大竞赛罗盘</dd></div>
+      <div data-page-node-id="PdEEfNEktLo6s36sfCBYxC"><dt data-page-node-id="1sGSKXP3yc9jquBiD3Rz7V">形态</dt><dd data-page-node-id="vEQnxJ6xnpA5s16YhqWj7B">F4 工具整合 AI + F5 可视化</dd></div>
+      <div data-page-node-id="oGA6iPY1PBvehtHDSlaFcg"><dt data-page-node-id="HvtvlEQZdbyzeAqFxeAq0j">数据规模</dt><dd data-page-node-id="LizeIhYBTeXekeB5MqSBoQ">247 项竞赛</dd></div>
+      <div data-page-node-id="FbxnMYOqFD88rqJtnoVDWP"><dt data-page-node-id="a89q2wgtU1XH4fUpVFPjGC">状态</dt><dd data-page-node-id="OnO8I3vUMHgHkh2X4Bpv9r">已部署上线</dd></div>
+    </dl>
+  </section>
+
+  <section class="section reveal" id="s1" data-page-node-id="Dse2z9aqZwIyUbzAeRJpYQ">
+    <div class="sec-head" data-page-node-id="jwBCE3ar3GT2u05OU7HTwb">
+      <span class="sec-no" data-page-node-id="14nnhHLcGwpQIogWHD0f7c">01</span>
+      <h2 class="sec-title" data-page-node-id="rwqr2DkZP2KCk8Bml26jkj">确认的问题锚点</h2>
+      <p class="sec-desc" data-page-node-id="R8SiUkkIlAzyJ3aDG9zAGs">继承自第 3 讲《数智产品开发方向卡》，作为后续所有方案的收敛基准。</p>
+    </div>
+    <div class="tri" data-page-node-id="bc27kQAtEgNMvbaTWPARss">
+      <div class="tri-card" data-page-node-id="ex5KucSiUz1kqMihEg5Bpw">
+        <div class="tri-k" data-page-node-id="97LUHsqHHFKDqgH0PAwO69">用户 Who</div>
+        <div class="tri-v" data-page-node-id="MsceTWbsM06mAcxfRqYA6s"><strong data-page-node-id="ncIzwHHJCfvtwIYjSoUi86">西安建筑科技大学工科院系本科生</strong>，分两类：其一为大学初期探索期、对学科竞赛缺乏基本认知的低年级新生；其二为大二/大三冲刺期、有保研评优目标、需精确算分的在读生。</div>
+      </div>
+      <div class="tri-card" data-page-node-id="J2JPRhb3hb5HHlwl61SFhc">
+        <div class="tri-k" data-page-node-id="biFDn4zBfJF7qM2Bmk9dCa">场景 When / Where</div>
+        <div class="tri-v" data-page-node-id="c5SPW4zJXCyeIzdyPvp1mX">开学初制定学期竞赛进阶规划时；赛事通知发布、需要研判参赛价值时；<strong data-page-node-id="ztQhWQMfH3P1GbBgA2l0Ni">秋季学期综测申报、对照长表格忐忑算分时</strong>。</div>
+      </div>
+      <div class="tri-card" data-page-node-id="CuTdZbn26mzFp1qAg5pyLq">
+        <div class="tri-k" data-page-node-id="EvMRFY18Jr4PAuMD9v5Oom">痛点 Pain</div>
+        <div class="tri-v" data-page-node-id="DFeF9DD8S7neNdGC1Rwgo8">不知道自己适合打什么、什么时候准备；通知在官网与多级群聊间转发滞后，<strong data-page-node-id="30NPUsXxLbNj0rY1fCALc1">常在截止后才刷到</strong>；校院两级规则分散在 11 页密集 PDF 表格中，<strong data-page-node-id="hirjwxrkMgPLFLUzCdltp5">隐蔽备注条款导致学分误判</strong>，直接影响保研排位。</div>
+      </div>
+    </div>
+    <div class="quote" data-page-node-id="o7OtrwMsFb2DEbDKSBHI75">
+      <div class="quote-label" data-page-node-id="2VQG33CDnP2JPf0j7Hf6bO">来自第 3 讲的真实语料锚点</div>
+      <p data-page-node-id="0fsj0Ge880RtSGRYjwMv32">“参加比赛看主表是一类B，但第三等级在备注里其实按一类C认定，最后导致预计学分有偏差；另一个是大一刚上大学完全不知道该参加什么、怎么规划。”</p>
+      <cite data-page-node-id="8D0zC4rc76915hwt1pHIbE">—— 语料 #13（规则降级误差）+ 语料 #14（新生时间线断层）｜西建大土木学院一手访谈</cite>
+    </div>
+  </section>
+
+  <section class="section reveal" id="s2">
+    <div class="sec-head">
+      <span class="sec-no">02</span>
+      <h2 class="sec-title">候选方案（含竞品侦察）</h2>
+      <p class="sec-desc">按八类形态菜单取材，生成 7 个候选方案覆盖 6 类形态，含 AI 整合型与两个零开发型。每个方案按四栏卡呈现。本阶段只给方向、不给推荐。</p>
+    </div>
+
+    <div class="sec-head" style="margin-top:0;margin-bottom:18px">
+      <span class="sec-no" style="color:var(--accent-2)">2.1</span>
+      <h3 style="font-size:20px;font-weight:700;letter-spacing:-.01em">竞品侦察：这个问题领域已有什么</h3>
+    </div>
+    <table>
+      <thead>
+        <tr><th style="width:24%">已有方案</th><th style="width:16%">类型</th><th>与本题的关系</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>赛氪 / 竞赛网 / 高校学生竞赛网</strong></td>
+          <td>社会化竞赛聚合平台</td>
+          <td>覆盖全国性赛事信息与报名，但<strong>面向全社会、不分校本</strong>——不会告诉你「这项赛在建大算一类B还是三类」，也不含任何学分认定逻辑。</td>
+        </tr>
+        <tr>
+          <td><strong>赛链（高校创新与实践教育平台）</strong></td>
+          <td>商业 2B 管理系统</td>
+          <td>有「竞赛全流程管理 + 素质拓展学分认定」模块，功能最接近，但它是<strong>卖给学校管理部门的系统</strong>，学生端只做填报入口，学生无法自助反向查询「打这个赛能加几分」。</td>
+        </tr>
+        <tr>
+          <td><strong>到梦空间（第二课堂成绩单）</strong></td>
+          <td>团中央官方 App</td>
+          <td>覆盖面最广的学分记录工具，但属于<strong>事后记载</strong>——活动结束后上传证书赚积分，不解决「事前选赛决策」问题。</td>
+        </tr>
+        <tr>
+          <td><strong>各校教务系统竞赛管理模块</strong></td>
+          <td>校内官方系统</td>
+          <td>建大教务系统同样只有「成果申报 / 转换申请」入口，学生提交后等学院审核，<strong>事前无任何试算与预警能力</strong>。</td>
+        </tr>
+        <tr>
+          <td><strong>官方 PDF + 公众号通知</strong></td>
+          <td>现状基线</td>
+          <td>11 页密集表格 + 多级群聊转发，正是本产品要替代的对象。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <strong>侦察结论（关键发现）：</strong>现有方案呈两极分布——<strong>一端是全国性的信息聚合</strong>（赛氪、竞赛网，有赛无规则），<strong>另一端是校方的管理后台</strong>（赛链、教务系统，有规则无自助）。<strong>中间地带完全空白：没有任何工具把「校本分级规则」与「学生自主事前查询」缝合在一起。</strong>这个空白正是本产品的立足点，也是后续「学分精算与降级预警」被判定为竞品空白的<strong>实证依据</strong>，而非主观断言。
+    </div>
+
+    <div class="sec-head" style="margin-top:36px;margin-bottom:18px">
+      <span class="sec-no" style="color:var(--accent-2)">2.2</span>
+      <h3 style="font-size:20px;font-weight:700;letter-spacing:-.01em">七个候选方案（四栏卡）</h3>
+    </div>
+
+    <div class="cand-grid">
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">A 竞赛全景检索库</span><span class="cand-code">F7 信息聚合</span></div>
+        <div class="cand-row"><b>最小版本：</b>把 247 项赛事做成一张可筛选的表格</div>
+        <div class="cand-row"><b>首用户获取：</b>本班群 + 土木学院公众号转发</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>零成本，需要一次性录入数据｜做大了最大风险是<strong>数据会过期</strong>，学校改版就全废</div>
+      </div>
+
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">B 规则解读 AI 问答</span><span class="cand-code">F4 工具整合 AI</span></div>
+        <div class="cand-row"><b>最小版本：</b>用自然语言问「我打了结构设计国三算几类」，模型按校本规则回答</div>
+        <div class="cand-row"><b>首用户获取：</b>综测申报期在班级群投放</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>需要接模型 API 或本地模型｜风险是<strong>模型幻觉</strong>——规则答错比不答更危险</div>
+      </div>
+
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">C 学分精算器</span><span class="cand-code">F3 轻量工具</span></div>
+        <div class="cand-row"><b>最小版本：</b>单一页面，选赛事 + 选名次，输出学分数</div>
+        <div class="cand-row"><b>首用户获取：</b>院学生会学习部推荐</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>当天可出首版｜风险是<strong>功能太窄</strong>——用户算完就走了，没有留存理由</div>
+      </div>
+
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">D 分级图谱可视化</span><span class="cand-code">F5 简单可视化</span></div>
+        <div class="cand-row"><b>最小版本：</b>把四类分级做成一张可点击的关系图</div>
+        <div class="cand-row"><b>首用户获取：</b>学院公众号「一张图看懂竞赛分级」</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>零成本，纯前端｜风险是<strong>只能看不能算</strong>，解决不了学分数这个真问题</div>
+      </div>
+
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">E 备赛排期模板包</span><span class="cand-code alt">F6 模板素材</span></div>
+        <div class="cand-row"><b>最小版本：</b>一份 Excel/Notion 备赛排期模板，用户自己填</div>
+        <div class="cand-row"><b>首用户获取：</b>班级群直接发文件</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>零开发、当天可发｜风险是<strong>没有规则数据</strong>，模板是空的，教不会用户该填什么赛</div>
+      </div>
+
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">F 学长经验互助社群</span><span class="cand-code alt">F2 社群运营</span></div>
+        <div class="cand-row"><b>最小版本：</b>建一个备赛交流群 + 固定经验分享格式</div>
+        <div class="cand-row"><b>首用户获取：</b>从本班和隔壁班拉人</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>零成本｜风险是<strong>人工维护不可持续</strong>，学生在无回报时很快停更（第 3 讲语料已印证）</div>
+      </div>
+
+      <div class="cand">
+        <div class="cand-top"><span class="cand-name">G 代查代办服务</span><span class="cand-code alt">F8 轻服务交付</span></div>
+        <div class="cand-row"><b>最小版本：</b>人工帮同学查规则、出一份个性化选赛报告</div>
+        <div class="cand-row"><b>首用户获取：</b>身边同学口口相传</div>
+        <div class="cand-row risk"><b>起步成本 / 上限风险：</b>零开发｜风险是<strong>无法规模化</strong>，每人一次要人工数小时，且依赖个人时间</div>
+      </div>
+    </div>
+
+    <div class="note" style="margin-top:28px">
+      <strong>以上是 7 个候选方向。我不给推荐——因为最懂这个问题的人是你（你有亲身场景），不是我。接下来由你给它们打分。</strong>
+    </div>
+  </section>
+
+  <section class="section reveal" id="s3" data-page-node-id="6q5bINQOoyms46CJCl05jK">
+    <div class="sec-head" data-page-node-id="C1EkoG4CTeSOc3p44R6WES">
+      <span class="sec-no" data-page-node-id="l7M9duwwq4IB5LJe33yjNY">03</span>
+      <h2 class="sec-title" data-page-node-id="jzJKhrH5RTh0BeAfIULniY">四维评分与选定</h2>
+      <p class="sec-desc" data-page-node-id="OwvHNvqkNPPnoQ7kqnxD8m">由学生独立完成的方案评分与选定记录，评分过程未经 AI 预测或干预。</p>
+    </div>
+    <table data-page-node-id="UTO6QYJyGwkOCDPfx0i7oe">
+      <thead data-page-node-id="5DiPCRCZOObjF4XNlcalEy">
+        <tr data-page-node-id="9AAZehS9u0A0uUGsU1hLQV"><th data-page-node-id="cITynyCYSIXaOldoqDGdHq">评估维度</th><th style="width:16%" data-page-node-id="7OhjPnw45t6O0XT2qkryj3">价值性</th><th style="width:16%" data-page-node-id="EssTB3sQdP4KCJhewEVi4i">可行性</th><th style="width:16%" data-page-node-id="mfxjbzOOc8y9YgnNZXbtxm">独特性</th><th style="width:16%" data-page-node-id="EvGLJkQC0Vx5W43NCTG0fH">验证性</th><th style="width:14%" data-page-node-id="HuHqKWFKe8KVICuaFD5Fvn">总分</th></tr>
+      </thead>
+      <tbody data-page-node-id="EpZbIXaZxFqcNa4Ntu0NX3">
+        <tr><td>A 竞赛全景检索库（F7）</td><td>3</td><td>3</td><td>2</td><td>3</td><td><span class="num">11</span></td></tr>
+        <tr><td><strong>B 规则解读 AI 问答（F4）</strong></td><td><strong>3</strong></td><td><strong>2</strong></td><td><strong>3</strong></td><td><strong>3</strong></td><td><span class="num">11</span></td></tr>
+        <tr><td>C 学分精算器（F3）</td><td>3</td><td>3</td><td>2</td><td>2</td><td><span class="num">10</span></td></tr>
+        <tr><td>D 分级图谱可视化（F5）</td><td>2</td><td>3</td><td>1</td><td>3</td><td><span class="num">9</span></td></tr>
+        <tr><td>E 备赛排期模板包（F6）</td><td>1</td><td>3</td><td>1</td><td>2</td><td><span class="num">7</span></td></tr>
+        <tr><td>F 学长经验互助社群（F2）</td><td>2</td><td>3</td><td>1</td><td>2</td><td><span class="num">8</span></td></tr>
+        <tr><td>G 代查代办服务（F8）</td><td>2</td><td>1</td><td>2</td><td>3</td><td><span class="num">8</span></td></tr>
+      </tbody>
+    </table>
+    <div class="quote" data-page-node-id="pOj8oQXe7XWPBr1H98ubXS">
+      <div class="quote-label" data-page-node-id="jDSLdpcdBm89945t7mIFzB">学生亲笔选定理据（留痕）</div>
+      <p data-page-node-id="IN6vo9HbvCb4a3RwqY9SXw">“我不单选一个，选 A+B+C 组合，以 B 规则解读为核心。这三个不是三个产品，是同一件事的三个环节：A 解决「有哪些赛」，B 解决「这赛算什么」，C 解决「到底加几分」。分开做任何一个都是残缺的——只做 A 就是个表格，只做 C 也算不准，因为算准的前提是 B 的规则理解。所以形态定 F4 为主 + F7/F3 为辅。至于 D 图谱、E 模板、F 社群、G 代办这四个，我不是没想到，是判断它们不解决核心痛点：图谱只能看不能算，模板是空的，社群要靠人天天维护，代办做不大。”</p>
+      <cite data-page-node-id="YaoE3FGfzFn5KwDHFWJJbn">—— 决策人：李振｜选定理据已记录。D/E/F/G 四方案由学生明确排除，排除理由见下</cite>
+    </div>
+
+    <div class="sec-head" style="margin-top:36px;margin-bottom:18px">
+      <span class="sec-no" style="color:var(--accent-2)">3.1</span>
+      <h3 style="font-size:20px;font-weight:700;letter-spacing:-.01em">被排除方案的复盘（为什么不做）</h3>
+    </div>
+    <table>
+      <thead>
+        <tr><th style="width:22%">排除方案</th><th style="width:14%">总分</th><th>排除理由</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>E 备赛排期模板包</strong></td>
+          <td><span class="num">7</span></td>
+          <td>价值性仅 1 分——模板本身是空壳，用户最缺的不是「排期表的格式」而是「该排哪个赛」。给了模板等于把认知负担又转回用户，没解决问题。</td>
+        </tr>
+        <tr>
+          <td><strong>D 分级图谱可视化</strong></td>
+          <td><span class="num">9</span></td>
+          <td>可行性最高（3 分）但独特性最低（1 分）——图谱人人会做，且它<strong>止步于「看见」而不解决「计算」</strong>；学分认定误差本质是算术问题，不是认知问题。</td>
+        </tr>
+        <tr>
+          <td><strong>F 学长经验互助社群</strong></td>
+          <td><span class="num">8</span></td>
+          <td>唯一纯零开发方案，但存在<strong>结构性缺陷</strong>：依赖人工持续产出内容，而第 3 讲语料 #03 已实证「群内通知会因无人维护而失效」——同一个死法不能重演。</td>
+        </tr>
+        <tr>
+          <td><strong>G 代查代办服务</strong></td>
+          <td><span class="num">8</span></td>
+          <td>可行性仅 1 分——单人单次需数小时人工，<strong>无法规模化</strong>，且与学生本人的时间预算直接冲突（还有课业与四级备考）。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <strong>收敛逻辑：</strong>被排除的四个方案里有三个是「零开发 / 低成本」路线——这恰恰是<strong>主动放弃舒适区</strong>的决策。学生没有选最省力的方案，而是依据「哪个真正解决核心痛点」做出了难度更高的选择，因此在可行性维度<strong>主动接受 2 分而非 3 分</strong>。
+    </div>
+  </section>
+
+  <section class="section reveal" id="s4" data-page-node-id="3eRA5E9JcBAVo62bpsKvco">
+    <div class="sec-head" data-page-node-id="E5aEniNF1e12weyED8KesH">
+      <span class="sec-no" data-page-node-id="escuS7x09DedqfWCNOT8ZP">04</span>
+      <h2 class="sec-title" data-page-node-id="3ZL8OFVqap44WgRhsBWRQP">任务—机制匹配复核</h2>
+      <p class="sec-desc" data-page-node-id="kNIcTkOvIPatg5KRogayV0">对选定方案做的四问复核，逐条给出匹配判定与理由。</p>
+    </div>
+    <table data-page-node-id="RjWYFTRmRPoMSYCqs9jJo0">
+      <thead data-page-node-id="S6HNY4TGfZgmt5ABi5pCHg">
+        <tr data-page-node-id="4O16OlPYXhKlgw2hQ3qboV"><th style="width:22%" data-page-node-id="BpKXGSWtTPHjdRIz7GpZ6H">复核维度</th><th style="width:12%" data-page-node-id="Gpot4r6gX4C3Me6yNSZ5x6">判定</th><th data-page-node-id="6BOjNzWrXjovfcIgEaD7Bz">理由</th></tr>
+      </thead>
+      <tbody data-page-node-id="iJMOof2XP1HnEkDpGOCGRt">
+        <tr data-page-node-id="LMKxW55GMuY3LHvZamvT3X"><td data-page-node-id="8tJrIBzA70D3ursBlMaI6d"><strong data-page-node-id="6b8i2dqFVlcWCHoziiOjWo">机制回应任务</strong></td><td data-page-node-id="wAlyQhyzKMSr0A4yrNwr6d"><span class="src diff" data-page-node-id="5dPgzoeJnbIQsjLQd957hg">匹配</span></td><td data-page-node-id="p4FIiYUaIAfXfygXMFXDww">核心动作「输入赛事 → 输出真实层级与学分数」直接对着「规则理解偏差导致学分认定误差」这一痛点。</td></tr>
+        <tr data-page-node-id="dd3NALihwTTmE8xkVfCOjT"><td data-page-node-id="UZlYFaxDAMNGsxpdKJOIMC"><strong data-page-node-id="wDAFlWUufug5QRGAfZwXBn">形态贴近现场</strong></td><td data-page-node-id="vwg9lo4c1rSxigo8W3c2ND"><span class="src diff" data-page-node-id="CZpNLtBvopw4zIzGVMF0AF">匹配</span></td><td data-page-node-id="8GzY431GwdrAnnp90AUDRJ">决策发生在综测申报期的电脑前或手机端，Web 单页工具零安装即开即用，贴合现场。</td></tr>
+        <tr data-page-node-id="bacDrbQgSLAYfNhGW2wCRg"><td data-page-node-id="9qIIaTMlrDzmkOQ6P37fyf"><strong data-page-node-id="TBE7s1qs6ZAaogXdS5Weqv">价值一次闭环</strong></td><td data-page-node-id="KMdJMtQV3LWo8PtOpflK4k"><span class="src diff" data-page-node-id="Fk3kE0ipeQ0BLD7dtmrWYs">匹配</span></td><td data-page-node-id="pM3xhEIIuHptlIhpTwmYgN">单次查询即得「层级 + 学分数 + 降级预警 + 报名入口」四件套，一次使用一次完整结果。</td></tr>
+        <tr data-page-node-id="9j8gPN8nUgu2VhWjyQuqDZ"><td data-page-node-id="fUShE6nP9U9uae7Yos5DC0"><strong data-page-node-id="z14064zusWbFQUghRrDLFz">能力可支撑</strong></td><td data-page-node-id="p1tE2v7xKosJbFHa9GEQts"><span class="src warn" style="background:rgba(217,139,74,.12);color:var(--warn);border:1px solid rgba(217,139,74,.3)" data-page-node-id="AhjKFhjqGbwYGP9XFB2DLz">存疑</span></td><td data-page-node-id="OLjlXwzJs2F3XDfn7lyfss">247 项赛事 × 4 阶段时间线 × 官网链接的数据录入工作量极大，且规则更新需持续维护。</td></tr>
+      </tbody>
+    </table>
+    <div class="quote" data-page-node-id="wr6ITpSYAqdFveG1n5GG8V">
+      <div class="quote-label" data-page-node-id="JuBE2UAxcHDHuXJgcOaU81">学生对存疑项的处置（留痕）</div>
+      <p data-page-node-id="tHZLxT0bsGNcL9zZil3IRR">“数据量的问题我决定用结构化方案解决：一次性把 247 项全部录入成 JSON，然后让前端单文件内嵌读取，这样既避免了后台服务，也保证离线可用。规则更新靠左下角的线报纠错入口让同学反馈，不靠我一个人维护。”</p>
+      <cite data-page-node-id="JztOsjMFWPzMOHJoa5lvWc">—— 存疑项由学生裁决，AI 未代为决定</cite>
+    </div>
+  </section>
+
+  <section class="section reveal" id="s5" data-page-node-id="FBQPWMbYATZl6k83ESESFI">
+    <div class="sec-head" data-page-node-id="Gw0MJGUWNbkCELaVQcUgr6">
+      <span class="sec-no" data-page-node-id="Khj1TiNivsTRdo98aiTUky">05</span>
+      <h2 class="sec-title" data-page-node-id="mdqX5CtFN4XdbHIQXiIhMj">共创记录</h2>
+      <p class="sec-desc" data-page-node-id="qsE3nEzUnQSCvDEQhMRDlr">Yes-and 共创阶段学生提出的原创点子，已在功能拆解中显式融合落地。</p>
+    </div>
+    <div class="quote" data-page-node-id="fzTVqCGBDiHOsdr8vWIdza">
+      <div class="quote-label" data-page-node-id="l6FOLby1kBpawmHUL4NKVF"><span class="src mine" data-page-node-id="Nt8xfRZ1QnAvumBy1WKze1">你的点子</span>学生原创贡献（必现条款）</div>
+      <p data-page-node-id="0vBvTnFKy1XNnFMmjrFoRO">“每家比赛的官网直达链接必须都能点进去。同学看完分层之后下一步一定是去报名，如果还要自己再搜一遍官网，这个工具就断在半路了。”</p>
+      <cite data-page-node-id="zGkSMHbxlDgDgt4Zie89Iu">—— 共创阶段学生主动追加，成为本产品最高满意度的功能模块</cite>
+    </div>
+    <div class="note" data-page-node-id="IeEg9IaDfcQTFrV0WyXBFF">
+      <strong data-page-node-id="5sBtVFHtXXalp7ApuTuFAj">融合结果：</strong>该点子被完整采纳并扩展——不仅录入 247 项赛事的官方报名网址，还为每项赛事标注了<strong data-page-node-id="0LM3PypXUiDN2mHKNkcIEa">网站名称与通道性质</strong>（如「全国大学生创业服务网（教育部官方直报通道）」「全国大学生结构设计竞赛官方网（全国竞赛秘书处）」），并为全部 247 项配置了 4 阶段赛程时间线，让「查到」与「报上」形成连续闭环。此项在反思中被学生评为<strong data-page-node-id="uVWn04cR5CNpAJh7zZp5z9">最满意的产出</strong>。
+    </div>
+  </section>
+
+  <section class="section reveal" id="s6" data-page-node-id="ieV7Txi4QvZJ9I0xFUXQtt">
+    <div class="sec-head" data-page-node-id="LY9Ea4sEpHkYJY3VVd74Sk">
+      <span class="sec-no" data-page-node-id="Lay1jlPuyy7DIKp332kF9M">06</span>
+      <h2 class="sec-title" data-page-node-id="4IltMV9M5CSDBE6MH0z1kQ">核心功能拆解</h2>
+      <p class="sec-desc" data-page-node-id="yVGojw7I1ThAaCA3wqbNmq">恰好三个核心功能，每项创新点均可追溯至「方案差异点 / 你的点子 / 竞品空白」三者之一。</p>
+    </div>
+    <table data-page-node-id="0kgIqDUYCDd8cTqbSudyaN">
+      <thead data-page-node-id="c7v7L1jtOHFE0lci23ulLM">
+        <tr data-page-node-id="7PsL7CYF4rBfXtCJ3NWQZP"><th style="width:20%" data-page-node-id="m0BHJekwsW3WZCWQQHq8WT">功能点</th><th style="width:34%" data-page-node-id="Nav4K2t04jfBBuRaclGyN8">核心价值</th><th data-page-node-id="Vr01kPXyyVdnhp7Rq15mcj">创新点（来源标注）</th></tr>
+      </thead>
+      <tbody data-page-node-id="CwwO46PpHGDQHFymH2sGXG">
+        <tr data-page-node-id="4NsY8KTP3vq3TjGqvis6Tl">
+          <td data-page-node-id="PakYwH2HMyhly8491HNES9"><strong data-page-node-id="Qv6xMWyUUYjiw4h7VRPODE">竞赛全景检索库</strong></td>
+          <td data-page-node-id="3tSPTHCCZdeNxq9OUH69zx">247 项官方赛事按学院 / 层级 / 赛程季节多维穿透，替代翻查 11 页 PDF</td>
+          <td data-page-node-id="35EX6WPo1wXW0xMGrKblBV"><span class="src diff" data-page-node-id="xZs32Uog3w7JsTVIngWMqZ">方案差异点</span>官方 PDF 只按大类罗列，本产品按承办学院 + 认定层级 + 报名季节三维交叉索引，支持从「我是土木大一」反查可参与赛事。</td>
+        </tr>
+        <tr data-page-node-id="WgohXPDblO2VFbEmiEbaMj">
+          <td data-page-node-id="n3YxIgyieA1tkW0pG2Cosc"><strong data-page-node-id="eW52Gn4SX7BOqWaugpW5Sf">学分精算与暗坑透视</strong></td>
+          <td data-page-node-id="tVUpA5ldToHiUuSwCGXSly">输入赛事与名次，输出真实层级、认定学分与综测 GPA 增量，自动预警降级条款</td>
+          <td data-page-node-id="IKDPExAR1BgKVwN9cRs1es"><span class="src gap" data-page-node-id="MRBra8LJljao4yttjtbGR1">竞品空白</span>经竞品侦察实证：赛氪/竞赛网一类全国聚合平台「有赛无规则」，赛链/教务系统一类校方后台「有规则无自助」，<strong>中间地带全空</strong>。现有工具均止步于「赛事等级查询」，无任何工具处理备注条款的层级降级判定——而这正是 2 学分误差的真实来源。</td>
+        </tr>
+        <tr data-page-node-id="hxmWhxQ2dCeRNsjbqyhylr">
+          <td data-page-node-id="6wzZ9IDjWTS7mm5GygZvEh"><strong data-page-node-id="PJRVquxWu61UVBAUBEiWml">官网直达与赛程时间线</strong></td>
+          <td data-page-node-id="HDeTbW56Hl7AJgIAmrsMYy">247 项赛事全部配官方报名入口与 4 阶段时间线，查到即可报名</td>
+          <td data-page-node-id="CkygBOIpXJGS0AIx9dUw5S"><span class="src mine" data-page-node-id="0ARTzBiSqOgPWaba4gg1Th">你的点子</span>出自共创阶段学生主张「官网直达链接必须都能点进去」，将工具从「信息查询」延展为「行动闭环」。</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note" data-page-node-id="zeXppV22TzIf8WV6PGx2Jt">
+      <strong data-page-node-id="lP7zpHBKqvoBL3wVsKb9JT">自检：</strong>学生点子显式出现（功能三，标注「你的点子」）｜三项创新点均有来源标注｜无「个性化体验」类无来源空话
+    </div>
+  </section>
+
+  <section class="section reveal" id="s7" data-page-node-id="rNKT9F8zS8ScpqI93T19Fr">
+    <div class="sec-head" data-page-node-id="chvj4anD3ghPdZCXaa0GaL">
+      <span class="sec-no" data-page-node-id="G1IJ9jqiELs7wAlKdFNXAB">07</span>
+      <h2 class="sec-title" data-page-node-id="4OyfsnqDAGGJtixxUJJcjP">责任审查三审</h2>
+      <p class="sec-desc" data-page-node-id="AtMT5PLTfE9QR2GIcDdQ7a">无障碍、数据、误用三项逐条审查，每项给出具体结论。</p>
+    </div>
+    <table data-page-node-id="VJFTVYWtqF8IYmSqitOMLu">
+      <thead data-page-node-id="UPSxJtRDknXgmhTeF0LsQh">
+        <tr data-page-node-id="1Pvawe9aXH8TOB8EFQ3YdS"><th style="width:16%" data-page-node-id="5TaSrQw8pYX0Np74dpReye">审查项</th><th style="width:38%" data-page-node-id="ACKbZ37L53bhxjwjUzESFq">审查发现</th><th data-page-node-id="1r43ZH15JaVPFP4Ypcowyo">具体结论</th></tr>
+      </thead>
+      <tbody data-page-node-id="p2gfuSXGs9NPK9a0fbQnzb">
+        <tr data-page-node-id="VFeW4dHl9RJcfLWIAPvLn8">
+          <td data-page-node-id="6L4czB8cQkezVQiBwJsA2I"><strong data-page-node-id="91HhrKzi6VK9Z4XzZ8kfmP">无障碍</strong></td>
+          <td data-page-node-id="kLWBfU8fNwRqbf9xhC1Pdj">层级标签以颜色区分（一类A 红 / 二类 蓝 / 三类 灰），色弱与色盲用户可能无法区分相邻层级。</td>
+          <td data-page-node-id="AGfdIrdqY88EDKpq7kAm9L">所有层级标签必须<strong data-page-node-id="YMdDtyMKOby7e2i0zzLIsD">文字 + 颜色双标识</strong>，且字号不低于 11px；交互按钮提供键盘可达焦点态，不能只依赖悬停。</td>
+        </tr>
+        <tr data-page-node-id="Dt85CRFuFBWbsRAVtGsUfF">
+          <td data-page-node-id="EyHGD4dduRZcDTnRqNw0JD"><strong data-page-node-id="CKz9O0sD7QibPHBugvtQ1N">数据</strong></td>
+          <td data-page-node-id="SfAiJHkvYYyFqBvp7Kyr9D">产品需要收集学生年级、专业、参赛目标用于定制推荐。</td>
+          <td data-page-node-id="8BqcD7kmR38uSAMmlQkLvG">全部输入<strong data-page-node-id="xsIgTGr5P5wyHqOrQnVIJG">仅在浏览器本地内存中参与计算，不落库、不上传、不设账号体系</strong>，符合最少够用原则；规则库数据全部来自已公开的校级红头文件。</td>
+        </tr>
+        <tr data-page-node-id="k4sthJEpL3drY5xSXxAsfZ">
+          <td data-page-node-id="NVEkvZWzNOVsaWQPaeq3Ac"><strong data-page-node-id="w8aG3LYdNgeYX23ft6Dah3">误用</strong></td>
+          <td data-page-node-id="cCDBOIzaZpZcSOb3njAm8m">学分精算结果可能被同学当作学校官方认定结论，用于评奖申诉等正式场合，而核算结果存在与学院最终认定不一致的风险。</td>
+          <td data-page-node-id="vWHowpTl5xKuojFhPZ2j4H">页面需<strong data-page-node-id="lcBOvtYrbW2Xbbr8i9JhjI">明示结果为辅助估算</strong>，最终以学院审核为准；同时不提供任何「包拿奖 / 保研包过」类承诺，仅作客观规则解读与时间规划。</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="sec-head" style="margin-top:36px;margin-bottom:18px">
+      <span class="sec-no" style="color:var(--accent-2)">7.1</span>
+      <h3 style="font-size:20px;font-weight:700;letter-spacing:-.01em">定稿决策四项（学生亲口确认）</h3>
+    </div>
+    <table>
+      <thead>
+        <tr><th style="width:20%">决策项</th><th style="width:26%">学生决策</th><th>理据（原样记录）</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>砍改功能</strong></td>
+          <td>三个功能<strong>全部保留</strong>，不砍不改</td>
+          <td>“这三个是链条关系不是并列关系——砍掉检索库就不知道有哪些赛，砍掉精算就没有量化结论，砍掉官网直达就断在最后一步。任何一个都补不了另一个的位。”</td>
+        </tr>
+        <tr>
+          <td><strong>形态决策</strong></td>
+          <td><strong>F4 主 + F7 / F3 辅</strong></td>
+          <td>“核心必须是 F4，因为规则解读这件事只有 AI 能做；F7 是数据底座，F3 是计算层，它们服务 F4 而不是并列。”</td>
+        </tr>
+        <tr>
+          <td><strong>责任审查认可</strong></td>
+          <td><strong>三条结论全部认可</strong>，无障碍项补充一条</td>
+          <td>“三条都认可。无障碍那条我再补一点：除了色弱，还有一层——打印出来的时候颜色会丢。所以层级标签除了颜色和文字，最好再加个可辨识的层级代码，黑白打印也能认出来。”</td>
+        </tr>
+        <tr>
+          <td><strong>人机分工确认</strong></td>
+          <td><strong>认可分工表</strong></td>
+          <td>“认可。规则库更新必须人工核对这条我很坚持——模型自己更新规则库太危险了，规则错了直接影响别人的保研排位，这个责任不能交给 AI。”</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">
+      <strong>本条为 S2 硬约束「决策须学生亲口做出」的留痕记录。</strong>上述四项均未由 AI 代为决定；其中无障碍项由学生主动追加了「黑白打印场景」的补充条件，属于超出 AI 原审查范围的原创贡献。
+    </div>
+  </section>
+  <section class="section reveal" id="s8">
+    <div class="sec-head" data-page-node-id="aD28sreyxnYKSDHbpEvoDo">
+      <span class="sec-no" data-page-node-id="eTCHik5iKyM9i0E24YC6CI">08</span>
+      <h2 class="sec-title" data-page-node-id="lY1OnScg2eOfnXM3Ina7t8">产品任务书 · 九要素</h2>
+      <p class="sec-desc" data-page-node-id="jmkTz9V5ZDHtdquR88D5BP">第 4 讲最终交付核心文件，可直接带入第 5 讲迭代环节。</p>
+    </div>
+    <div class="elems" data-page-node-id="tw7FHHbo3ikpPC8CN3u02p">
+      <div class="elem" data-page-node-id="UbDEEGgyGFuqfYSrkcQ5Pp">
+        <div class="elem-no" data-page-node-id="jnV9DKZfuaIqbpdjULhbsB">01</div>
+        <div data-page-node-id="FfxqX20CjwPmtFCQ537w1K">
+          <div class="elem-k" data-page-node-id="iBaM2yzgHS7QzsZcw53QMY">产品名称</div>
+          <div class="elem-v" data-page-node-id="eUrrJw5qh2LAHB36lKBc78"><b data-page-node-id="0LMBESi0v4Rc8HPxgaYv0F">建大竞赛罗盘（XAUAT-COMPASS）</b><br data-page-node-id="1Yz3kEEmeLMjkc101YUJSy">副名：西安建筑科技大学学科竞赛导航与学分精算系统。名称由学生亲自选定，取「罗盘」意象对应「方向指引 + 精准定位」的双重语义。</div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="Hh5Yi6jUOSkkBKYsCzC6qr">
+        <div class="elem-no" data-page-node-id="rdeaylm5DEDk94OKYUwAtp">02</div>
+        <div data-page-node-id="1Cn6TZ7nWsCAm2Hg6Xos9q">
+          <div class="elem-k" data-page-node-id="NX8BALdQNuiBsWqWiBS2ub">一句话定义 <span class="src" style="background:rgba(217,139,74,.12);color:var(--warn);border:1px solid rgba(217,139,74,.3)">[人定稿]</span></div>
+          <div class="elem-v" data-page-node-id="nW33pTufomSUzlLwyMFU0K">让建大学生打开一个网页，就知道<strong data-page-node-id="qj12IBrwjhUJmhe6rUbMbz">自己能打什么赛、什么时候报、在学院到底认几类、能加多少学分</strong>。</div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="2gluRZbwIqU5HAw0lLbEk2">
+        <div class="elem-no" data-page-node-id="YqfxwNzNAiW6ADYafL3Ndy">03</div>
+        <div data-page-node-id="36N9c8tjnD7wdOiLHa8UsE">
+          <div class="elem-k" data-page-node-id="tl3iiJKXUAJIR8udWYf6DD">用户与任务</div>
+          <div class="elem-v" data-page-node-id="cl9Ti8UdDxSzHPPW3xQIs4">
+            <b data-page-node-id="nLzm0bjFWGM3JHmsodGk0d">用户：</b>西安建筑科技大学工科院系大一至大三本科生，有自主进取心但受困于规则繁琐与信息孤岛。<br data-page-node-id="aZkZsKHQzH7hBmoY0BwlG2">
+            <b data-page-node-id="6Etk9DHS1UGZAZSWDEj6y0">任务：</b>搞清楚适合打什么、什么时候准备、在学院到底算几类加几分，按清晰节奏稳步参赛。
+          </div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="5sBJKYpQU9MjAcrAuDhvYw">
+        <div class="elem-no" data-page-node-id="GDn5TWDxKHsTG3VyYWf0R6">04</div>
+        <div data-page-node-id="gv4agQmMuB5rXY2NjFtNgZ">
+          <div class="elem-k" data-page-node-id="ZMNdGuCQdc5bYRXywfvC8d">形态与理由</div>
+          <div class="elem-v" data-page-node-id="Rxo0c0ErZAuws7jvXFlj6M">
+            <b data-page-node-id="FsaAYlaJDjbnPo2GQkaNuc">主形态 F4 工具整合 AI ＋ 辅形态 F7 信息聚合 ＋ F3 轻量工具。</b><br data-page-node-id="b05yQGD0MECtI4GCwB5kyN">
+            理由：问题核心是「非结构化规则的精确解读」，必须有模型语义理解能力参与；交互层用可视化降低认知门槛。产品采用<strong data-page-node-id="cxhu2x6R3GD843l0vTAWYg">零依赖单文件 Web 架构</strong>，无后台服务、无账号体系，双击即开、100% 离线可用，适配学生随时查阅的使用习惯。
+          </div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="mMavPZie7QCUNvOjAcRec0">
+        <div class="elem-no" data-page-node-id="PnQgV1FhkJk8QZZMb65P8o">05</div>
+        <div data-page-node-id="DTf8iZKyirkdCmypLFnBuc">
+          <div class="elem-k" data-page-node-id="5FyAQum2Iwkpc5pFgUBMyv">主干流程（≤5 步）</div>
+          <div class="elem-v" data-page-node-id="HCAdxqyHTSCS9sdETJVwwr">
+            <ul data-page-node-id="r9gKqtvLA9r0nVY0KYq4x9">
+              <li data-page-node-id="RmkSBBGjIhvk6KRSBkB5B6"><b data-page-node-id="wfGkgiVPeAcUAEDBs2vHi6">第一步</b>　打开页面，进入「竞赛智搜」，按承办学院 / 认定层级 / 赛程季节筛选目标赛事</li>
+              <li data-page-node-id="FNn0oJg4CDpWfVzQeTvAPH"><b data-page-node-id="DElNdGy8XO14DHgN2HNJj4">第二步</b>　点击赛事卡片，查看该赛事的分级详情、4 阶段赛程时间线与备赛提示</li>
+              <li data-page-node-id="Gx8FYsNElAwRa8drJ2HggI"><b data-page-node-id="3SKPd4iWDtlGt9umSdBFYn">第三步</b>　跳转「学分精算器」，输入预期获奖等级与名次，读取认定学分与综测 GPA 增量</li>
+              <li data-page-node-id="c1R7YzUImRORSFOVjLs7rH"><b data-page-node-id="5NxjNx3rraVBpSDCr7cnh7">第四步</b>　查看降级暗坑预警，确认是否存在备注条款导致的层级下调</li>
+              <li data-page-node-id="mOXWteUJOyrTuceFxCtFnc"><b data-page-node-id="Dvrp6VX9I3z3XUIwp0kVKi">第五步</b>　点击官网直达链接完成报名，或加入「备赛计划本」生成个人排期</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="4Epegp88aSUkfDTmP2YfKh">
+        <div class="elem-no" data-page-node-id="YddjX3GAGVkbkJiEvRzKPv">06</div>
+        <div data-page-node-id="Wu6INUwxQ5w5OvjJ89DApy">
+          <div class="elem-k" data-page-node-id="QHGh48ywhbBgEBxbFPY9W5">功能边界（第一版不做什么）</div>
+          <div class="elem-v" data-page-node-id="HodslnNQ8FQqmUhAj5F0Jj">
+            <ul data-page-node-id="7uleHelXXi525hxxhOYCvt">
+              <li data-page-node-id="8VCK1PLVnmWWKHkiITZwNl"><b data-page-node-id="NW1DD0KWDl3dh8p5rnAkQp">不做用户系统</b>——不设注册登录、不做云端数据同步，所有个性化计算仅存于浏览器本地内存</li>
+              <li data-page-node-id="rQ3Yhv4U9Amu4yj3SZAHF6"><b data-page-node-id="yQp8p4klcZLKIYTDFGgAkY">不做跨校通用</b>——规则库严格收敛在西建大校本口径（教务处 247 项目录 + 土木院认定细则 + 学生手册），暂不适配其他高校</li>
+              <li data-page-node-id="8suK7zTtLzPcjIwQdbpsBc"><b data-page-node-id="wBuk0yJ7qPTnMaLntIabxW">不做自动报名</b>——仅提供官网入口跳转，不代理填报任何赛事材料</li>
+              <li data-page-node-id="fuSnyPrzzZpGtTvuW5FICb"><b data-page-node-id="hmBC1SKxuehVBipUvaNDur">不做赛事成绩预测</b>——不提供获奖概率、评奖竞争力估算等推测性内容</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="NuEcKz2ZGBxYwKrVtnvmbW">
+        <div class="elem-no" data-page-node-id="9rDmr1hwnDcHszOpMR1eaS">07</div>
+        <div data-page-node-id="FSBZ3xVByWtNdO5iOuBsRV">
+          <div class="elem-k" data-page-node-id="FAMOXpOC5WSfEAFK6hIDwS">三个核心功能（含创新点来源）</div>
+          <div class="elem-v" data-page-node-id="nQH6ix7MfTvh6H7pHqQy9F">
+            <ul data-page-node-id="fRPXFnvAGCdUgbvR8kFyse">
+              <li data-page-node-id="Fz2noiLpJBLMeIOCWc3QHh"><b data-page-node-id="5GnqzBtYg3v1iulFP879yv">竞赛全景检索库</b>　<span class="src diff" data-page-node-id="BocZIcNi5cCFsqJovAmOAf">方案差异点</span>247 项赛事按承办学院 × 认定层级 × 报名季节三维交叉索引</li>
+              <li data-page-node-id="yPCzZo4EnWbhJD43M5LcHr"><b data-page-node-id="izBi2Kfl61BqkbFUNQzhCP">学分精算与暗坑透视</b>　<span class="src gap" data-page-node-id="xY5mOg7WBEXBghK5hVvssP">竞品空白</span>经竞品侦察实证：市面 5 类已有产品均无此能力，唯一处理备注条款层级降级判定的工具，直击 2 学分误差真实来源</li>
+              <li data-page-node-id="kDNGlZQkGfj1qyMzjWFcoX"><b data-page-node-id="3JzAN9xrFo7pW86GAOXHK0">官网直达与赛程时间线</b>　<span class="src mine" data-page-node-id="T2YmsWhEqZ3MqhHG6nWKpg">你的点子</span>247 项全配官方报名入口，让「查到」与「报上」形成闭环</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="Ih846n7Th54zYDlGEtsXNa">
+        <div class="elem-no" data-page-node-id="r5ggFIhp0XSUCy5y3iBSVa">08</div>
+        <div data-page-node-id="hcRWkWlcmgCsMorW48I535">
+          <div class="elem-k" data-page-node-id="q8lX54HIFzuUBgUx47q4hY">人机分工三档</div>
+          <div class="elem-v" data-page-node-id="fca3fJRgf1bhtD5wfHYFaG">
+            <table style="margin:0" data-page-node-id="U4F8eK7JLAkTSbLeNAD558">
+              <thead data-page-node-id="m0EEBwuIjFCvHEWAhw3mPB">
+                <tr data-page-node-id="xtnQBDgP9Wn89eI3iH5spD"><th style="width:30%" data-page-node-id="LljiOjwDDkKtYGGVXUMCrW">环节</th><th style="width:26%" data-page-node-id="BZ5dFAPuOmpapwbYWAdL5P">AI 自动做</th><th style="width:24%" data-page-node-id="DDKsQQw4YxfcBpZ2qEEe4t">用户确认后做</th><th data-page-node-id="VPvMAoTxIreBp3cQE2oXG3">必须人工接管</th></tr>
+              </thead>
+              <tbody data-page-node-id="IQpDi41sMQHjANIMzPVj5j">
+                <tr data-page-node-id="VNpiAitSKZScskmhFWN0k3"><td data-page-node-id="HbKYPVfezm1tQOIpCnRp7I">规则解读与层级判定</td><td data-page-node-id="m4ea9YJ9j0mHFuGIYLfICR">自动匹配分级表与备注条款，输出认定层级</td><td data-page-node-id="snEp7qppNEMQ65D7eaNmdu">争议条款由用户确认是否采纳</td><td data-page-node-id="QaRHwmy1fbwhdRfLiBGnNp">—</td></tr>
+                <tr data-page-node-id="39w1fnfyvPCZcMCDtLnVtC"><td data-page-node-id="l30twmVXrfAAtC7YwQ0G7O">学分与综测折算</td><td data-page-node-id="Q8qml9a5VwUa1HMN7ZdpfB">按内置规则表实时计算学分与 GPA 增量</td><td data-page-node-id="KnMFYSnC4GdC4dgyyFQoIe">—</td><td data-page-node-id="Pv5kWka9YlWwfUFLze0ZjQ">—</td></tr>
+                <tr data-page-node-id="nX0Wg8vEU9Mc2fkXDGIaa5"><td data-page-node-id="ooAfp6uhIgZ3DmIquDAUiM">选赛规划生成</td><td data-page-node-id="8yzbDBvnOJTd46WeohDCMG">按年级 / 专业 / 目标自动生成四梯队方案</td><td data-page-node-id="Ov80FTSrUIs2lsSoZpwvh7">用户确认后写入备赛计划本</td><td data-page-node-id="azwABLxP9M2PLKu1YfHfXG">—</td></tr>
+                <tr data-page-node-id="TOEBmETu8diceqQB1CFbvn"><td data-page-node-id="qWjzhDZBumial2JXopX3YE">规则库更新维护</td><td data-page-node-id="W2gsDCdVXSeSV1BYkvT9NB">—</td><td data-page-node-id="V1JrtXzmRxUChNO4RVFVDv">—</td><td data-page-node-id="KvVjBqVLWGKJozRwryJ2f9">官方文件变更由维护者人工核对入库</td></tr>
+                <tr data-page-node-id="TGyBzf2aSJ3yyLfreYe8ZT"><td data-page-node-id="vhPp6NRrXhrvf08CdfDeKr">线报纠错处理</td><td data-page-node-id="mLAOM1EpeQASV98vMTkH8O">—</td><td data-page-node-id="DEH7ywoBOBzLUxvsv7fa9N">用户提交后由维护者判断采纳</td><td data-page-node-id="NDfreGltokwhkGJ7P8rv0Q">信息真伪核验必须人工完成</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="elem" data-page-node-id="nCkWe6ebFXYlHrgB6d97Ip">
+        <div class="elem-no" data-page-node-id="y2Ta0fyhHnT08y19Zuv506">09</div>
+        <div data-page-node-id="9eQr8SUs1oUkBQLAhnkdbB">
+          <div class="elem-k" data-page-node-id="LMVaRQTVPjJJJb6K0GQYJu">可检验验收标准 <span class="src" style="background:rgba(217,139,74,.12);color:var(--warn);border:1px solid rgba(217,139,74,.3)">[人定稿]</span></div>
+          <div class="elem-v" data-page-node-id="k5ntmOCt2zxEyciVEsocF8">
+            <ul data-page-node-id="OJEpuhOgWGBMqkqfpfd6EJ">
+              <li data-page-node-id="61sx9P1ZjO9DPtC2ZbFESO">用户在全量检索库中<strong data-page-node-id="IoQWWs2Vg3Cyvbky0AaSAD">输入赛事关键词后 1 秒内</strong>返回匹配结果，且结果显示该赛事的认定层级</li>
+              <li data-page-node-id="qkHPC7guCOE9ioArTHAVpI">用户在学分精算器中<strong data-page-node-id="zS7SLHsM5fNVl40FaBBYg1">3 分钟内</strong>完成一次「赛事 + 名次 → 学分数」的试算并看到数字结果</li>
+              <li data-page-node-id="GaBT11yx5HmFAsSR7cy81A">产品完整收录 <strong data-page-node-id="XbnhXEXtpdRqghkxt9Y3cM">247 项</strong>官方赛事，每项均具备可点击的官方报名链接与 4 阶段赛程时间线；官方链接<strong data-page-node-id="XbnhXEXtpdRqghkxt9Y3cM">域名正确率 100%</strong>（无张冠李戴、无失效域），连通性实测可达约 <strong data-page-node-id="XbnhXEXtpdRqghkxt9Y3cM">77%</strong>，余项已纳入月度巡检机制</li>
+              <li data-page-node-id="eDEWzoCEDvx6zFQR25tRkK">内置规则库覆盖 <strong data-page-node-id="pASiaFNXgYSW8RKdxYrX2e">15 条</strong>特殊备注条款，命中降级条件时页面明确提示层级下调及学分落差</li>
+              <li data-page-node-id="maFwnJ8Ue86gKs4CuwJ4vE">产品在<strong data-page-node-id="5kB4rNlZpMRG8gF4bI85gE">断网状态下</strong>双击本地 HTML 文件即可完整运行全部检索与计算功能</li>
+              <li data-page-node-id="GUDMGt7S28yC9fc54nevIG">用户在定制选赛模块完成年级 / 专业 / 目标三项输入后，<strong data-page-node-id="djbvbELdWr08esTu4u8nbh">能生成 4 条不同梯队的参赛建议</strong></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section reflection reveal" id="s9" data-page-node-id="dl8I49JkCznYuk1wtpANWZ">
+    <div class="sec-head" data-page-node-id="H0jeIH0DZshh2b6lKMVcem">
+      <span class="sec-no" data-page-node-id="BS5JBx28D1U3608G03bLIl">09</span>
+      <h2 class="sec-title" data-page-node-id="nudG8mSeV6EGpYJGXkv59H">反思记录</h2>
+      <p class="sec-desc" data-page-node-id="yRFapK7TDfkAhhn3uuTqzt">课程硬约束 H8 门槛，三问由学生本人逐条作答，原样归档，供 S7 数智资产归档智能体提取。</p>
+    </div>
+
+    <div class="qa" data-page-node-id="UNEDt0w8UqkheJKGBKEYIU">
+      <div class="qa-q" data-page-node-id="xZxA9u3WE4ec5jLxSE7phs">
+        <span class="qa-idx" data-page-node-id="up5RDr0cWRlQ3uE9LitSiu">Q1</span>
+        <span data-page-node-id="VQGoYbp1raRTAu4ar15T5r">本次产出里，你最满意的部分是什么？为什么？</span>
+      </div>
+      <div class="qa-a" data-page-node-id="E7USWaccYgTBP1uBHhCbCG">
+        最满意的是 <b data-page-node-id="UK2b91eLT97R8yod1ONhqj">AI 直接检索到了所有竞赛的官网直达链接</b>。<br data-page-node-id="9PFmztdzFOSYiJwFElNuOw"><br data-page-node-id="SBe9fki8Eblzi9OgV0EUBU">
+        因为这一步解决的不是「知道有什么比赛」，而是「知道之后怎么办」。以前看到分级表，只知道自己打了个一类B，但要去哪儿报名、什么时候截止、官方入口是哪个，还得自己再搜一遍，经常搜到山寨站点或者过期页面。现在 247 项全部配齐官网直达，等于把从「查」到「报」的最后一公里接上了。这也是我在共创阶段特意提出来要加的东西——我判断这个断点才是真正卡人的地方，而不是信息不够多。
+      </div>
+    </div>
+
+    <div class="qa" data-page-node-id="PojDSRCTOcOJHKHmpIjxUn">
+      <div class="qa-q" data-page-node-id="LE3jFcc8GttFOMusWZgAoG">
+        <span class="qa-idx" data-page-node-id="ZnPja1nM0sLVO1tPGKZYYI">Q2</span>
+        <span data-page-node-id="Es9EvOuvAvUm7xldmgm3GV">你改得最多的地方是哪里？改了什么？</span>
+      </div>
+      <div class="qa-a" data-page-node-id="uaiyDYWAlG2PVSn2vMFJ1m">
+        改得最多的是 <b data-page-node-id="3i18HJ9zSHMlAprSuETtZv">「定制选赛规划」这个板块和整体 UI 设计</b>。<br data-page-node-id="HqgIAhywVBKBinjgDI5FgG"><br data-page-node-id="yWfqbqUFHV2ki2G53UQaIt">
+        定制选赛板块来回改了好几版：一开始只是一个简单的「选个年级和专业就出结果」，但出来的建议很泛，跟直接列表筛选没区别。后来把它改成 <b data-page-node-id="BytsjITyMliZ0jcII0sBFV">01 意向调研 → 02 能力匹配 → 03 梯队方案</b> 的分步交互，并且把结果拆成冲顶金奖、骨干中坚、稳健拿分、跨界拓维四条梯队，每条梯队的定位都不一样，才真正有「规划」的感觉，而不是又一张筛选表。<br data-page-node-id="6OyCk2IaqPq4BX14b03xg7"><br data-page-node-id="x7YvxRkiVnk6b3DbqOVLuO">
+        UI 方面也反复调整过，最后统一到 Material Design 3 的形状体系和 Ant Design 的成分组件上，把卡片、步骤条、统计卡的视觉语言拉齐，让整个页面看起来是一个完整产品，不是拼接出来的。
+      </div>
+    </div>
+
+    <div class="qa" data-page-node-id="Fkg6E3MHUKMPqOWkeBD4WM">
+      <div class="qa-q" data-page-node-id="qHSFsik4Y3YVM9YV19H6SF">
+        <span class="qa-idx" data-page-node-id="3QF1DSiVaPeiD3x2vBMfIf">Q3</span>
+        <span data-page-node-id="rnd8EcLWERbN5LawKh2TBf">整个过程中，AI 哪一步最想替你拿主意？你是怎么接住的？</span>
+      </div>
+      <div class="qa-a" data-page-node-id="S3NqlXe0vA2zPtXENcP3lx">
+        AI 最想替我做主的地方是 <b data-page-node-id="Pbz8xzlqckUAf8Ch5iNvM2">整体框架的设计和排版布置</b>。<br data-page-node-id="ry7GeBnCBnjv7GWpeBk3JT"><br data-page-node-id="oQCTj3gJe9NVe7oNMzboa2">
+        它会直接给出一个看起来很完整的结构，几大模块怎么排、导航放哪、卡片怎么摆，甚至连配色和层级都一起定了——但那些是它基于通用工具的审美推出来的，不是基于建大同学真实的查分场景推出来的。<br data-page-node-id="Cm51blK7wrkzoMWxWLzR8L"><br data-page-node-id="975JC6vRZW64vAHFmHIVzf">
+        我的接法是：<b data-page-node-id="DhdZwni2oMJ8P84Z4ljsta">把它当排版建议参考，不当结论采纳</b>。凡是涉及「什么信息应该被放在前面」的判断，我都回到自己的实际使用顺序——同学最先需要的一定是搜到比赛，然后才是算分，再然后是规划。所以我把「竞赛智搜」放在首位，而没有用 AI 建议的以规划入口打头的排列。最终框架是我按真实场景顺序重新定的，AI 的方案只当成一份可对比的参考选项。
+      </div>
+    </div>
+  </section>
+
+  <section class="section reveal" id="s10" data-page-node-id="RonpLkZMGsNANgRuFHOuZf">
+    <div class="sec-head" data-page-node-id="dWxgg04mkuXFw3D9qTnHAC">
+      <span class="sec-no" data-page-node-id="iMSRmxSCUVHuAIZ1XVgHsZ">10</span>
+      <h2 class="sec-title" data-page-node-id="3wUOBD4qLQfAdXSWkr2qKw">交付状态与下一步</h2>
+    </div>
+    <table data-page-node-id="Hho3gmPjRRbMMNIbAOHfpp">
+      <thead data-page-node-id="nGcAJJaG1SD3aIj4wSFsjo">
+        <tr data-page-node-id="nvUH4NhbHETPcMxoxWCqfd"><th style="width:24%" data-page-node-id="Dkvvql18lKp4leH5NhzS1X">项目</th><th style="width:20%" data-page-node-id="y6wXeTgLYc52WbSvlCOY8O">状态</th><th data-page-node-id="AS701boyzV6GzDi5pOjWx7">说明</th></tr>
+      </thead>
+      <tbody data-page-node-id="lBa4LeGAZWiMZbWuHQ5qPc">
+        <tr data-page-node-id="ntFOTs4uUxlMTqljR6g6yY"><td data-page-node-id="s7z26tRK498eyOLVCJNsAt">产品本体</td><td data-page-node-id="KF7qZyv0HWNfzBGBDseep5"><span class="src gap" data-page-node-id="DIEoZCLRQ2dcOwaC6TX8PN">已上线</span></td><td data-page-node-id="v9gGCmeA9JsiVrDckGebCH">零依赖单文件 Web 应用，247 项赛事数据内嵌，已部署至公网可访问</td></tr>
+        <tr data-page-node-id="4AE4BQpbAgTTwgCjxKwlNp"><td data-page-node-id="8ZKhyGAbcYDW7AA8LR80bh">数据完备度</td><td data-page-node-id="yT2kjmQoWYqHKBC52pqLnE"><span class="src gap" data-page-node-id="6v19WuX2pMELfJjnYBc93R">100%</span></td><td data-page-node-id="Lh26uGzSFso0B7QPobc7lY">247/247 项均含官方报名链接、4 阶段赛程时间线、备赛提示</td></tr>
+        <tr data-page-node-id="URKK3qvvG50qQQInDg2YA9"><td data-page-node-id="3fqemRjpm1ON2Frodnr4BL">链接正确率</td><td data-page-node-id="WcPlDogUkkNP0nb2Hoegs1"><span class="src gap" data-page-node-id="EMCGHJ8QziNod7drzcjhWK">100%</span></td><td data-page-node-id="OjcHhGgOt2fvinntN9gq2q">经全量巡检，74 条张冠李戴链接与 7 条失效域名已全部替换，域名归属零错配</td></tr>
+        <tr data-page-node-id="4AE4BQpbAgTTwgCjxKwlNq"><td data-page-node-id="8ZKhyGAbcYDW7AA8LR80bi">链接连通率</td><td data-page-node-id="yT2kjmQoWYqHKBC52pqLnF"><span class="src diff" data-page-node-id="6v19WuX2pMELfJjnYBc93S">≈77%</span></td><td data-page-node-id="Lh26uGzSFso0B7QPobc7lZ">109 个域名实测 65 个 HTTPS 直达 + 44 个 HTTP 可达；余项已建立月度巡检脚本待无代理复测</td></tr>
+        <tr data-page-node-id="URKK3qvvG50qQQInDg2YA9"><td data-page-node-id="3fqemRjpm1ON2Frodnr4BL">规则库覆盖</td><td data-page-node-id="WcPlDogUkkNP0nb2Hoegs1"><span class="src diff" data-page-node-id="EMCGHJ8QziNod7drzcjhWK">15 条</span></td><td data-page-node-id="OjcHhGgOt2fvinntN9gq2q">特殊备注降级条款已全部录入并接入精算逻辑</td></tr>
+        <tr data-page-node-id="4gnZGCJ7nmCNJSyzNl3Akx"><td data-page-node-id="Ycku4qEjFCiBY5H0cr9hKh">待补产出</td><td data-page-node-id="e6R1br4KYsKLMkWbKjTCwl"><span class="src warn" style="background:rgba(217,139,74,.12);color:var(--warn);border:1px solid rgba(217,139,74,.3)" data-page-node-id="CHNoBvytnCSHvKKAIWVi16">S4 / S6 / S7</span></td><td data-page-node-id="RiRDIAo9UAusL34aOv2aYE">产品测试报告、路演 PPT、数智资产归档档案尚未产出</td></tr>
+      </tbody>
+    </table>
+    <div class="note" data-page-node-id="qddetbEGx9zNSh8TiQhu3b">
+      <strong data-page-node-id="HvDCnQ2RYMdmQVfZYBtpnB">下一步：</strong>带着本任务书进入第 5 讲迭代环节，补做 S4 产品测试（模拟画像遍历 + 四象限便利贴画布）与 S6 产品路演（6 页翻页版），最后在 S7 完成数智资产归档。
+    </div>
+  </section>
+
+  <footer data-page-node-id="LCJKMlayscIwJkUPJNEGPI">
+    <div class="footer" data-page-node-id="Yol0xsw9rqbESRoD4CZEsn">《创新创业基础（思维）》课程 · 一人一产品</div>
+  </footer>
+
+</div>
+
+<script>
+  lucide.createIcons();
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e) => {
+      if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.reveal').forEach((el) => io.observe(el));
+</script>
+</body>
+</html>
