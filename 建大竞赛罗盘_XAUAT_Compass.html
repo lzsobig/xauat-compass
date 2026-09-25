@@ -3311,6 +3311,320 @@
 .ant-alert-warning { background: #fffbe6; border-color: #ffe58f; color: rgba(0, 0, 0, 0.88); }
 .ant-alert-success { background: #f6ffed; border-color: #b7eb8f; color: rgba(0, 0, 0, 0.88); }
 
+
+
+  /* ==========================================================================
+     ARCHITECTURAL EDITORIAL DESIGN SYSTEM (XAUAT Architectural Standards)
+     Eliminates AI slop, bloated oval capsules, and font fallback glitches.
+     ========================================================================== */
+
+  /* Table Container */
+  .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid var(--line-strong);
+    border-radius: 6px;
+    background: #ffffff;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .comp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+    font-family: var(--font-sans);
+  }
+
+  .comp-table th {
+    background: #f8fafc;
+    padding: 11px 14px;
+    font-weight: 600;
+    font-size: 12px;
+    font-family: var(--font-sans) !important;
+    color: var(--ink-secondary);
+    border-bottom: 1px solid var(--line-strong);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+  }
+
+  .comp-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line-hairline);
+    vertical-align: middle;
+    font-family: var(--font-sans);
+  }
+
+  .comp-table tbody tr {
+    transition: background-color 0.12s ease;
+  }
+
+  .comp-table tbody tr:hover {
+    background-color: #f8fafc;
+  }
+
+  /* Architectural Tier Matrix */
+  .tier-matrix {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 86px;
+  }
+
+  .tier-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .tier-lbl {
+    font-size: 11px;
+    color: var(--ink-muted);
+    font-weight: 500;
+    width: 24px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .tier-chip {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1.35;
+    letter-spacing: -0.01em;
+  }
+
+  .tier-chip.t-a1 { background: #fdf2f8; color: #9d174d; border: 1px solid #fbcfe8; }
+  .tier-chip.t-a2 { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
+  .tier-chip.t-b  { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  .tier-chip.t-c  { background: #f0fdfa; color: #0f766e; border: 1px solid #99f6e4; }
+  .tier-chip.t-2  { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
+  .tier-chip.t-3  { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+
+  /* Structured Cycle Cell (NO MORE BUBBLY OVAL CAPSULES) */
+  .cycle-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 170px;
+  }
+
+  .cycle-main-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--ink-primary);
+    white-space: nowrap;
+  }
+
+  .cycle-cal-icon {
+    font-size: 11px;
+    opacity: 0.85;
+    flex-shrink: 0;
+  }
+
+  .cycle-time-text {
+    letter-spacing: -0.01em;
+  }
+
+  .cycle-subnote-box {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .cycle-subnote {
+    font-size: 11px;
+    color: var(--ink-tertiary);
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 1px 5px;
+    border-radius: 3px;
+    line-height: 1.35;
+    white-space: normal;
+  }
+
+  /* Special Rule Remark (Engineering Alert Style) */
+  .rule-standard-text {
+    color: var(--ink-muted);
+    font-size: 12px;
+  }
+
+  .rule-alert-chip {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 5px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    line-height: 1.4;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    max-width: 220px;
+  }
+
+  .rule-alert-chip.downgrade {
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    color: #9a3412;
+  }
+
+  .rule-alert-chip.downgrade:hover {
+    background: #ffedd5;
+    border-color: #fdba74;
+  }
+
+  .rule-alert-chip.notice {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1e40af;
+  }
+
+  .rule-alert-chip.notice:hover {
+    background: #dbeafe;
+  }
+
+  .rule-alert-icon {
+    font-size: 11px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .rule-alert-text {
+    flex: 1;
+    word-break: break-word;
+  }
+
+  /* Table Action Buttons */
+  .tbl-action-btn {
+    padding: 4px 10px;
+    font-size: 11.5px;
+    font-weight: 500;
+    border-radius: 4px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+    font-family: inherit;
+    line-height: 1.4;
+  }
+
+  .tbl-action-btn.primary {
+    background: #eff6ff;
+    color: var(--blueprint);
+    border: 1px solid #bfdbfe;
+    font-weight: 600;
+  }
+
+  .tbl-action-btn.primary:hover {
+    background: var(--blueprint);
+    color: #ffffff;
+    border-color: var(--blueprint);
+    box-shadow: 0 1px 3px rgba(30, 58, 138, 0.2);
+  }
+
+  .tbl-action-btn.outline {
+    background: #ffffff;
+    color: var(--ink-secondary);
+    border: 1px solid var(--line-strong);
+  }
+
+  .tbl-action-btn.outline:hover {
+    background: #f8fafc;
+    color: var(--ink-primary);
+    border-color: var(--ink-tertiary);
+  }
+
+  /* Portal Link Tag in Table */
+  .tbl-portal-link {
+    font-size: 11px;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 1px 6px;
+    border-radius: 3px;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 600;
+    margin-top: 4px;
+    transition: all 0.15s ease;
+  }
+
+  .tbl-portal-link:hover {
+    background: #047857;
+    color: #ffffff;
+    border-color: #047857;
+  }
+
+  /* Global Badge Overhaul: Clean rectangular micro-tag */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 1px 6px;
+    border-radius: 3px !important;
+    font-size: 11px;
+    font-family: var(--font-sans) !important;
+    font-weight: 600;
+    line-height: 1.35;
+  }
+
+  /* Filter Toggle Buttons Overhaul: Modern Segmented Chips */
+  .pill-btn {
+    padding: 4px 10px !important;
+    border-radius: 4px !important;
+    border: 1px solid var(--line);
+    background: #ffffff;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+
+  .pill-btn:hover {
+    background: #f1f5f9;
+    border-color: var(--line-strong);
+    color: var(--ink-primary);
+  }
+
+  .pill-btn.active {
+    background: var(--blueprint) !important;
+    color: #ffffff !important;
+    border-color: var(--blueprint) !important;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(30, 58, 138, 0.2);
+  }
+
+  .pill-btn.accent {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #e11d48;
+    border-radius: 4px !important;
+  }
+
+  .pill-btn.accent.active {
+    background: #e11d48 !important;
+    color: #ffffff !important;
+    border-color: #e11d48 !important;
+  }
+
+  .pill-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink-secondary);
+    font-family: var(--font-sans) !important;
+    margin-right: 4px;
+  }
+
 </style>
 </head>
 <body>
@@ -4726,29 +5040,56 @@
 
       const tr = document.createElement('tr');
 
-      const getBadgeClass = (tier) => {
-        if (tier.includes('A1')) return 'badge-a1';
-        if (tier.includes('A2')) return 'badge-a2';
-        if (tier.includes('B')) return 'badge-b';
-        if (tier.includes('C')) return 'badge-c';
-        if (tier.includes('二类')) return 'badge-2';
-        return 'badge-3';
+      const getTierChipClass = (tier) => {
+        if (!tier) return 't-3';
+        if (tier.includes('A1')) return 't-a1';
+        if (tier.includes('A2')) return 't-a2';
+        if (tier.includes('B')) return 't-b';
+        if (tier.includes('C')) return 't-c';
+        if (tier.includes('二类')) return 't-2';
+        return 't-3';
       };
 
       const tierBadges = `
-        <div style="display: flex; flex-direction: column; gap: 3px;">
-          <div><span class="badge ${getBadgeClass(c.tier1)}">一等: ${c.tier1}</span></div>
-          <div><span class="badge ${getBadgeClass(c.tier2)}">二等: ${c.tier2}</span></div>
-          <div><span class="badge ${getBadgeClass(c.tier3)}">三等: ${c.tier3}</span></div>
+        <div class="tier-matrix">
+          <div class="tier-row"><span class="tier-lbl">一等</span><span class="tier-chip ${getTierChipClass(c.tier1)}">${c.tier1}</span></div>
+          <div class="tier-row"><span class="tier-lbl">二等</span><span class="tier-chip ${getTierChipClass(c.tier2)}">${c.tier2}</span></div>
+          <div class="tier-row"><span class="tier-lbl">三等</span><span class="tier-chip ${getTierChipClass(c.tier3)}">${c.tier3}</span></div>
         </div>
       `;
 
-      let remarkHtml = '<span style="color: var(--ink-muted); font-size: 12px;">标准认定</span>';
+      // Clean structured cycle parsing (no distorted pills!)
+      const rawRange = c.timeRange || '每年 3月~11月';
+      let mainRange = rawRange;
+      let cycleNote = '';
+      
+      const pMatch = rawRange.match(/^([^(（]+)[(（]([^)）]+)[)）](.*)$/);
+      if (pMatch) {
+        mainRange = pMatch[1].trim();
+        cycleNote = pMatch[2].trim() + (pMatch[3] ? ' ' + pMatch[3].replace(/[()（）]/g, '').trim() : '');
+      }
+
+      const cycleHtml = `
+        <div class="cycle-cell">
+          <div class="cycle-main-time">
+            <span class="cycle-cal-icon">🗓️</span>
+            <span class="cycle-time-text">${mainRange}</span>
+          </div>
+          ${cycleNote ? `
+            <div class="cycle-subnote-box">
+              <span class="cycle-subnote">${cycleNote}</span>
+            </div>
+          ` : ''}
+        </div>
+      `;
+
+      let remarkHtml = '<span class="rule-standard-text">标准认定</span>';
       if (c.remarks && c.remarks.trim()) {
         const isDowngrade = c.remarks.includes('一类C') || c.remarks.includes('降低') || c.remarks.includes('三类');
         remarkHtml = `
-          <div class="badge ${isDowngrade ? 'badge-warning' : 'badge-b'}" style="white-space: normal; line-height: 1.4; padding: 4px 6px;" onclick="openCompModal(${c.id})">
-            ${isDowngrade ? '⚠️ ' : 'ℹ️ '}${c.remarks}
+          <div class="rule-alert-chip ${isDowngrade ? 'downgrade' : 'notice'}" onclick="openCompModal(${c.id})" title="点击查看特殊认定细则">
+            <span class="rule-alert-icon">${isDowngrade ? '⚠️' : 'ℹ️'}</span>
+            <span class="rule-alert-text">${c.remarks}</span>
           </div>
         `;
       }
@@ -4757,26 +5098,30 @@
         <td style="text-align: center; font-family: var(--font-mono); font-size: 12px; color: var(--ink-tertiary);">${c.id}</td>
         <td style="font-weight: 600; white-space: nowrap; color: var(--ink-secondary); font-size: 13px;">${c.dept}</td>
         <td>
-          <div style="font-weight: 700; color: var(--ink-primary); cursor: pointer;" onclick="openCompModal(${c.id})">${c.name}</div>
+          <div style="font-weight: 700; color: var(--ink-primary); cursor: pointer; line-height: 1.4;" onclick="openCompModal(${c.id})">${c.name}</div>
           <div style="margin-top: 4px;">
-            <a href="${c.website}" target="_blank" rel="noopener noreferrer" style="font-size: 11.5px; color: var(--emerald-ink); text-decoration: none; display: inline-flex; align-items: center; gap: 3px; font-weight: 600;">
-              <span class="icon-slot" data-icon="globe"></span> 官网入口
+            <a href="${c.website}" target="_blank" rel="noopener noreferrer" class="tbl-portal-link">
+              <span class="icon-slot" data-icon="globe"></span> 官网直达 ↗
             </a>
           </div>
         </td>
-        <td style="font-size: 12px; color: var(--ink-tertiary); line-height: 1.45;">${c.host || '-'}</td>
+        <td style="font-size: 12px; color: var(--ink-tertiary); line-height: 1.45; max-width: 220px;">${c.host || '-'}</td>
         <td style="white-space: nowrap; font-size: 12.5px;">
-          <span style="font-family: var(--font-mono); color: var(--ink-secondary);">${c.category}</span><br>
+          <span style="font-family: var(--font-sans); font-weight: 600; color: var(--ink-secondary);">${c.category}</span><br>
           <span style="font-size: 11.5px; color: var(--ink-tertiary);">${c.level}</span>
         </td>
         <td>${tierBadges}</td>
-        <td>
-          <span class="badge badge-season">${c.timeRange || '每年 3月~11月'}</span>
-        </td>
+        <td>${cycleHtml}</td>
         <td>${remarkHtml}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn" onclick="directToCalc(${c.id})">精算</button>
-          <button class="action-btn" onclick="openCompModal(${c.id})">详情</button>
+          <div style="display: inline-flex; gap: 5px; align-items: center;">
+            <button class="tbl-action-btn primary" onclick="directToCalc(${c.id})">
+              <span class="icon-slot" data-icon="calculator"></span> 精算
+            </button>
+            <button class="tbl-action-btn outline" onclick="openCompModal(${c.id})">
+              <span class="icon-slot" data-icon="file-text"></span> 详情
+            </button>
+          </div>
         </td>
       `;
 
