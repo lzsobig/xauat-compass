@@ -39,7 +39,8 @@
         "desc": "教育部直属全国总决赛，各高校代表队现场终审答辩与天使投资对接"
       }
     ],
-    "prepTips": "教育部第一大项，需跨学科组队（工科技术+经管财会+艺术路演PPT），重点提炼技术壁垒与真实商业落地价值。"
+    "prepTips": "教育部第一大项，需跨学科组队（工科技术+经管财会+艺术路演PPT），重点提炼技术壁垒与真实商业落地价值。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 2,
@@ -54,34 +55,35 @@
     "remarks": "国家级专项赛竞赛 层级为一类B",
     "website": "https://www.tiaozhanbei.net",
     "websiteName": "“挑战杯”全国大学生竞赛官方网站",
-    "season": "spring",
-    "seasonLabel": "春季校赛 · 秋季全国终审决胜",
-    "timeRange": "每年 3月 ~ 11月（奇大偶小）",
-    "startMonth": 3,
+    "season": "autumn",
+    "seasonLabel": "秋季“粉体杯”校赛 · 次年秋季全国决选",
+    "timeRange": "每年 10月 ~ 次年 11月（奇大挑、偶小挑）",
+    "startMonth": 10,
     "endMonth": 11,
     "milestones": [
       {
-        "month": "3月 - 4月",
-        "title": "校内选拔与立项推报",
-        "desc": "校团委组织各学院申报，提交课外学术科技论文、发明制作或商业调查报告"
+        "month": "10月 - 11月",
+        "title": "“粉体杯”校赛启动与项目申报",
+        "desc": "校团委联合教务处发布西建大“粉体杯”大学生课外学术科技/创业计划竞赛通知，各学院宣讲并组织团队开题立项申报"
       },
       {
-        "month": "5月 - 6月",
+        "month": "12月 - 次年3月",
+        "title": "校级初审打磨与寒假重点培育",
+        "desc": "校团委组织专家双盲网评与现场路演，评选“粉体杯”校级金银奖，并遴选优质项目进入省赛重点培育孵化池"
+      },
+      {
+        "month": "4月 - 6月",
         "title": "陕西省赛网络初评与现场决赛",
-        "desc": "省团委组委会双盲网评，进入省赛现场质询答辩并推荐国赛"
-      },
-      {
-        "month": "7月 - 8月",
-        "title": "国赛文本深化与展品制作",
-        "desc": "暑期集中攻坚，打磨实物模型与查新报告，完成国家级组委会材料报送"
+        "desc": "共青团陕西省委组织全省高校同台竞技，角逐陕西省金奖并争取国家级直报/推荐资格"
       },
       {
         "month": "10月 - 11月",
         "title": "全国终审决赛与现场公开问辩",
-        "desc": "团中央主办全国决赛现场展位布展，院士评审团现场封闭式问辩"
+        "desc": "共青团中央主办全国决赛现场展位布展，院士评审团现场封闭式问辩，冲刺全国特等奖/金奖"
       }
     ],
-    "prepTips": "国内大学生学术科技第一盛事。奇数年为学术论文与发明制作大项，偶数年为创青春创业计划，导师背书与实验数据完整度是制胜关键。"
+    "prepTips": "西建大科创第一品牌！校内选拔即每年10月启动的“粉体杯”。大挑（奇数年）重学术科技发明，小挑（偶数年）重商业落地与创业计划。务必在秋季大一至大三主动联系导师进课题组，依托“粉体杯”立项。",
+    "timeAccuracy": "确凿校本"
   },
   {
     "id": 3,
@@ -97,8 +99,8 @@
     "website": "https://www.uia-architectes.org",
     "websiteName": "UIA国际建筑师协会官方竞赛门户",
     "season": "spring",
-    "seasonLabel": "春季发布 · 8月国际评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "三年一届世界大会 · 日常以霍普杯为主",
+    "timeRange": "三年一届（日常霍普杯每年3月~10月）",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -123,7 +125,8 @@
         "desc": "世界建筑师大会期间由国际知名普利兹克奖得主/评委公布获奖作品"
       }
     ],
-    "prepTips": "全球建筑学学子殿堂级竞赛。对空间叙事、结构逻辑与概念深度要求极高，建议建筑学大三以上高年级或研究生主导。"
+    "prepTips": "国际建筑学界“奥林匹克”。正统UIA大会竞赛为三年一届；日常年份建大建筑学院主要组织参加UIA官方支持的年度大奖“UIA-霍普杯”，通常春季发题，9-10月交图，11月评审。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 4,
@@ -139,8 +142,8 @@
     "website": "https://iflaworld.com",
     "websiteName": "IFLA国际风景园林师联合会官方竞赛网",
     "season": "spring",
-    "seasonLabel": "春季设计 · 9月世界大会揭晓",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季设计 · 9月世界大会揭晓 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -165,7 +168,8 @@
         "desc": "国际评委团终审，并在IFLA世界风景园林大会上正式颁发奖项"
       }
     ],
-    "prepTips": "风景园林专业最高国际赛事，重在生态修复、文化脉络延续与全球前沿绿色议题契合。"
+    "prepTips": "风景园林专业最高国际赛事，重在生态修复、文化脉络延续与全球前沿绿色议题契合。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 5,
@@ -181,7 +185,7 @@
     "website": "https://www.cms.org.cn",
     "websiteName": "中国数学会官方平台",
     "season": "autumn",
-    "seasonLabel": "暑假集训 · 9月全国统一开赛",
+    "seasonLabel": "暑期集训 · 9月中旬全国统一开赛",
     "timeRange": "每年 5月 ~ 11月",
     "startMonth": 5,
     "endMonth": 11,
@@ -207,7 +211,8 @@
         "desc": "全国组委会公布赛区与国家一、二、三等奖名单"
       }
     ],
-    "prepTips": "全国规模最大的基础科学学科赛事，建议尽早确立队员核心分工（建模-编程-写作）。"
+    "prepTips": "理学院传统王牌。每年5月校赛选拔组队，暑假7-8月封闭强化集训，9月第二周周末进行连续72小时全国统一开题竞技。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 6,
@@ -223,7 +228,7 @@
     "website": "http://www.ccea.zju.edu.cn/cesc",
     "websiteName": "全国大学生结构设计竞赛官方网（全国竞赛秘书处）",
     "season": "spring",
-    "seasonLabel": "春季出题 · 10月全国终极加载",
+    "seasonLabel": "春季校选 · 10月全国终审决战",
     "timeRange": "每年 3月 ~ 11月",
     "startMonth": 3,
     "endMonth": 11,
@@ -231,7 +236,7 @@
       {
         "month": "3月 - 4月",
         "title": "全国赛题发布与模型试制",
-        "desc": "全国秘书处发布赛题模型（竹皮/木条材料），土木结构力学教研室启动宣讲"
+        "desc": "全国组委会发布年度赛题模型（竹皮/木条材料），土木结构力学教研室启动宣讲"
       },
       {
         "month": "5月",
@@ -240,16 +245,17 @@
       },
       {
         "month": "6月 - 7月",
-        "title": "陕西省大学生结构设计竞赛",
-        "desc": "陕西省分区赛角逐，力争以省特等奖/省一等奖身份晋级全国总决赛"
+        "title": "陕西省分区赛现场竞技",
+        "desc": "角逐陕西省一等奖并争夺全国总决赛晋级门票"
       },
       {
         "month": "10月 - 11月",
-        "title": "全国总决赛（16小时封闭制作与加载）",
-        "desc": "全国百余所高校齐聚承办校，现场16小时连续制作、称重计算与抗震台加载"
+        "title": "全国总决赛模型加载决胜",
+        "desc": "全国百强高校代表队现场进行16小时极限制作与多级重力/地震动实载测试"
       }
     ],
-    "prepTips": "建大土木工程学院‘王牌神赛’。要求精通材料力学、结构力学、手作竹木工艺与有限元分析（ANSYS/SAP2000）。"
+    "prepTips": "西建大土木工程招牌赛事！校赛直接由土木学院组织现场打磨制作与振动台加载测试，重在理论计算、节点做工精细度与抗震力学分析。",
+    "timeAccuracy": "确凿校本"
   },
   {
     "id": 7,
@@ -265,7 +271,7 @@
     "website": "https://www.jienengjianpai.org",
     "websiteName": "全国大学生节能减排社会实践与科技竞赛官网",
     "season": "spring",
-    "seasonLabel": "春季立项 · 8月全国实物总决",
+    "seasonLabel": "春季申报 · 8月全国总决赛",
     "timeRange": "每年 3月 ~ 8月",
     "startMonth": 3,
     "endMonth": 8,
@@ -291,7 +297,8 @@
         "desc": "全国承办高校现场布展，专家现场考察实物能效并进行公开答辩"
       }
     ],
-    "prepTips": "教育部环境化工与能源类第一A类大赛。科技类重在装置能效比与创新结构，社科类重在广泛真实的社会调研与可行节能方案。"
+    "prepTips": "教育部环境化工与能源类第一A类大赛。科技类重在装置能效比与创新结构，社科类重在广泛真实的社会调研与可行节能方案。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 8,
@@ -307,7 +314,7 @@
     "website": "http://www.3chuang.net/",
     "websiteName": "全国大学生三创赛组委会官方网站",
     "season": "summer",
-    "seasonLabel": "逢单年举办 · 8月四天三夜封闭决胜",
+    "seasonLabel": "逢单年举办 · 8月四天三夜封闭决胜 (大致)",
     "timeRange": "单数年 5月 ~ 9月",
     "startMonth": 5,
     "endMonth": 9,
@@ -333,7 +340,8 @@
         "desc": "角逐全国一等奖资格，优秀队伍前往全国总复测点现场调试并评定全国最高荣誉"
       }
     ],
-    "prepTips": "电子信息硬核巅峰。逢单数年举办（2025/2027），需提前熟练掌握STM32/FPGA/模拟电路与PCB打样。"
+    "prepTips": "电子信息硬核巅峰。逢单数年举办（2025/2027），需提前熟练掌握STM32/FPGA/模拟电路与PCB打样。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 9,
@@ -349,8 +357,8 @@
     "website": "https://nuedc.xjtu.edu.cn/",
     "websiteName": "全国大学生电子设计竞赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "单数年国赛 · 8月四天三夜",
+    "timeRange": "奇数年 8月国赛（偶数年省赛邀请赛）",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -375,7 +383,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "全国电类第一大赛。全国总决赛逢单数年（奇数年）8月举行，连续四天三夜全封闭实物焊接调试与软件编程；双数年通常由陕西省赛区举办TI杯邀请赛。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 10,
@@ -391,8 +400,8 @@
     "website": "https://www.chemsoc.org.cn",
     "websiteName": "中国化学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -417,7 +426,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 11,
@@ -432,9 +442,9 @@
     "remarks": "",
     "website": "https://cpipc.acge.org.cn/cw/hp/4",
     "websiteName": "中国研究生创新实践系列大赛官网（研数模平台）",
-    "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "season": "autumn",
+    "seasonLabel": "秋季开赛 · 9月全国统一竞技",
+    "timeRange": "每年 6月 ~ 12月",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -459,7 +469,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 12,
@@ -474,34 +485,35 @@
     "remarks": "",
     "website": "http://www.chinanecc.cn/",
     "websiteName": "全国大学生英语竞赛（NECCS）官方网站",
-    "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "season": "autumn",
+    "seasonLabel": "秋季校选 · 12月全国总决赛",
+    "timeRange": "每年 9月 ~ 12月",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
       {
-        "month": "3月 - 4月",
-        "title": "官方章程发布与校内初报",
-        "desc": "承办学院团委/教务发布赛事通知，组织校内资格初审"
+        "month": "9月",
+        "title": "校级初赛选拔与线上笔试",
+        "desc": "文学院/外国语学院组织全校初赛在线笔试与即兴演讲初选"
       },
       {
-        "month": "5月 - 6月",
-        "title": "校内选拔赛与作品打磨",
-        "desc": "组织初赛评审与专业教师指导，选送优秀队伍代表学校出征"
+        "month": "10月 - 11月",
+        "title": "陕西省复赛综合能力面试",
+        "desc": "省教育厅联合外研社组织省级决赛现场答辩与即兴演讲"
       },
       {
-        "month": "7月 - 8月",
-        "title": "省级复赛与成果强化提交",
-        "desc": "参加省赛阶段比拼，进一步优化参赛成果与技术材料"
+        "month": "11月",
+        "title": "国赛训练营导师深度磨砺",
+        "desc": "针对国赛学术思辨、多模态口译与即兴表达进行封闭化特训"
       },
       {
-        "month": "9月 - 10月",
-        "title": "全国总决赛或终期评审",
-        "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
+        "month": "12月",
+        "title": "全国总决赛现场争霸",
+        "desc": "外研社北京总决赛现场辩论、演讲与国才综合评定"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 13,
@@ -517,8 +529,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -543,7 +555,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 14,
@@ -559,8 +572,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -585,7 +598,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 15,
@@ -600,34 +614,35 @@
     "remarks": "",
     "website": "https://zgs.chsi.com.cn/",
     "websiteName": "全国大学生职业规划大赛官方平台（学信网）",
-    "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "season": "autumn",
+    "seasonLabel": "秋季申报 · 次年春季全国总决赛",
+    "timeRange": "每年 10月 ~ 次年 5月",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
       {
-        "month": "3月 - 4月",
-        "title": "设计任务书发布与调研立项",
-        "desc": "组委会发布年度设计主题，团队开展实地调研与空间构思"
+        "month": "10月 - 11月",
+        "title": "全国平台申报与校内初赛",
+        "desc": "教育部职规平台开启，分成长赛道与就业赛道，提交生涯规划报告或求职简历"
       },
       {
-        "month": "5月 - 6月",
-        "title": "图面深度绘制与三维渲染",
-        "desc": "深化建筑平面、剖面、立面表达，撰写设计说明与技术指标"
+        "month": "12月 - 次年1月",
+        "title": "校级决赛与省赛推荐遴选",
+        "desc": "学生处与各学院组织现场路演、专家问辩，选拔校级金奖推荐入围省赛"
       },
       {
-        "month": "7月",
-        "title": "高质量图版成果排版递交",
-        "desc": "在组委会门户上传标准A0/A1图版及视频展示模型"
+        "month": "2月 - 3月",
+        "title": "陕西省分赛区网评与现场决赛",
+        "desc": "省教育厅组织省赛专家评审、现场答辩与企业HR天团模拟面试"
       },
       {
-        "month": "8月 - 9月",
-        "title": "学术评审与年会成果巡展",
-        "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
+        "month": "4月 - 5月",
+        "title": "全国总决赛与名企现场签约",
+        "desc": "教育部主办全国总决赛，现场公开路演并对接头部企业实习与全职 Offer"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 16,
@@ -643,8 +658,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -669,7 +684,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 17,
@@ -685,8 +701,8 @@
     "website": "https://www.culsc.cn/",
     "websiteName": "全国大学生生命科学竞赛（CULSC）官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -711,7 +727,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 18,
@@ -727,8 +744,8 @@
     "website": "https://www.chinausmaker.org.cn/",
     "websiteName": "中美青年创客大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -753,7 +770,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 19,
@@ -769,8 +787,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -795,7 +813,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 20,
@@ -811,8 +830,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -837,7 +856,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 21,
@@ -853,8 +873,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "两年一届（偶数年办国赛）",
+    "timeRange": "偶数年 3月 ~ 8月（奇数年发布主题）",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -879,7 +899,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "全国机械专业第一大项，每两年举办一届（逢双数年举办国赛）。单数年下半年全国组委会发布赛题，双数年春季各省赛、暑假全国决赛。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 22,
@@ -895,8 +916,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -921,7 +942,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 23,
@@ -937,8 +959,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -963,7 +985,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 24,
@@ -979,8 +1002,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1005,7 +1028,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 25,
@@ -1021,8 +1045,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1047,7 +1071,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 26,
@@ -1063,8 +1088,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -1089,7 +1114,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 27,
@@ -1105,8 +1131,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方竞赛综合平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 8月全国总决（含降级规则）",
-    "timeRange": "每年 3月 ~ 8月",
+    "seasonLabel": "春季启动 · 8月全国总决（含降级规则） (大致)",
+    "timeRange": "每年 3月 ~ 8月 (大致)",
     "startMonth": 3,
     "endMonth": 8,
     "milestones": [
@@ -1131,7 +1157,8 @@
         "desc": "全国总决赛现场问辩，评定国家一、二、三等奖"
       }
     ],
-    "prepTips": "【特别注意】：西建大《2025目录》明确规定材料热处理第三等级奖降为一类C认定（6.0学分，而非一类B的8.0学分），备赛须力争国一国二！"
+    "prepTips": "【特别注意】：西建大《2025目录》明确规定材料热处理第三等级奖降为一类C认定（6.0学分，而非一类B的8.0学分），备赛须力争国一国二！",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 28,
@@ -1147,8 +1174,8 @@
     "website": "http://www.jxsbk.com/",
     "websiteName": "全国大学生金相技能大赛组委会官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1173,7 +1200,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 29,
@@ -1189,8 +1217,8 @@
     "website": "https://icpc.global/",
     "websiteName": "ICPC国际大学生程序设计竞赛全球官网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -1215,7 +1243,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 30,
@@ -1231,8 +1260,8 @@
     "website": "http://www.siemenscup-cimc.org.cn/",
     "websiteName": "“西门子杯”中国智能制造挑战赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1257,7 +1286,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 31,
@@ -1273,8 +1303,8 @@
     "website": "https://www.ccf.org.cn",
     "websiteName": "中国计算机学会（CCF）官方平台",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -1299,7 +1329,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 32,
@@ -1315,8 +1346,8 @@
     "website": "http://www.cnsoftbei.com/",
     "websiteName": "“中国软件杯”大学生软件设计大赛官方网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -1341,7 +1372,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 33,
@@ -1357,8 +1389,8 @@
     "website": "https://dtcup.dtston.com/",
     "websiteName": "“大唐杯”全国大学生信息通信技术大赛官网",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -1383,7 +1415,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 34,
@@ -1399,8 +1432,8 @@
     "website": "https://e.huawei.com/cn/talent/",
     "websiteName": "华为人才在线ICT大赛官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1425,7 +1458,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 35,
@@ -1441,8 +1475,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -1467,7 +1501,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 36,
@@ -1483,8 +1518,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -1509,7 +1544,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 37,
@@ -1525,7 +1561,7 @@
     "website": "https://www.cgn.net.cn",
     "websiteName": "中国图学学会成图大赛官方门户",
     "season": "spring",
-    "seasonLabel": "春季选拔 · 7月全国总决（团体/个人差异）",
+    "seasonLabel": "春季校省选 · 7月下旬全国总决赛",
     "timeRange": "每年 3月 ~ 7月",
     "startMonth": 3,
     "endMonth": 7,
@@ -1551,7 +1587,8 @@
         "desc": "全国数万学子统一限时高压建模与图纸绘制"
       }
     ],
-    "prepTips": "【规则暗坑提示】：建大官方一览表明确‘团体单项竞赛层级为一类C；个人奖直接降为三类；省奖只认团体’，切勿误当一类B计算！"
+    "prepTips": "【规则暗坑提示】：建大官方一览表明确‘团体单项竞赛层级为一类C；个人奖直接降为三类；省奖只认团体’，切勿误当一类B计算！",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 38,
@@ -1567,8 +1604,8 @@
     "website": "http://zpy.cstam.org.cn/",
     "websiteName": "全国周培源大学生力学竞赛官方网站",
     "season": "spring",
-    "seasonLabel": "逢单年举办 · 5月全国笔试 · 8月团体决赛",
-    "timeRange": "单数年 3月 ~ 8月",
+    "seasonLabel": "奇数年5月全国统考 · 8月团队总决赛",
+    "timeRange": "逢单数年（奇数年）5月~8月",
     "startMonth": 3,
     "endMonth": 8,
     "milestones": [
@@ -1593,7 +1630,8 @@
         "desc": "包括力学基础知识竞赛、基础力学实验与力学趣味创新制作比赛"
       }
     ],
-    "prepTips": "土木与力学类黄金基石赛。逢单数年举办（2025/2027），个人全国三等奖以上即获一类B认定（8.0学分，GPA直接+0.800）。"
+    "prepTips": "土木与力学类黄金基石赛。逢单数年举办（2025/2027），个人全国三等奖以上即获一类B认定（8.0学分，GPA直接+0.800）。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 39,
@@ -1609,8 +1647,8 @@
     "website": "http://wlsyks.sysu.edu.cn/",
     "websiteName": "全国大学生物理实验竞赛官方平台",
     "season": "autumn",
-    "seasonLabel": "暑期集训 · 9月全国72小时通宵决战",
-    "timeRange": "每年 5月 ~ 11月",
+    "seasonLabel": "暑期集训 · 9月全国72小时通宵决战 (大致)",
+    "timeRange": "每年 5月 ~ 11月 (大致)",
     "startMonth": 5,
     "endMonth": 11,
     "milestones": [
@@ -1635,7 +1673,8 @@
         "desc": "全国组委会公布国家一等奖、二等奖名单与高教社杯答辩入围名单"
       }
     ],
-    "prepTips": "保研硬通货比赛。全国一等奖（10.0~12.0学分），需提前训练Python/MATLAB求解器与LaTeX排版效率。"
+    "prepTips": "保研硬通货比赛。全国一等奖（10.0~12.0学分），需提前训练Python/MATLAB求解器与LaTeX排版效率。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 40,
@@ -1651,8 +1690,8 @@
     "website": "https://www.cmathc.cn/",
     "websiteName": "全国大学生数学竞赛官方网站",
     "season": "autumn",
-    "seasonLabel": "秋季报名 · 11月全国初赛 · 次年3月决赛",
-    "timeRange": "每年 9月 ~ 次年3月",
+    "seasonLabel": "秋季报名 · 11月全国初赛 · 次年3月决赛 (大致)",
+    "timeRange": "每年 9月 ~ 次年3月 (大致)",
     "startMonth": 9,
     "endMonth": 3,
     "milestones": [
@@ -1677,7 +1716,8 @@
         "desc": "在承办高校进行全国总决赛，角逐全国一、二、三等奖"
       }
     ],
-    "prepTips": "大一、大二打牢高数底子必冲项。无需组队，完全凭借个人纯数学功底，一类B高额学分。"
+    "prepTips": "大一、大二打牢高数底子必冲项。无需组队，完全凭借个人纯数学功底，一类B高额学分。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 41,
@@ -1692,34 +1732,35 @@
     "remarks": "",
     "website": "https://ucc.fltrp.com/",
     "websiteName": "外研社·国才杯全国大学生外语能力大赛官网",
-    "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "season": "autumn",
+    "seasonLabel": "秋季校选 · 12月全国总决赛",
+    "timeRange": "每年 9月 ~ 12月",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
       {
-        "month": "3月 - 4月",
-        "title": "官方章程发布与校内初报",
-        "desc": "承办学院团委/教务发布赛事通知，组织校内资格初审"
+        "month": "9月",
+        "title": "校级初赛选拔与线上笔试",
+        "desc": "文学院/外国语学院组织全校初赛在线笔试与即兴演讲初选"
       },
       {
-        "month": "5月 - 6月",
-        "title": "校内选拔赛与作品打磨",
-        "desc": "组织初赛评审与专业教师指导，选送优秀队伍代表学校出征"
+        "month": "10月 - 11月",
+        "title": "陕西省复赛综合能力面试",
+        "desc": "省教育厅联合外研社组织省级决赛现场答辩与即兴演讲"
       },
       {
-        "month": "7月 - 8月",
-        "title": "省级复赛与成果强化提交",
-        "desc": "参加省赛阶段比拼，进一步优化参赛成果与技术材料"
+        "month": "11月",
+        "title": "国赛训练营导师深度磨砺",
+        "desc": "针对国赛学术思辨、多模态口译与即兴表达进行封闭化特训"
       },
       {
-        "month": "9月 - 10月",
-        "title": "全国总决赛或终期评审",
-        "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
+        "month": "12月",
+        "title": "全国总决赛现场争霸",
+        "desc": "外研社北京总决赛现场辩论、演讲与国才综合评定"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 42,
@@ -1735,8 +1776,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -1761,7 +1802,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 43,
@@ -1777,8 +1819,8 @@
     "website": "http://www.china-cas.org/",
     "websiteName": "全国大学生市场调查与分析大赛官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1803,7 +1845,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 44,
@@ -1819,8 +1862,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -1845,7 +1888,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 45,
@@ -1861,8 +1905,8 @@
     "website": "http://www.nactrans.com/",
     "websiteName": "全国大学生交通运输科技大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1887,7 +1931,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 46,
@@ -1903,8 +1948,8 @@
     "website": "http://smartcar.cdstm.cn/",
     "websiteName": "全国大学生智能汽车竞赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季调车 · 7月分赛区 · 8月国赛",
+    "timeRange": "每年 3月 ~ 8月",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -1929,7 +1974,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 47,
@@ -1945,8 +1991,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -1971,7 +2017,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 48,
@@ -1987,8 +2034,8 @@
     "website": "https://gldbic.glodon.com/",
     "websiteName": "全国高校BIM毕业设计创新大赛官方平台",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 3月成果上传 · 5月全国答辩",
-    "timeRange": "每年 10月 ~ 次年5月",
+    "seasonLabel": "冬季启动 · 3月成果上传 · 5月全国答辩 (大致)",
+    "timeRange": "每年 10月 ~ 次年5月 (大致)",
     "startMonth": 10,
     "endMonth": 5,
     "milestones": [
@@ -2013,7 +2060,8 @@
         "desc": "全国总决赛现场/线上路演，评定全国一、二、三等奖"
       }
     ],
-    "prepTips": "建筑土木数字化最权威实用大赛。可直接衔接大四毕业设计，获奖成果获各大建筑央企（中建、中铁）高度青睐。"
+    "prepTips": "建筑土木数字化最权威实用大赛。可直接衔接大四毕业设计，获奖成果获各大建筑央企（中建、中铁）高度青睐。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 49,
@@ -2029,8 +2077,8 @@
     "website": "https://jsjds.blcu.edu.cn/",
     "websiteName": "中国大学生计算机设计大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2055,7 +2103,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 50,
@@ -2071,8 +2120,8 @@
     "website": "http://univ.ciciec.com/",
     "websiteName": "全国大学生集成电路创新创业大赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -2097,7 +2146,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 51,
@@ -2113,8 +2163,8 @@
     "website": "http://www.socchina.net/",
     "websiteName": "全国大学生嵌入式芯片与系统设计竞赛官网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2139,7 +2189,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 52,
@@ -2155,8 +2206,8 @@
     "website": "https://cpipc.acge.org.cn/cw/hp/6",
     "websiteName": "中国研究生创新实践系列大赛官网（研电赛平台）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2181,7 +2232,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 53,
@@ -2197,8 +2249,8 @@
     "website": "http://www.sun-ada.net/",
     "websiteName": "全国大学生广告艺术大赛（大广赛）官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2223,7 +2275,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 54,
@@ -2239,8 +2292,8 @@
     "website": "http://www.huacanjiang.com/",
     "websiteName": "两岸新锐设计竞赛·华灿奖官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2265,7 +2318,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 55,
@@ -2281,8 +2335,8 @@
     "website": "http://www.ncda.org.cn/",
     "websiteName": "未来设计师·全国高校数字艺术设计大赛官网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2307,7 +2361,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 56,
@@ -2323,8 +2378,8 @@
     "website": "https://www.cdec.org.cn/",
     "websiteName": "中国好创意暨全国数字艺术设计大赛官网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2349,7 +2404,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 57,
@@ -2365,8 +2421,8 @@
     "website": "https://cpipc.acge.org.cn/cw/hp/1",
     "websiteName": "中国研究生创新实践系列大赛官网（MPA案例赛）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2391,7 +2447,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 58,
@@ -2407,8 +2464,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2433,7 +2490,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 59,
@@ -2449,8 +2507,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2475,7 +2533,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 60,
@@ -2491,8 +2550,8 @@
     "website": "http://www.env-competition.net/",
     "websiteName": "全国环境友好科技竞赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2517,7 +2576,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 61,
@@ -2533,8 +2593,8 @@
     "website": "http://www.cubec.org.cn/",
     "websiteName": "全国高校商业精英挑战赛组委会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -2559,7 +2619,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 62,
@@ -2575,8 +2636,8 @@
     "website": "https://3dshenzhou.3ddl.net/",
     "websiteName": "全国三维数字化创新设计大赛（3D大赛）官网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2601,7 +2662,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 63,
@@ -2617,8 +2679,8 @@
     "website": "http://www.raicom.com.cn/",
     "websiteName": "睿抗机器人开发者大赛（RAICOM）官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2643,7 +2705,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 64,
@@ -2659,8 +2722,8 @@
     "website": "https://dasai.lanqiao.cn",
     "websiteName": "蓝桥杯全国软件和信息技术专业人才大赛官网",
     "season": "winter",
-    "seasonLabel": "冬季报名 · 4月省赛个人冲刺 · 6月国赛",
-    "timeRange": "每年 10月 ~ 次年6月",
+    "seasonLabel": "冬季报名 · 4月省赛个人冲刺 · 6月国赛 (大致)",
+    "timeRange": "每年 10月 ~ 次年6月 (大致)",
     "startMonth": 10,
     "endMonth": 6,
     "milestones": [
@@ -2685,7 +2748,8 @@
         "desc": "全国顶尖高校同台竞技，赛后即时出分并评定国家一、二、三等奖"
       }
     ],
-    "prepTips": "【注意赛道限制】：蓝桥杯软件类按一类C认定；官方备注明确电子信息类赛项降低一个层级认定，且省赛直接降为三类！"
+    "prepTips": "【注意赛道限制】：蓝桥杯软件类按一类C认定；官方备注明确电子信息类赛项降低一个层级认定，且省赛直接降为三类！",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 65,
@@ -2701,8 +2765,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2727,7 +2791,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 66,
@@ -2743,8 +2808,8 @@
     "website": "http://www.cubec.org.cn/",
     "websiteName": "全国高校商业精英挑战赛组委会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -2769,7 +2834,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 67,
@@ -2785,8 +2851,8 @@
     "website": "https://www.chemsoc.org.cn",
     "websiteName": "中国化学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -2811,7 +2877,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 68,
@@ -2827,8 +2894,8 @@
     "website": "https://cpipc.acge.org.cn/",
     "websiteName": "中国研究生创新实践系列大赛官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -2853,7 +2920,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 69,
@@ -2869,8 +2937,8 @@
     "website": "http://zyfw.gqt.org.cn/",
     "websiteName": "中国青年志愿服务网官方大赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2895,7 +2963,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 70,
@@ -2911,8 +2980,8 @@
     "website": "http://ailiteracy.shisu.edu.cn/",
     "websiteName": "大学生“AI+信息素养”大赛官方平台",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -2937,7 +3006,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 71,
@@ -2953,8 +3023,8 @@
     "website": "https://www.moe.gov.cn/",
     "websiteName": "教育部高校学生司国家安全素养展示专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -2979,7 +3049,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 72,
@@ -2995,8 +3066,8 @@
     "website": "http://www.concretecanoe.cn/",
     "websiteName": "国际大学生混凝土龙舟邀请赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3021,7 +3092,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 73,
@@ -3037,8 +3109,8 @@
     "website": "http://www.mysecf.org/",
     "websiteName": "北京茅以升科技教育基金会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3063,7 +3135,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 74,
@@ -3079,8 +3152,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -3105,7 +3178,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 75,
@@ -3121,8 +3195,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3147,7 +3221,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 76,
@@ -3163,8 +3238,8 @@
     "website": "https://www.moe.gov.cn",
     "websiteName": "中华人民共和国教育部官方政务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3189,7 +3264,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 77,
@@ -3205,8 +3281,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3231,7 +3307,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 78,
@@ -3247,8 +3324,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -3273,7 +3350,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 79,
@@ -3289,8 +3367,8 @@
     "website": "http://www.formulastudent.com.cn/",
     "websiteName": "中国大学生方程式系列赛事官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3315,7 +3393,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 80,
@@ -3331,8 +3410,8 @@
     "website": "http://www.ciscn.cn/",
     "websiteName": "全国大学生信息安全竞赛（CISCN）官方网",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -3357,7 +3436,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 81,
@@ -3373,8 +3453,8 @@
     "website": "https://www.ccf.org.cn",
     "websiteName": "中国计算机学会（CCF）官方平台",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬秋报名 · 4月省赛 · 6月国决胜",
+    "timeRange": "每年 10月 ~ 次年 6月",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -3399,7 +3479,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 82,
@@ -3415,8 +3496,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3441,7 +3522,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 83,
@@ -3457,8 +3539,8 @@
     "website": "https://www.comap.com/contests/mcm-icm",
     "websiteName": "MCM/ICM美国大学生数学建模竞赛全球官网",
     "season": "autumn",
-    "seasonLabel": "暑假集训 · 9月全国统一开赛",
-    "timeRange": "每年 5月 ~ 11月",
+    "seasonLabel": "暑假集训 · 9月全国统一开赛 (大致)",
+    "timeRange": "每年 5月 ~ 11月 (大致)",
     "startMonth": 5,
     "endMonth": 11,
     "milestones": [
@@ -3483,7 +3565,8 @@
         "desc": "全国组委会公布赛区与国家一、二、三等奖名单"
       }
     ],
-    "prepTips": "全国规模最大的基础科学学科赛事，建议尽早确立队员核心分工（建模-编程-写作）。"
+    "prepTips": "全国规模最大的基础科学学科赛事，建议尽早确立队员核心分工（建模-编程-写作）。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 84,
@@ -3498,34 +3581,35 @@
     "remarks": "",
     "website": "https://fltrpebc.fltrp.com/",
     "websiteName": "“外研社·国才杯”全国大学生英语辩论赛官网",
-    "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "season": "autumn",
+    "seasonLabel": "秋季校选 · 12月全国总决赛",
+    "timeRange": "每年 9月 ~ 12月",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
       {
-        "month": "3月 - 4月",
-        "title": "官方章程发布与校内初报",
-        "desc": "承办学院团委/教务发布赛事通知，组织校内资格初审"
+        "month": "9月",
+        "title": "校级初赛选拔与线上笔试",
+        "desc": "文学院/外国语学院组织全校初赛在线笔试与即兴演讲初选"
       },
       {
-        "month": "5月 - 6月",
-        "title": "校内选拔赛与作品打磨",
-        "desc": "组织初赛评审与专业教师指导，选送优秀队伍代表学校出征"
+        "month": "10月 - 11月",
+        "title": "陕西省复赛综合能力面试",
+        "desc": "省教育厅联合外研社组织省级决赛现场答辩与即兴演讲"
       },
       {
-        "month": "7月 - 8月",
-        "title": "省级复赛与成果强化提交",
-        "desc": "参加省赛阶段比拼，进一步优化参赛成果与技术材料"
+        "month": "11月",
+        "title": "国赛训练营导师深度磨砺",
+        "desc": "针对国赛学术思辨、多模态口译与即兴表达进行封闭化特训"
       },
       {
-        "month": "9月 - 10月",
-        "title": "全国总决赛或终期评审",
-        "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
+        "month": "12月",
+        "title": "全国总决赛现场争霸",
+        "desc": "外研社北京总决赛现场辩论、演讲与国才综合评定"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 85,
@@ -3541,8 +3625,8 @@
     "website": "http://spap.ruc.edu.cn/",
     "websiteName": "中国人民大学公共管理学院/寻是杯专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3567,7 +3651,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 86,
@@ -3583,8 +3668,8 @@
     "website": "https://www.most.gov.cn/",
     "websiteName": "中华人民共和国科学技术部官方政务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3609,7 +3694,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 87,
@@ -3625,8 +3711,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 10月全国金奖决赛",
+    "timeRange": "每年 4月 ~ 11月",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -3651,7 +3737,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "教育部第一大项，需跨学科组队（工科技术+经管财会+艺术路演PPT），重点提炼技术壁垒与真实商业落地价值。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 88,
@@ -3666,34 +3753,35 @@
     "remarks": "",
     "website": "http://www.shaanxiqsn.org.cn/",
     "websiteName": "共青团陕西省委/陕西青年网挑战杯专栏",
-    "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
-    "startMonth": 3,
-    "endMonth": 10,
+    "season": "autumn",
+    "seasonLabel": "秋季“粉体杯”校选 · 次年春季省决赛",
+    "timeRange": "每年 10月 ~ 次年 6月",
+    "startMonth": 10,
+    "endMonth": 6,
     "milestones": [
       {
-        "month": "3月 - 4月",
-        "title": "官方章程发布与校内初报",
-        "desc": "承办学院团委/教务发布赛事通知，组织校内资格初审"
+        "month": "10月 - 11月",
+        "title": "“粉体杯”校内立项初选",
+        "desc": "依托西建大“粉体杯”竞赛选拔优秀项目，完成校内开题评审"
+      },
+      {
+        "month": "12月 - 次年3月",
+        "title": "校级决赛评选与寒假打磨",
+        "desc": "校团委评定校级奖项，确定代表建大推报陕西省赛的重点项目名单"
+      },
+      {
+        "month": "4月 - 5月",
+        "title": "陕西省赛网络初审推报",
+        "desc": "向团省委报送完整学术论文或创业计划书，进行全省网评"
       },
       {
         "month": "5月 - 6月",
-        "title": "校内选拔赛与作品打磨",
-        "desc": "组织初赛评审与专业教师指导，选送优秀队伍代表学校出征"
-      },
-      {
-        "month": "7月 - 8月",
-        "title": "省级复赛与成果强化提交",
-        "desc": "参加省赛阶段比拼，进一步优化参赛成果与技术材料"
-      },
-      {
-        "month": "9月 - 10月",
-        "title": "全国总决赛或终期评审",
-        "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
+        "title": "陕西省总决赛现场路演",
+        "desc": "入围省赛现场问辩与路演答辩，角逐全省优胜杯与国赛资格"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "陕西省赛推报名额完全来自上一阶段学校“粉体杯”的评定排名，未参加“粉体杯”无法获得省赛推荐资格。",
+    "timeAccuracy": "确凿校本"
   },
   {
     "id": 89,
@@ -3709,8 +3797,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3735,7 +3823,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 90,
@@ -3751,8 +3840,8 @@
     "website": "http://hypcup.uedmagazine.net/",
     "websiteName": "UIA-霍普杯国际大学生建筑设计竞赛官网",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "三年一届世界大会 · 日常以霍普杯为主",
+    "timeRange": "三年一届（日常霍普杯每年3月~10月）",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3777,7 +3866,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "国际建筑学界“奥林匹克”。正统UIA大会竞赛为三年一届；日常年份建大建筑学院主要组织参加UIA官方支持的年度大奖“UIA-霍普杯”，通常春季发题，9-10月交图，11月评审。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 91,
@@ -3793,8 +3883,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3819,7 +3909,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 92,
@@ -3835,8 +3926,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -3861,7 +3952,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 93,
@@ -3877,8 +3969,8 @@
     "website": "http://www.csm.org.cn/",
     "websiteName": "中国金属学会全国大学生冶金科技大赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3903,7 +3995,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 94,
@@ -3919,8 +4012,8 @@
     "website": "https://www.moe.gov.cn",
     "websiteName": "中华人民共和国教育部官方政务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -3945,7 +4038,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 95,
@@ -3961,8 +4055,8 @@
     "website": "http://www.cstam.org.cn",
     "websiteName": "中国力学学会官方网站",
     "season": "spring",
-    "seasonLabel": "通识筑基 · 全国统考选拔",
-    "timeRange": "每年 3月 ~ 11月",
+    "seasonLabel": "通识筑基 · 全国统考选拔 (大致)",
+    "timeRange": "每年 3月 ~ 11月 (大致)",
     "startMonth": 3,
     "endMonth": 11,
     "milestones": [
@@ -3987,7 +4081,8 @@
         "desc": "各赛区顶尖优胜者决战全国赛场，争夺国家级荣誉"
       }
     ],
-    "prepTips": "重在夯实本科基础理论，无需复杂的商业路演，凭借纯学业实力冲高分。"
+    "prepTips": "重在夯实本科基础理论，无需复杂的商业路演，凭借纯学业实力冲高分。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 96,
@@ -4003,8 +4098,8 @@
     "website": "https://www.moe.gov.cn",
     "websiteName": "中华人民共和国教育部官方政务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4029,7 +4124,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 97,
@@ -4045,8 +4141,8 @@
     "website": "https://www.moe.gov.cn",
     "websiteName": "中华人民共和国教育部官方政务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4071,7 +4167,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 98,
@@ -4087,8 +4184,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -4113,7 +4210,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 99,
@@ -4129,8 +4227,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4155,7 +4253,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 100,
@@ -4171,8 +4270,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4197,7 +4296,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 101,
@@ -4213,8 +4313,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4239,7 +4339,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 102,
@@ -4255,8 +4356,8 @@
     "website": "https://www.cces.net.cn",
     "websiteName": "中国土木工程学会官方门户",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4281,7 +4382,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 103,
@@ -4297,8 +4399,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4323,7 +4425,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 104,
@@ -4339,8 +4442,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -4365,7 +4468,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 105,
@@ -4381,8 +4485,8 @@
     "website": "https://contest.i21st.cn/",
     "websiteName": "“21世纪杯”全国英语演讲比赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4407,7 +4511,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 106,
@@ -4423,8 +4528,8 @@
     "website": "https://www.moe.gov.cn",
     "websiteName": "中华人民共和国教育部官方政务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4449,7 +4554,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 107,
@@ -4465,8 +4571,8 @@
     "website": "http://www.cusc.org.cn/",
     "websiteName": "全国大学生城市管理竞赛组委会官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4491,7 +4597,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 108,
@@ -4507,8 +4614,8 @@
     "website": "https://www.chemsoc.org.cn",
     "websiteName": "中国化学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4533,7 +4640,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 109,
@@ -4549,8 +4657,8 @@
     "website": "https://www.wangdingcup.com/",
     "websiteName": "“网鼎杯”网络安全大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4575,7 +4683,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 110,
@@ -4591,8 +4700,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4617,7 +4726,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 111,
@@ -4633,8 +4743,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -4659,7 +4769,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 112,
@@ -4675,8 +4786,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4701,7 +4812,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 113,
@@ -4717,8 +4829,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4743,7 +4855,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 114,
@@ -4759,8 +4872,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4785,7 +4898,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 115,
@@ -4801,8 +4915,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -4827,7 +4941,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 116,
@@ -4843,8 +4958,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4869,7 +4984,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 117,
@@ -4885,8 +5001,8 @@
     "website": "http://www.ccea.zju.edu.cn/",
     "websiteName": "全国大学生结构设计信息技术大赛专栏",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4911,7 +5027,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 118,
@@ -4927,8 +5044,8 @@
     "website": "https://www.cces.net.cn",
     "websiteName": "中国土木工程学会官方门户",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -4953,7 +5070,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 119,
@@ -4969,8 +5087,8 @@
     "website": "http://www.cnsteel.org/",
     "websiteName": "中国建筑金属结构协会/钢结构创新竞赛网",
     "season": "spring",
-    "seasonLabel": "春季立项 · 秋季现场测试",
-    "timeRange": "每年 3月 ~ 11月",
+    "seasonLabel": "春季立项 · 秋季现场测试 (大致)",
+    "timeRange": "每年 3月 ~ 11月 (大致)",
     "startMonth": 3,
     "endMonth": 11,
     "milestones": [
@@ -4995,7 +5113,8 @@
         "desc": "赴承办校现场规定时间内复现模型，现场承载力冲击终评"
       }
     ],
-    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。"
+    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 120,
@@ -5011,8 +5130,8 @@
     "website": "https://www.cces.net.cn/",
     "websiteName": "中国土木工程学会全国大学生岩土工程竞赛网",
     "season": "spring",
-    "seasonLabel": "春季立项 · 秋季现场测试",
-    "timeRange": "每年 3月 ~ 11月",
+    "seasonLabel": "春季立项 · 秋季现场测试 (大致)",
+    "timeRange": "每年 3月 ~ 11月 (大致)",
     "startMonth": 3,
     "endMonth": 11,
     "milestones": [
@@ -5037,7 +5156,8 @@
         "desc": "赴承办校现场规定时间内复现模型，现场承载力冲击终评"
       }
     ],
-    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。"
+    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 121,
@@ -5053,8 +5173,8 @@
     "website": "https://www.cces.net.cn/",
     "websiteName": "中国土木工程学会城市地下空间分会官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5079,7 +5199,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 122,
@@ -5095,8 +5216,8 @@
     "website": "https://www.crepce.com/",
     "websiteName": "全国大学生房地产策划大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5121,7 +5242,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 123,
@@ -5137,8 +5259,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5163,7 +5285,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 124,
@@ -5179,8 +5302,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -5205,7 +5328,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 125,
@@ -5221,8 +5345,8 @@
     "website": "http://www.water-school.org.cn/",
     "websiteName": "全国高校给排水科学与工程教学指导分委网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5247,7 +5371,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 126,
@@ -5263,8 +5388,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -5289,7 +5414,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 127,
@@ -5305,8 +5431,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -5331,7 +5457,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 128,
@@ -5347,8 +5474,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -5373,7 +5500,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 129,
@@ -5389,8 +5517,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -5415,7 +5543,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 130,
@@ -5431,8 +5560,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -5457,7 +5586,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 131,
@@ -5473,8 +5603,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -5499,7 +5629,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 132,
@@ -5515,8 +5646,8 @@
     "website": "http://www.keyun.com.cn/",
     "websiteName": "“科云杯”全国大学生财会能力大赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5541,7 +5672,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 133,
@@ -5557,8 +5689,8 @@
     "website": "http://www.taxcompetition.edu.cn/",
     "websiteName": "全国本科院校税收风险管控案例大赛官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5583,7 +5715,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 134,
@@ -5599,8 +5732,8 @@
     "website": "http://tjjm.stats.gov.cn/",
     "websiteName": "全国大学生统计建模大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5625,7 +5758,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 135,
@@ -5641,8 +5775,8 @@
     "website": "https://www.seentao.com/",
     "websiteName": "新道科技数智化企业经营沙盘大赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5667,7 +5801,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 136,
@@ -5683,8 +5818,8 @@
     "website": "http://www.ibizsim.cn/",
     "websiteName": "全国企业竞争模拟大赛组委会官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5709,7 +5844,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 137,
@@ -5725,8 +5861,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -5751,7 +5887,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 138,
@@ -5767,8 +5904,8 @@
     "website": "http://www.ibizsim.cn/",
     "websiteName": "全国管理决策模拟大赛官方平台（商道杯）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5793,7 +5930,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 139,
@@ -5809,8 +5947,8 @@
     "website": "http://www.fostercup.com/",
     "websiteName": "“福思特杯”全国大学生资产评估竞赛网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5835,7 +5973,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 140,
@@ -5851,8 +5990,8 @@
     "website": "http://www.fostercup.com/",
     "websiteName": "“福思特杯”全国大学生审计精英挑战赛网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5877,7 +6016,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 141,
@@ -5893,8 +6033,8 @@
     "website": "https://www.seentao.com/",
     "websiteName": "全国大学生数智化业财融合竞赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5919,7 +6059,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 142,
@@ -5935,8 +6076,8 @@
     "website": "http://www.cnec.org.cn/",
     "websiteName": "中国煤炭教育协会/财会技能挑战赛专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -5961,7 +6102,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 143,
@@ -5977,8 +6119,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -6003,7 +6145,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 144,
@@ -6019,8 +6162,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6045,7 +6188,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 145,
@@ -6061,8 +6205,8 @@
     "website": "http://www.rccpk.cn/",
     "websiteName": "中国工程机器人大赛暨国际公开赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6087,7 +6231,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 146,
@@ -6103,8 +6248,8 @@
     "website": "http://www.siac.net.cn/",
     "websiteName": "全国仿真创新应用大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -6129,7 +6274,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 147,
@@ -6145,8 +6291,8 @@
     "website": "https://www.cces.net.cn",
     "websiteName": "中国土木工程学会官方门户",
     "season": "spring",
-    "seasonLabel": "春季立项 · 秋季现场测试",
-    "timeRange": "每年 3月 ~ 11月",
+    "seasonLabel": "春季立项 · 秋季现场测试 (大致)",
+    "timeRange": "每年 3月 ~ 11月 (大致)",
     "startMonth": 3,
     "endMonth": 11,
     "milestones": [
@@ -6171,7 +6317,8 @@
         "desc": "赴承办校现场规定时间内复现模型，现场承载力冲击终评"
       }
     ],
-    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。"
+    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 148,
@@ -6187,8 +6334,8 @@
     "website": "https://www.cces.net.cn",
     "websiteName": "中国土木工程学会官方门户",
     "season": "spring",
-    "seasonLabel": "春季立项 · 秋季现场测试",
-    "timeRange": "每年 3月 ~ 11月",
+    "seasonLabel": "春季立项 · 秋季现场测试 (大致)",
+    "timeRange": "每年 3月 ~ 11月 (大致)",
     "startMonth": 3,
     "endMonth": 11,
     "milestones": [
@@ -6213,7 +6360,8 @@
         "desc": "赴承办校现场规定时间内复现模型，现场承载力冲击终评"
       }
     ],
-    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。"
+    "prepTips": "土木学子核心赛道。理论计算必须与手作工艺精度高度契合，切忌盲目套公式。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 149,
@@ -6229,8 +6377,8 @@
     "website": "https://cpipc.acge.org.cn/",
     "websiteName": "中国研究生创新实践系列大赛材料赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6255,7 +6403,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 150,
@@ -6271,8 +6420,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -6297,7 +6446,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 151,
@@ -6313,8 +6463,8 @@
     "website": "https://www.ccf.org.cn",
     "websiteName": "中国计算机学会（CCF）官方平台",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -6339,7 +6489,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 152,
@@ -6355,8 +6506,8 @@
     "website": "http://www.isclab.org.cn/",
     "websiteName": "全国大学生信息安全与对抗技术竞赛(ISCC)官网",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -6381,7 +6532,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 153,
@@ -6397,8 +6549,8 @@
     "website": "https://www.ccf.org.cn",
     "websiteName": "中国计算机学会（CCF）官方平台",
     "season": "winter",
-    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战",
-    "timeRange": "每年 11月 ~ 次年6月",
+    "seasonLabel": "冬季启动 · 春季省赛 · 初夏决战 (大致)",
+    "timeRange": "每年 11月 ~ 次年6月 (大致)",
     "startMonth": 11,
     "endMonth": 6,
     "milestones": [
@@ -6423,7 +6575,8 @@
         "desc": "全国名校选手同台竞技，现场决出国家级最高荣誉"
       }
     ],
-    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。"
+    "prepTips": "代码熟练度与边界条件判断至关重要，建议日常在LeetCode/Codeforces保持刷题手感。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 154,
@@ -6439,8 +6592,8 @@
     "website": "http://www.cmit.cn/",
     "websiteName": "全国大学生数字媒体科技作品及创意竞赛官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6465,7 +6618,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 155,
@@ -6481,8 +6635,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -6507,7 +6661,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 156,
@@ -6523,8 +6678,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -6549,7 +6704,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 157,
@@ -6565,8 +6721,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -6591,7 +6747,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 158,
@@ -6607,8 +6764,8 @@
     "website": "http://www.yuanyebei.com/",
     "websiteName": "“园冶杯”国际风景园林设计大赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6633,7 +6790,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 159,
@@ -6649,8 +6807,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -6675,7 +6833,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 160,
@@ -6691,8 +6850,8 @@
     "website": "http://www.cscea.org/",
     "websiteName": "中国雕塑学会官方网站（优秀雕塑作品展）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6717,7 +6876,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 161,
@@ -6733,8 +6893,8 @@
     "website": "http://www.caanet.org.cn/",
     "websiteName": "中国美术家协会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6759,7 +6919,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 162,
@@ -6775,8 +6936,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -6801,7 +6962,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 163,
@@ -6817,8 +6979,8 @@
     "website": "https://bcsff.bnu.edu.cn/",
     "websiteName": "北京大学生电影节官方网站（北师大）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6843,7 +7005,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 164,
@@ -6859,8 +7022,8 @@
     "website": "http://www.i-exam.ru/",
     "websiteName": "国际奥林匹克互联网学科竞赛官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6885,7 +7048,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 165,
@@ -6901,8 +7065,8 @@
     "website": "https://icp.sflep.com/",
     "websiteName": "“外教社杯”全国高校学生跨文化能力大赛官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6927,7 +7091,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 166,
@@ -6943,8 +7108,8 @@
     "website": "http://lawschool.whu.edu.cn/",
     "websiteName": "全国大学生模拟法庭竞赛组委会专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -6969,7 +7134,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 167,
@@ -6985,8 +7151,8 @@
     "website": "http://www.ecupl.edu.cn/",
     "websiteName": "华东政法大学“华政杯”法律翻译大赛专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7011,7 +7177,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 168,
@@ -7027,8 +7194,8 @@
     "website": "http://www.chinese.cn/",
     "websiteName": "中外语言交流合作中心“汉教英雄会”专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7053,7 +7220,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 169,
@@ -7069,8 +7237,8 @@
     "website": "https://cpt.sflep.com/",
     "websiteName": "“外教社·词达人杯”全国英语词汇能力大赛官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7095,7 +7263,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 170,
@@ -7111,8 +7280,8 @@
     "website": "http://www.catticenter.com/",
     "websiteName": "“CATTI杯”全国翻译大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7137,7 +7306,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 171,
@@ -7153,8 +7323,8 @@
     "website": "http://www.puyijiang.com/",
     "websiteName": "“普译奖”全国大学生翻译比赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7179,7 +7349,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 172,
@@ -7195,8 +7366,8 @@
     "website": "http://energy.csee.org.cn/",
     "websiteName": "全国大学生能源经济学术创意大赛官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7221,7 +7392,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 173,
@@ -7237,8 +7409,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7263,7 +7435,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 174,
@@ -7279,8 +7452,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -7305,7 +7478,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 175,
@@ -7321,8 +7495,8 @@
     "website": "https://www.aiche.org/community/students/chem-e-car-competition",
     "websiteName": "AIChE全球Chem-E-Car竞赛官方门户",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7347,7 +7521,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 176,
@@ -7363,8 +7538,8 @@
     "website": "https://www.chemsoc.org.cn",
     "websiteName": "中国化学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7389,7 +7564,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 177,
@@ -7405,8 +7581,8 @@
     "website": "https://www.chemsoc.org.cn",
     "websiteName": "中国化学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -7431,7 +7607,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 178,
@@ -7447,8 +7624,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7473,7 +7650,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 179,
@@ -7489,8 +7667,8 @@
     "website": "http://jyt.shaanxi.gov.cn/",
     "websiteName": "陕西省教育厅官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -7515,7 +7693,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 180,
@@ -7531,8 +7710,8 @@
     "website": "https://www.chinausmaker.org.cn/",
     "websiteName": "中美青年创客大赛官方网站（陕西赛区）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7557,7 +7736,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 181,
@@ -7573,8 +7753,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "两年一届（偶数年办国赛）",
+    "timeRange": "偶数年 3月 ~ 8月（奇数年发布主题）",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7599,7 +7779,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "全国机械专业第一大项，每两年举办一届（逢双数年举办国赛）。单数年下半年全国组委会发布赛题，双数年春季各省赛、暑假全国决赛。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 182,
@@ -7615,8 +7796,8 @@
     "website": "https://nuedc.xjtu.edu.cn/",
     "websiteName": "全国大学生电赛陕西赛区组委会官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7641,7 +7822,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 183,
@@ -7657,8 +7839,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "单数年国赛 · 8月四天三夜",
+    "timeRange": "奇数年 8月国赛（偶数年省赛邀请赛）",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7683,7 +7865,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "全国电类第一大赛。全国总决赛逢单数年（奇数年）8月举行，连续四天三夜全封闭实物焊接调试与软件编程；双数年通常由陕西省赛区举办TI杯邀请赛。",
+    "timeAccuracy": "特定周期"
   },
   {
     "id": 184,
@@ -7699,8 +7882,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7725,7 +7908,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 185,
@@ -7741,8 +7925,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -7767,7 +7951,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 186,
@@ -7783,8 +7968,8 @@
     "website": "http://jyt.shaanxi.gov.cn/",
     "websiteName": "陕西省教育厅“双百工程”专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7809,7 +7994,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 187,
@@ -7825,7 +8011,7 @@
     "website": "https://www.cms.org.cn",
     "websiteName": "中国数学会官方平台",
     "season": "autumn",
-    "seasonLabel": "暑假集训 · 9月全国统一开赛",
+    "seasonLabel": "暑期集训 · 9月中旬全国统一开赛",
     "timeRange": "每年 5月 ~ 11月",
     "startMonth": 5,
     "endMonth": 11,
@@ -7851,7 +8037,8 @@
         "desc": "全国组委会公布赛区与国家一、二、三等奖名单"
       }
     ],
-    "prepTips": "全国规模最大的基础科学学科赛事，建议尽早确立队员核心分工（建模-编程-写作）。"
+    "prepTips": "理学院传统王牌。每年5月校赛选拔组队，暑假7-8月封闭强化集训，9月第二周周末进行连续72小时全国统一开题竞技。",
+    "timeAccuracy": "官方固定"
   },
   {
     "id": 188,
@@ -7867,8 +8054,8 @@
     "website": "http://jyt.shaanxi.gov.cn/",
     "websiteName": "陕西省教育厅“双百工程”红色旅游专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -7893,7 +8080,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 189,
@@ -7909,8 +8097,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -7935,7 +8123,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 190,
@@ -7951,8 +8140,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -7977,7 +8166,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 191,
@@ -7993,8 +8183,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8019,7 +8209,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 192,
@@ -8035,8 +8226,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8061,7 +8252,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 193,
@@ -8077,8 +8269,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8103,7 +8295,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 194,
@@ -8119,8 +8312,8 @@
     "website": "http://www.film-festival.org.cn/",
     "websiteName": "国际大学生微电影盛典组委会官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8145,7 +8338,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 195,
@@ -8161,8 +8355,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8187,7 +8381,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 196,
@@ -8203,8 +8398,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8229,7 +8424,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 197,
@@ -8245,8 +8441,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8271,7 +8467,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 198,
@@ -8287,8 +8484,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8313,7 +8510,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 199,
@@ -8329,8 +8527,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8355,7 +8553,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 200,
@@ -8371,8 +8570,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8397,7 +8596,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 201,
@@ -8413,8 +8613,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8439,7 +8639,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 202,
@@ -8455,8 +8656,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8481,7 +8682,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 203,
@@ -8497,8 +8699,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8523,7 +8725,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 204,
@@ -8539,8 +8742,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -8565,7 +8768,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 205,
@@ -8581,8 +8785,8 @@
     "website": "http://www.water-school.org.cn/",
     "websiteName": "全国高校给排水专指委科普创意大赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8607,7 +8811,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 206,
@@ -8623,8 +8828,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8649,7 +8854,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 207,
@@ -8665,8 +8871,8 @@
     "website": "http://www.car.org.cn/",
     "websiteName": "中国制冷空调工业协会大学生科技竞赛网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8691,7 +8897,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 208,
@@ -8707,8 +8914,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -8733,7 +8940,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 209,
@@ -8749,8 +8957,8 @@
     "website": "http://www.cres.org.cn/",
     "websiteName": "中国可再生能源学会优秀科技作品竞赛网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8775,7 +8983,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 210,
@@ -8791,8 +9000,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8817,7 +9026,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 211,
@@ -8833,8 +9043,8 @@
     "website": "http://www.c-mrs.org.cn/",
     "websiteName": "中国材料研究学会功能材料短视频大赛专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8859,7 +9069,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 212,
@@ -8875,8 +9086,8 @@
     "website": "https://www.cces.net.cn",
     "websiteName": "中国土木工程学会官方门户",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -8901,7 +9112,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 213,
@@ -8917,8 +9129,8 @@
     "website": "http://www.pmrc.org.cn/",
     "websiteName": "中国（双法）项目管理研究委员会官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8943,7 +9155,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 214,
@@ -8959,8 +9172,8 @@
     "website": "https://www.cmes.org",
     "websiteName": "中国机械工程学会官方平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -8985,7 +9198,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 215,
@@ -9001,8 +9215,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9027,7 +9241,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 216,
@@ -9043,8 +9258,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9069,7 +9284,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 217,
@@ -9085,8 +9301,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9111,7 +9327,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 218,
@@ -9127,8 +9344,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -9153,7 +9370,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 219,
@@ -9169,8 +9387,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9195,7 +9413,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 220,
@@ -9211,8 +9430,8 @@
     "website": "http://www.shanxiwenhua.com/",
     "websiteName": "陕西省文化产业投资控股集团官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9237,7 +9456,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 221,
@@ -9253,8 +9473,8 @@
     "website": "http://www.cfa1983.org.cn/",
     "websiteName": "中国高校影视学会作品推优活动官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9279,7 +9499,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 222,
@@ -9295,8 +9516,8 @@
     "website": "http://www.modelapec.org/",
     "websiteName": "Model APEC亚太青年模拟APEC大会官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9321,7 +9542,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 223,
@@ -9337,8 +9559,8 @@
     "website": "http://www.catticenter.com/",
     "websiteName": "“中译杯”全国口译大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9363,7 +9585,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 224,
@@ -9379,8 +9602,8 @@
     "website": "http://www.theworldofenglish.com/",
     "websiteName": "《英语世界》杯翻译大赛官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9405,7 +9628,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 225,
@@ -9421,8 +9645,8 @@
     "website": "http://law.whu.edu.cn/",
     "websiteName": "全国环境资源模拟法庭大赛组委会专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9447,7 +9671,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 226,
@@ -9463,8 +9688,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9489,7 +9714,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 227,
@@ -9505,8 +9731,8 @@
     "website": "https://fltrpebc.fltrp.com/",
     "websiteName": "中国大学生英语辩论赛（China BP）官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9531,7 +9757,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 228,
@@ -9547,8 +9774,8 @@
     "website": "http://www.xianac.org/",
     "websiteName": "西安仲裁委员会“西仲杯”模拟仲裁庭官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9573,7 +9800,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 229,
@@ -9589,8 +9817,8 @@
     "website": "http://www.xauat.edu.cn/",
     "websiteName": "西安建筑科技大学文学院/模拟法庭活动专栏",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9615,7 +9843,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 230,
@@ -9631,8 +9860,8 @@
     "website": "http://www.hjjy.org/",
     "websiteName": "“中学西渐杯”汉语国际教育技能大赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9657,7 +9886,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 231,
@@ -9673,8 +9903,8 @@
     "website": "http://www.chinese.cn/",
     "websiteName": "教育部中外语言交流合作中心国际中文教学大赛网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9699,7 +9929,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 232,
@@ -9715,8 +9946,8 @@
     "website": "http://www.futurecup.cn/",
     "websiteName": "“未来杯”高校AI与大数据挑战赛官网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9741,7 +9972,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 233,
@@ -9757,8 +9989,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9783,7 +10015,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 234,
@@ -9799,8 +10032,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9825,7 +10058,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 235,
@@ -9841,8 +10075,8 @@
     "website": "http://www.chinaasc.org",
     "websiteName": "中国建筑学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9867,7 +10101,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 236,
@@ -9883,8 +10118,8 @@
     "website": "https://cy.ncss.cn",
     "websiteName": "全国大学生创业服务网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛",
-    "timeRange": "每年 4月 ~ 10月",
+    "seasonLabel": "春季启动 · 暑期省赛 · 秋季国赛 (大致)",
+    "timeRange": "每年 4月 ~ 10月 (大致)",
     "startMonth": 4,
     "endMonth": 10,
     "milestones": [
@@ -9909,7 +10144,8 @@
         "desc": "全国总决赛公开路演答辩，角逐国家级顶尖奖项"
       }
     ],
-    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。"
+    "prepTips": "商业逻辑必须自洽，核心技术必须有建大本土实验室或专利支撑。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 237,
@@ -9925,8 +10161,8 @@
     "website": "http://jyt.shaanxi.gov.cn/",
     "websiteName": "中共陕西省委教育工委/陕西省教育厅官方网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -9951,7 +10187,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 238,
@@ -9967,8 +10204,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -9993,7 +10230,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 239,
@@ -10009,8 +10247,8 @@
     "website": "http://www.fostercup.com/",
     "websiteName": "陕西省“福思特杯”大学生财税技能竞赛网",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -10035,7 +10273,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 240,
@@ -10051,8 +10290,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -10077,7 +10316,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 241,
@@ -10093,8 +10333,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -10119,7 +10359,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 242,
@@ -10135,8 +10376,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -10161,7 +10402,8 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 243,
@@ -10177,8 +10419,8 @@
     "website": "http://rst.shaanxi.gov.cn/",
     "websiteName": "陕西省人力资源和社会保障厅技能竞赛平台",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -10203,7 +10445,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 244,
@@ -10219,8 +10462,8 @@
     "website": "https://www.cms.org.cn",
     "websiteName": "中国数学会官方平台",
     "season": "autumn",
-    "seasonLabel": "通识筑基 · 全国统考选拔",
-    "timeRange": "每年 3月 ~ 11月",
+    "seasonLabel": "通识筑基 · 全国统考选拔 (大致)",
+    "timeRange": "每年 3月 ~ 11月 (大致)",
     "startMonth": 3,
     "endMonth": 11,
     "milestones": [
@@ -10245,7 +10488,8 @@
         "desc": "各赛区顶尖优胜者决战全国赛场，争夺国家级荣誉"
       }
     ],
-    "prepTips": "重在夯实本科基础理论，无需复杂的商业路演，凭借纯学业实力冲高分。"
+    "prepTips": "重在夯实本科基础理论，无需复杂的商业路演，凭借纯学业实力冲高分。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 245,
@@ -10261,8 +10505,8 @@
     "website": "http://gs.xjtu.edu.cn/",
     "websiteName": "西北地区研究生英语演讲邀请赛组委会（西安交大）",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -10287,7 +10531,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 246,
@@ -10303,8 +10548,8 @@
     "website": "https://www.chemsoc.org.cn",
     "websiteName": "中国化学会官方网站",
     "season": "spring",
-    "seasonLabel": "春季启动 · 秋季收官",
-    "timeRange": "每年 3月 ~ 10月",
+    "seasonLabel": "春季启动 · 秋季收官 (大致)",
+    "timeRange": "每年 3月 ~ 10月 (大致)",
     "startMonth": 3,
     "endMonth": 10,
     "milestones": [
@@ -10329,7 +10574,8 @@
         "desc": "全国评审委员会综合打分，正式公布国家级与省级获奖名单"
       }
     ],
-    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。"
+    "prepTips": "参赛前务必在【学分精算器】中核算该赛事在《2025分级一览表》与学院细则中的真实对应层级。",
+    "timeAccuracy": "大致常规"
   },
   {
     "id": 247,
@@ -10345,8 +10591,8 @@
     "website": "https://www.cdec.org.cn",
     "websiteName": "全国高等院校设计学科竞赛认证平台",
     "season": "spring",
-    "seasonLabel": "春季发题 · 夏季出图评审",
-    "timeRange": "每年 3月 ~ 9月",
+    "seasonLabel": "春季发题 · 夏季出图评审 (大致)",
+    "timeRange": "每年 3月 ~ 9月 (大致)",
     "startMonth": 3,
     "endMonth": 9,
     "milestones": [
@@ -10371,6 +10617,7 @@
         "desc": "全国权威专家密闭打分，优秀作品在专业年会公开巡展"
       }
     ],
-    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。"
+    "prepTips": "注重方案立意与视觉冲击力，图纸排版要遵循行业顶级设计院水准。",
+    "timeAccuracy": "大致常规"
   }
 ]
