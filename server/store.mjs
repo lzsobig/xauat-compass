@@ -2,6 +2,7 @@ import {DatabaseSync} from 'node:sqlite';
 import {mkdirSync} from 'node:fs';
 import {dirname} from 'node:path';
 import {createHash,randomBytes} from 'node:crypto';
+import {migrateAccountSchema} from '../shared/account-schema.js';
 export const hash=value=>createHash('sha256').update(value).digest('hex');
 export function openStore(path='runtime/compass.sqlite') {
   if(path!==':memory:')mkdirSync(dirname(path),{recursive:true});
@@ -13,6 +14,7 @@ export function openStore(path='runtime/compass.sqlite') {
     CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, trial_id INTEGER NOT NULL, name TEXT NOT NULL, created_at TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS attempts (ip_hash TEXT PRIMARY KEY, start INTEGER NOT NULL, count INTEGER NOT NULL);
   `);
+  migrateAccountSchema(query=>{if(query.startsWith('PRAGMA table_info'))return db.prepare(query).all();db.exec(query);return [];});
   return db;
 }
 export function createTrial(db){const code='CP-'+randomBytes(12).toString('base64url');db.prepare('INSERT INTO trials(code_hash,created_at) VALUES (?,?)').run(hash(code),new Date().toISOString());return code;}

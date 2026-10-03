@@ -41,7 +41,8 @@
     "TRIAL_DAILY_LIMIT": "3",
     "GLOBAL_DAILY_LIMIT": "100",
     "MAX_CONCURRENT": "2",
-    "LLM_TIMEOUT_MS": "90000"
+    "LLM_TIMEOUT_MS": "90000",
+    "ACCOUNTS_REQUIRED": "1"
   },
   "routes": [
     {

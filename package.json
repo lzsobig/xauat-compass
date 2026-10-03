@@ -15,7 +15,10 @@
     "report": "node --env-file-if-exists=.env tools/report.mjs",
     "build:offline": "node tools/build.mjs",
     "deploy": "wrangler deploy",
-    "trial:cloud": "node tools/cloud-trial.mjs"
+    "trial:cloud": "node tools/cloud-trial.mjs",
+    "test:accounts": "node tests/account-browser.mjs",
+    "admin:setup": "node tools/bootstrap-accounts.mjs",
+    "admin:local": "node --env-file=.env tools/local-admin.mjs"
   },
   "devDependencies": {
     "playwright": "^1.63.0",

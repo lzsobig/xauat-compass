@@ -1,14 +1,14 @@
 import {validateTasks,validateProfile,DEFAULT_PROFILE} from '../shared/core.js';
 export const STORE_KEY='xauat_compass_v2';
-export function readState(storage=localStorage) {
-  try {const text=storage.getItem(STORE_KEY);if(!text)return {tasks:[],favorites:[],profile:{...DEFAULT_PROFILE},plan:null};
+export function readState(storage=localStorage,key=STORE_KEY) {
+  try {const text=storage.getItem(key);if(!text)return {tasks:[],favorites:[],profile:{...DEFAULT_PROFILE},plan:null,syncRevision:0,syncDirty:false};
     const v=JSON.parse(text);if(v.version!==2)throw new Error('版本不支持');
-    return {tasks:validateTasks(v.tasks),favorites:Array.isArray(v.favorites)?v.favorites.filter(Number.isInteger):[],profile:validateProfile(v.profile),plan:null};
+    return {tasks:validateTasks(v.tasks),favorites:Array.isArray(v.favorites)?v.favorites.filter(Number.isInteger):[],profile:validateProfile(v.profile),plan:null,syncRevision:Number.isInteger(v.syncRevision)?v.syncRevision:0,syncDirty:v.syncDirty===true};
   }catch {return {tasks:[],favorites:[],profile:{...DEFAULT_PROFILE},plan:null,storageError:'本机数据读取失败，原数据已保留。请先导出原始备份或恢复有效备份，再继续保存。'};}
 }
-export function persistState(state,storage=localStorage) {
+export function persistState(state,storage=localStorage,key=STORE_KEY) {
   if(state.storageError)throw new Error(state.storageError);
-  storage.setItem(STORE_KEY,JSON.stringify({version:2,tasks:validateTasks(state.tasks),favorites:state.favorites,profile:state.profile}));
+  storage.setItem(key,JSON.stringify({version:2,tasks:validateTasks(state.tasks),favorites:state.favorites,profile:state.profile,syncRevision:state.syncRevision||0,syncDirty:!!state.syncDirty}));
 }
 export function legacyArchives(storage=localStorage) {
   const result=[];

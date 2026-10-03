@@ -1,0 +1,52 @@
+import {chromium} from 'playwright';
+import assert from 'node:assert/strict';
+import {once} from 'node:events';
+import {mkdirSync,writeFileSync} from 'node:fs';
+import {openStore,createTrial} from '../server/store.mjs';
+import {createApp} from '../server/index.mjs';
+import {sqliteAdapter} from '../cloudflare/sqlite-adapter.js';
+import {bootstrapAdmin} from '../shared/accounts.js';
+const dir='output/playwright/accounts';mkdirSync(dir,{recursive:true});
+const db=openStore(':memory:'),storage={sql:{exec(query,...args){const stmt=db.prepare(query);return {toArray:()=>stmt.columns().length?stmt.all(...args):(stmt.run(...args),[])};}},transactionSync(fn){db.exec('BEGIN');try{const result=fn();db.exec('COMMIT');return result;}catch(error){db.exec('ROLLBACK');throw error;}}};
+const origin='http://127.0.0.1:4185',pw='Account-Browser-Test-Password-123';
+const env={APP_ORIGIN:origin,AUTH_PEPPER:'a-test-pepper-over-thirty-two-characters',LLM_BASE_URL:'https://fixture.invalid/v1',LLM_MODEL:'fixture',LLM_API_KEY:'test'};
+await bootstrapAdmin({username:'test_owner',password:pw,displayName:'测试管理员'},{...env,DB:sqliteAdapter(storage)});const card=createTrial(db);
+const {server}=createApp({db,env,fetch:async(_url,options)=>{await new Promise(resolve=>setTimeout(resolve,1600));const p=JSON.parse(JSON.parse(options.body).messages[1].content),id=p.candidates[0].id;return Response.json({choices:[{message:{content:JSON.stringify({summary:'浏览器测试方案',recommendations:[{competitionId:id,role:'main',reason:'测试兴趣匹配',gaps:[],pending:[]}],weeks:[1,2,3,4].map(week=>({week,tasks:[{competitionId:id,title:'测试准备任务',hours:1}]}))})}}]});}});
+server.listen(4185,'127.0.0.1');await once(server,'listening');
+const browser=await chromium.launch({channel:'chrome',headless:true}),contexts=[];
+const report={checks:[],errors:[]};
+async function newPage(){const ctx=await browser.newContext({viewport:{width:1440,height:1000}});contexts.push(ctx);const page=await ctx.newPage();page.on('pageerror',e=>report.errors.push(e.message));await page.goto(origin);await page.waitForTimeout(500);return page;}
+function check(label,value=true){assert.ok(value,label);report.checks.push(label);}
+async function shot(page,name){await page.waitForTimeout(700);await page.screenshot({path:`${dir}/${name}.png`});}
+async function login(page,username,password,register=false){await page.locator('.avatar').click();if(register)await page.locator('[data-account-action=register]').click();await page.locator('#account-username').fill(username);await page.locator('#account-password').fill(password);await page.locator('#account-auth-form [type=submit]').click();await page.waitForFunction(()=>(!document.querySelector('#account-auth-form')||!document.querySelector('#sheet').open));await page.waitForTimeout(500);}
+async function logout(page){await page.locator('.avatar').click();await page.locator('[data-account-action=logout]').click();await page.waitForTimeout(500);}
+async function syncDone(page){await page.waitForFunction(()=>document.querySelector('[data-sync-badge]')?.textContent.includes('已同步'));}
+async function task(page,title){await page.goto(origin+'/#tasks');await page.waitForTimeout(500);await page.locator('[data-action=new-task]').click();await page.locator('#task-title').fill(title);await page.locator('#task-form [type=submit]').click();await page.waitForFunction(()=>(!document.querySelector('#task-form')||!document.querySelector('#sheet').open));await page.waitForTimeout(300);}
+try{
+ const a=await newPage();await task(a,'导入之前的本机任务');await login(a,'browser_student_a',pw,true);
+ check('first login asks before importing guest data',await a.locator('[data-account-action=import-guest]').count()>0);await a.locator('[data-account-action=import-guest]').click();await syncDone(a);check('guest task imported',await a.locator('.task-row').count()===1);await shot(a,'account-tasks-desktop');
+ await a.locator('.avatar').click();await a.locator('#sheet [data-action=trial]').click();await a.locator('#trial-code').fill(card);await a.locator('#trial-form [type=submit]').click();await a.waitForFunction(()=>(!document.querySelector('#trial-form')||!document.querySelector('#sheet').open));await a.locator('.avatar').click();await a.locator('.account-card-row').waitFor();check('bound card appears in account panel',await a.locator('.account-card-row').count()===1);await shot(a,'account-panel');await a.locator('#sheet [data-action=close-sheet]').click();await a.waitForTimeout(250);
+ const b=await newPage();await login(b,'browser_student_b',pw,true);await b.goto(origin+'/#tasks');await b.waitForTimeout(500);check('different account cannot see first account tasks',await b.locator('.task-row').count()===0);await logout(b);await login(b,'browser_student_a',pw);await b.goto(origin+'/#tasks');await b.waitForTimeout(500);check('second device loads existing cloud task',await b.locator('.task-row').count()===1);await task(b,'另一设备新增的私人任务');await syncDone(b);await a.reload();await a.waitForTimeout(900);check('first device loads second device changes',await a.locator('.task-row').count()===2);
+ const workspace=await b.evaluate(async()=>await(await fetch('/api/user/workspace')).json());await b.evaluate(async({workspace})=>{await fetch('/api/user/workspace',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({revision:workspace.revision,payload:workspace.payload})});},{workspace});
+ await a.locator('.check-task').first().click();await a.waitForFunction(()=>document.querySelector('[data-sync-badge]')?.textContent.includes('有更新'));check('stale revision exposes conflict instead of silently overwriting');await a.locator('.avatar').click();await a.locator('[data-account-action=conflict-local]').click();await syncDone(a);check('conflict resolution saves selected local version');
+ const owner=await newPage();await login(owner,'test_owner',pw);await owner.locator('.avatar').click();await owner.locator('#sheet [data-account-action=open-admin]').click();await owner.locator('[data-account-action=admin-edit-user]').first().waitFor();await shot(owner,'admin-users-desktop');check('administrator dashboard loads actual users',await owner.locator('[data-account-action=admin-edit-user]').count()===3);
+ const aId=db.prepare("SELECT id FROM users WHERE username='browser_student_a'").get().id;
+ await owner.locator(`[data-account-action=admin-edit-user][data-user-id="${aId}"]`).click();await owner.locator('#admin-user-grant').fill('5');await owner.locator('#admin-user-form [type=submit]').click();await owner.waitForFunction(()=>(!document.querySelector('#admin-user-form')||!document.querySelector('#sheet').open));check('admin grant persists',db.prepare('SELECT daily_grant FROM users WHERE id=?').get(aId).daily_grant===5);
+ await owner.locator('[data-account-action=admin-tab][data-tab=cards]').click();await shot(owner,'admin-cards-desktop');await owner.locator('[data-account-action=admin-create-cards]').click();await owner.locator('#card-count').fill('2');const [batch]=await Promise.all([owner.waitForEvent('download'),owner.locator('#admin-cards-form [type=submit]').click()]);await batch.saveAs(`${dir}/test-cards.txt`);await owner.waitForFunction(()=>(!document.querySelector('#admin-cards-form')||!document.querySelector('#sheet').open));check('new card batch downloaded and stored',db.prepare("SELECT count(*) n FROM trials WHERE kind='redeem'").get().n===3);
+ await owner.setViewportSize({width:375,height:812});await shot(owner,'admin-mobile');check('admin page does not overflow mobile viewport',await owner.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+ await logout(b);await login(b,'browser_student_b',pw);await b.goto(origin+'/#admin');await b.waitForTimeout(500);check('normal user admin route has no privileged controls',await b.locator('[data-account-action=admin-edit-user]').count()===0);
+ check('normal user admin API is forbidden',await b.evaluate(async()=> (await fetch('/api/admin/users')).status===403));
+ const delayed=await newPage();await delayed.route('**/api/user/workspace',async route=>{const response=await route.fetch();await new Promise(resolve=>setTimeout(resolve,1100));await route.fulfill({response});});
+ await delayed.locator('.avatar').click();await delayed.locator('#account-username').fill('browser_student_a');await delayed.locator('#account-password').fill(pw);await delayed.locator('#account-auth-form [type=submit]').click();
+ await delayed.waitForResponse(response=>response.url().endsWith('/api/auth/login'));
+ await delayed.locator('.avatar').click();await delayed.locator('[data-account-action=logout]').click();await delayed.waitForTimeout(1600);
+ await delayed.goto(origin+'/#tasks');await delayed.waitForTimeout(500);check('late cloud response cannot restore private data after logout',!(await delayed.locator('#page').innerText()).includes('另一设备新增的私人任务'));
+ await a.setViewportSize({width:375,height:812});await shot(a,'account-tasks-mobile');
+ await a.goto(origin+'/#plan');await a.waitForTimeout(500);for(let step=0;step<3;step++){if(step===1)await a.locator('[data-action=interest-pick][data-value=code]').click();await a.locator('#page [data-action=next-step]').click();}
+ await a.locator('[data-action=generate-ai]').click();await a.locator('.generation-panel').waitFor();await logout(a);await a.waitForTimeout(1900);
+ check('late model response does not expose previous account plan to guest',await a.locator('.result-grid').count()===0);
+ check('logout does not expose private cloud tasks to guest',!(await a.locator('#page').innerText()).includes('另一设备新增的私人任务'));
+ const offline=await newPage();await offline.goto('file:///'+(process.cwd()+'/dist/建大竞赛罗盘_离线版.html').replaceAll('\\','/'));await offline.locator('.hero').waitFor();check('offline build still starts without account service');
+ check('no browser script errors',report.errors.length===0);
+}catch(error){report.failure=error.stack;for(let i=0;i<contexts.length;i++){const page=contexts[i].pages()[0];if(page){await page.screenshot({path:`${dir}/failure-${i}.png`}).catch(()=>{});report.lastVisible=await page.locator('body').innerText().catch(()=>'');}}throw error;}
+finally{for(const ctx of contexts)await ctx.close();await browser.close();await new Promise(resolve=>server.close(resolve));db.close();writeFileSync(`${dir}/browser-report.json`,JSON.stringify(report,null,2));console.log(JSON.stringify({checks:report.checks.length,errors:report.errors,failure:report.failure}));}

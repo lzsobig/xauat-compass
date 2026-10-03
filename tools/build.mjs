@@ -4,7 +4,7 @@ const data=JSON.parse(readFileSync('competitions_enriched.json','utf8')).map(nor
 mkdirSync('public',{recursive:true});mkdirSync('dist',{recursive:true});
 writeFileSync('public/data.js','export const COMPETITIONS = '+JSON.stringify(data).replaceAll('<','\\u003c')+';\n');
 const css=readFileSync('public/styles.css','utf8');
-const modules=['public/data.js','shared/core.js','public/storage.js','public/motion.js','public/app.js'];
+const modules=['public/data.js','shared/core.js','public/storage.js','public/motion.js','public/account-client.js','public/app.js'];
 const js=modules.map(p=>readFileSync(p,'utf8').replace(/^import .*?;\r?\n/gm,'').replace(/^export /gm,'')).join('\n');
 const html=readFileSync('index.html','utf8').replace('<link rel="stylesheet" href="/public/styles.css">',`<style>${css}</style>`).replace('<script type="module" src="/public/app.js"></script>',`<script type="module">${js.replaceAll('</script','<\\/script')}</script>`);
 writeFileSync('dist/建大竞赛罗盘_离线版.html',html);console.log(`Built ${data.length} competitions and offline HTML.`);

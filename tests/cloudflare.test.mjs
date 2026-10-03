@@ -8,7 +8,7 @@ import {DEFAULT_PROFILE} from '../shared/core.js';
 function fixture(){
   const sqlite=openStore(':memory:'),code=createTrial(sqlite);
   const storage={sql:{exec(query,...values){const stmt=sqlite.prepare(query);let rows;if(stmt.columns().length)rows=stmt.all(...values);else{stmt.run(...values);rows=[];}return {toArray:()=>rows};}},transactionSync(fn){sqlite.exec('BEGIN');try{const result=fn();sqlite.exec('COMMIT');return result;}catch(error){sqlite.exec('ROLLBACK');throw error;}}};
-  const env={DB:sqliteAdapter(storage),APP_ORIGIN:'https://compass.lzso.top',LLM_BASE_URL:'https://fixture.invalid/v1',LLM_MODEL:'fixture',LLM_API_KEY:'fixture-secret',TRIAL_DAILY_LIMIT:'1',GLOBAL_DAILY_LIMIT:'3',MAX_CONCURRENT:'2'};
+  const env={DB:sqliteAdapter(storage),ACCOUNTS_REQUIRED:'0',APP_ORIGIN:'https://compass.lzso.top',LLM_BASE_URL:'https://fixture.invalid/v1',LLM_MODEL:'fixture',LLM_API_KEY:'fixture-secret',TRIAL_DAILY_LIMIT:'1',GLOBAL_DAILY_LIMIT:'3',MAX_CONCURRENT:'2'};
   const jobs=[],ctx={waitUntil(job){jobs.push(job);}};
   const request=(path,body,cookie,origin=env.APP_ORIGIN)=>new Request(env.APP_ORIGIN+path,{method:body?'POST':'GET',headers:{Origin:origin,...(body?{'Content-Type':'application/json'}:{}),...(cookie?{Cookie:cookie}:{})},...(body?{body:JSON.stringify(body)}:{})});
   return {sqlite,env,ctx,jobs,code,request};

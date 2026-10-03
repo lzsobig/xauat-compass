@@ -1,5 +1,6 @@
 import {COMPETITIONS} from '../public/data.js';
 import {validateProfile,rankCandidates,validatePlan,parseModelJson,beijingDay} from '../shared/core.js';
+import {handleAccountApi,currentUser,requireUser,publicUser,userTrials,generationIdentity,requiresAccounts} from '../shared/accounts.js';
 
 const encoder=new TextEncoder();
 const securityHeaders={
@@ -28,9 +29,15 @@ const isReady=conf=>Boolean(conf.base&&conf.model&&conf.key);
 
 export async function handleApi(request,env,ctx){
   const db=env.DB,conf=configuration(env),path=new URL(request.url).pathname;
+  if(/^\/api\/(auth|user|admin)\//.test(path))return handleAccountApi(request,env);
   if(request.method==='POST'&&request.headers.get('origin')!==conf.origin)throw problem('请求来源不受信任',403);
   if(request.method==='GET'&&path==='/api/capabilities'){
-    const s=await session(request,db);return responseJson({configured:isReady(conf),authenticated:!!s,remaining:s?await remaining(db,s.trial_id,conf.daily):0,dailyLimit:conf.daily});
+    if(requiresAccounts(env)){
+      const user=await currentUser(request,env);const usable=user?.status==='active'&&!user.must_change_password;
+      const trials=usable?await userTrials(user,env):[];const left=trials.reduce((sum,trial)=>sum+trial.remaining,0);
+      return responseJson({configured:isReady(conf),authenticated:trials.some(t=>t.active&&t.daily_limit>0),remaining:left,dailyLimit:trials.filter(t=>t.active).reduce((sum,t)=>sum+t.daily_limit,0),accountsRequired:true,user:usable?publicUser(user):null});
+    }
+    const s=await session(request,db);return responseJson({configured:isReady(conf),authenticated:!!s,remaining:s?await remaining(db,s.trial_id,conf.daily):0,dailyLimit:conf.daily,accountsRequired:false});
   }
   if(request.method==='POST'&&path==='/api/trial/session'){
     const ipHash=await sha(request.headers.get('cf-connecting-ip')||'unknown');
@@ -39,35 +46,45 @@ export async function handleApi(request,env,ctx){
     const attempt=await db.prepare('SELECT count FROM attempts WHERE ip_hash=?').bind(ipHash).first();if(attempt.count>10)throw problem('尝试过于频繁，请十五分钟后重试',429);
     const body=await jsonBody(request);if(typeof body.code!=='string'||body.code.length>100)throw problem('试用码无效');
     const trial=await db.prepare('SELECT id FROM trials WHERE code_hash=? AND active=1').bind(await sha(body.code.trim())).first();if(!trial)throw problem('试用码无效',401);
+    if(requiresAccounts(env)){
+      const user=await requireUser(request,env);
+      const claimed=await db.prepare("UPDATE trials SET owner_user_id=?,claimed_at=coalesce(claimed_at,?) WHERE id=? AND kind='redeem' AND (owner_user_id IS NULL OR owner_user_id=?)").bind(user.id,new Date().toISOString(),trial.id,user.id).run();
+      if(!claimed.meta.changes)throw problem('该卡密已绑定其他账号',409);
+      const cards=await userTrials(user,env);return responseJson({ok:true,remaining:cards.reduce((sum,c)=>sum+c.remaining,0),bound:true});
+    }
     const value=token();await db.prepare('INSERT INTO sessions VALUES(?,?,?)').bind(await sha(value),trial.id,now+30*86400000).run();
     return responseJson({ok:true,remaining:await remaining(db,trial.id,conf.daily)},200,{'Set-Cookie':`compass_session=${value}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=2592000`});
   }
-  const s=await session(request,db);if(!s)throw problem('请先兑换试用码',401);
+  const account=requiresAccounts(env)?await requireUser(request,env):null;
+  const s=requiresAccounts(env)?await generationIdentity(request,env):await session(request,db);
+  if(!s&&!account)throw problem('请先兑换试用码',401);
   if(request.method==='POST'&&path==='/api/feedback'){
     const body=await jsonBody(request);
     if(!['feedback','request-trial','save','export'].includes(body.kind)||typeof(body.note||'')!=='string'||(body.note||'').length>1500||!['yes','no','partly',''].includes(body.useful||''))throw problem('反馈格式无效');
-    const recent=await db.prepare('SELECT count(*) n FROM feedback WHERE trial_id=? AND created_at>?').bind(s.trial_id,new Date(Date.now()-3600000).toISOString()).first();if(recent.n>=30)throw problem('反馈过于频繁，请稍后再试',429);
-    const queries=[db.prepare('INSERT INTO feedback(trial_id,kind,useful,note,created_at) VALUES(?,?,?,?,?)').bind(s.trial_id,body.kind,body.useful||'',body.note||'',new Date().toISOString())];
-    if(['save','export'].includes(body.kind))queries.push(db.prepare('INSERT INTO events(trial_id,name,created_at) VALUES(?,?,?)').bind(s.trial_id,body.kind,new Date().toISOString()));
+    const recent=account?await db.prepare('SELECT count(*) n FROM feedback WHERE user_id=? AND created_at>?').bind(account.id,new Date(Date.now()-3600000).toISOString()).first():await db.prepare('SELECT count(*) n FROM feedback WHERE trial_id=? AND created_at>?').bind(s.trial_id,new Date(Date.now()-3600000).toISOString()).first();if(recent.n>=30)throw problem('反馈过于频繁，请稍后再试',429);
+    const queries=[db.prepare('INSERT INTO feedback(trial_id,kind,useful,note,created_at,user_id) VALUES(?,?,?,?,?,?)').bind(s?.trial_id||null,body.kind,body.useful||'',body.note||'',new Date().toISOString(),account?.id||null)];
+    if(['save','export'].includes(body.kind))queries.push(account?db.prepare('INSERT INTO user_events(user_id,name,created_at) VALUES(?,?,?)').bind(account.id,body.kind,new Date().toISOString()):db.prepare('INSERT INTO events(trial_id,name,created_at) VALUES(?,?,?)').bind(s.trial_id,body.kind,new Date().toISOString()));
     await db.batch(queries);return responseJson({ok:true});
   }
   if(request.method!=='POST'||path!=='/api/plans/generate')throw problem('接口不存在',404);
+  if(!s)throw problem('请先绑定卡密或联系管理员获取额度',403);
   if(!isReady(conf))throw problem('模型尚未配置，请先使用基础推荐',503);
   const body=await jsonBody(request);let profile;try{profile=validateProfile(body.profile);}catch(error){throw problem(error.message);}
   if(typeof body.requestId!=='string'||!/^[a-zA-Z0-9_-]{8,80}$/.test(body.requestId))throw problem('请求编号无效');
   const excluded=body.excluded||[];if(!Array.isArray(excluded)||excluded.length>247||!excluded.every(Number.isInteger))throw problem('替换赛事参数无效');
-  const prior=await db.prepare('SELECT status,result FROM calls WHERE trial_id=? AND request_id=?').bind(s.trial_id,body.requestId).first();
+  const prior=account?await db.prepare('SELECT status,result FROM calls WHERE user_id=? AND request_id=?').bind(account.id,body.requestId).first():await db.prepare('SELECT status,result FROM calls WHERE trial_id=? AND request_id=?').bind(s.trial_id,body.requestId).first();
   if(prior){if(prior.status==='success'&&prior.result)return new Response(JSON.stringify({type:'result',data:JSON.parse(prior.result),replayed:true})+'\n',{headers:{...securityHeaders,'Content-Type':'application/x-ndjson; charset=utf-8'}});throw problem('该请求已处理或正在运行，请使用新的请求编号',409);}
   const candidates=rankCandidates(COMPETITIONS,profile,excluded);if(!candidates.length)throw problem('当前没有符合条件的候选赛事');
   const createdAt=new Date().toISOString(),liveCutoff=new Date(Date.now()-conf.timeout-10000).toISOString();
   // A single SQLite statement reserves budget atomically across all Worker instances.
-  const reserved=await db.prepare(`INSERT INTO calls(trial_id,request_id,day,status,created_at)
-    SELECT ?,?,?,'running',? WHERE
+  const limit=s.daily_limit??conf.daily;
+  const reserved=await db.prepare(`INSERT INTO calls(trial_id,request_id,day,status,created_at,user_id)
+    SELECT ?,?,?,'running',?,? WHERE
       (SELECT count(*) FROM calls WHERE day=?)<? AND
       (SELECT count(*) FROM calls WHERE trial_id=? AND day=? AND status='success')<? AND
       (SELECT count(*) FROM calls WHERE status='running' AND created_at>?)<? AND
       (SELECT count(*) FROM calls WHERE trial_id=? AND status='running' AND created_at>?)=0
-    ON CONFLICT(trial_id,request_id) DO NOTHING`).bind(s.trial_id,body.requestId,beijingDay(),createdAt,beijingDay(),conf.global,s.trial_id,beijingDay(),conf.daily,liveCutoff,conf.concurrent,s.trial_id,liveCutoff).run();
+    ON CONFLICT DO NOTHING`).bind(s.trial_id,body.requestId,beijingDay(),createdAt,account?.id||null,beijingDay(),conf.global,s.trial_id,beijingDay(),limit,liveCutoff,conf.concurrent,s.trial_id,liveCutoff).run();
   if(!reserved.meta?.changes)throw problem('额度已用完或已有规划正在生成，请稍后再试',429);
   const stream=new TransformStream(),writer=stream.writable.getWriter(),abort=new AbortController();let ended=false;
   writer.closed.catch(()=>{if(!ended)abort.abort();});
@@ -75,10 +92,11 @@ export async function handleApi(request,env,ctx){
   const job=(async()=>{
     const started=Date.now();let timedOut=false,tokens=0;
     const timer=setTimeout(()=>{timedOut=true;abort.abort();},conf.timeout);
+    const cancel=()=>abort.abort();request.signal.addEventListener('abort',cancel,{once:true});
     try{
       await send('status','已完成候选筛选，正在请求模型');
       const schema={summary:'简短策略',recommendations:[{competitionId:1,role:'main | practice | backup',reason:'推荐原因',gaps:['能力缺口'],pending:['待确认事项']}],weeks:[{week:1,tasks:[{competitionId:1,title:'任务',hours:2}]}]};
-      const result=await fetch(conf.base.replace(/\/$/,'')+'/chat/completions',{method:'POST',signal:abort.signal,headers:{Authorization:`Bearer ${conf.key}`,'Content-Type':'application/json'},body:JSON.stringify({model:conf.model,stream:false,max_tokens:8000,messages:[{role:'system',content:'你是校园竞赛规划助手。仅输出 JSON，不用 Markdown。只可选提供的赛事 ID。输出1至3个推荐，角色唯一且必须有 main。输出连续4周，每周任务工时之和不得超过用户预算。不可编造资格、赛程、来源、分数和成功概率。只给学习练习与核验任务，不将报名视为已开放。所有文字是普通文本。格式：'+JSON.stringify(schema)},{role:'user',content:JSON.stringify({profile,candidates:candidates.map(c=>({id:c.id,name:c.name,tags:c.tags,level:c.level,remarks:c.remarks,eligibility:c.eligibility,scheduleNote:c.scheduleNote}))})}]})});
+      const result=await (env.UPSTREAM_FETCH||fetch)(conf.base.replace(/\/$/,'')+'/chat/completions',{method:'POST',signal:abort.signal,headers:{Authorization:`Bearer ${conf.key}`,'Content-Type':'application/json'},body:JSON.stringify({model:conf.model,stream:false,max_tokens:8000,messages:[{role:'system',content:'你是校园竞赛规划助手。仅输出 JSON，不用 Markdown。只可选提供的赛事 ID。输出1至3个推荐，角色唯一且必须有 main。输出连续4周，每周任务工时之和不得超过用户预算。不可编造资格、赛程、来源、分数和成功概率。只给学习练习与核验任务，不将报名视为已开放。所有文字是普通文本。格式：'+JSON.stringify(schema)},{role:'user',content:JSON.stringify({profile,candidates:candidates.map(c=>({id:c.id,name:c.name,tags:c.tags,level:c.level,remarks:c.remarks,eligibility:c.eligibility,scheduleNote:c.scheduleNote}))})}]})});
       if(!result.ok){await result.body?.cancel();throw problem('模型服务暂时不可用，请稍后重试',502);}
       const payload=await result.json();tokens=Number.isFinite(payload.usage?.total_tokens)?Math.max(0,Math.floor(payload.usage.total_tokens)):0;
       await send('status','模型已返回，正在核对赛事与每周时间');
@@ -89,7 +107,7 @@ export async function handleApi(request,env,ctx){
     }catch(error){
       await db.prepare('UPDATE calls SET status=?,duration_ms=?,tokens=? WHERE trial_id=? AND request_id=?').bind(abort.signal.aborted?'cancelled':'failed',Date.now()-started,tokens,s.trial_id,body.requestId).run();
       try{await send('error',timedOut?'模型响应超时，未扣除有效生成次数':abort.signal.aborted?'生成已取消':error.status||error.message?.includes('校验')?error.message:'模型服务返回异常，请稍后重试');}catch{/* Client already disconnected. The outcome is persisted above. */}
-    }finally{clearTimeout(timer);ended=true;await writer.close().catch(()=>{});}
+    }finally{clearTimeout(timer);request.signal.removeEventListener('abort',cancel);ended=true;await writer.close().catch(()=>{});}
   })();
   ctx.waitUntil(job);
   return new Response(stream.readable,{headers:{...securityHeaders,'Content-Type':'application/x-ndjson; charset=utf-8'}});
