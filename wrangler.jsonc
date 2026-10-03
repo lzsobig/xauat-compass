@@ -1,0 +1,55 @@
+{
+  "name": "xauat-compass",
+  "account_id": "0df6d7cd423532c190c1162cdc1caac9",
+  "main": "cloudflare/index.mjs",
+  "compatibility_date": "2026-10-03",
+  "workers_dev": false,
+  "assets": {
+    "directory": "./dist/cloudflare",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "STORE",
+        "class_name": "CompassStore"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "compass-v2-sqlite",
+      "new_sqlite_classes": [
+        "CompassStore"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "type": "Text",
+      "globs": [
+        "**/*.sql"
+      ],
+      "fallthrough": true
+    }
+  ],
+  "vars": {
+    "APP_ORIGIN": "https://compass.lzso.top",
+    "LLM_BASE_URL": "https://wb2api.lzso.top/v1",
+    "LLM_MODEL": "global:deepseek-v4.1-flash",
+    "TRIAL_DAILY_LIMIT": "3",
+    "GLOBAL_DAILY_LIMIT": "100",
+    "MAX_CONCURRENT": "2",
+    "LLM_TIMEOUT_MS": "90000"
+  },
+  "routes": [
+    {
+      "pattern": "compass.lzso.top",
+      "custom_domain": true
+    }
+  ],
+  "build": {
+    "command": "npm run build"
+  }
+}
