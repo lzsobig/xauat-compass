@@ -1,6 +1,6 @@
 import Foundation
 
-public enum RecordingMode: String, Codable, CaseIterable {
+public enum RecordingMode: String, Codable, CaseIterable, Sendable {
     case realtime = "realtime"
     case recordOnly = "recordOnly"
     
@@ -12,7 +12,7 @@ public enum RecordingMode: String, Codable, CaseIterable {
     }
 }
 
-public enum LessonStatus: String, Codable {
+public enum LessonStatus: String, Codable, Sendable {
     case recording = "recording"
     case paused = "paused"
     case interrupted = "interrupted"
@@ -28,7 +28,7 @@ public enum LessonStatus: String, Codable {
     }
 }
 
-public struct TranscriptSegment: Identifiable, Codable, Equatable {
+public struct TranscriptSegment: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var startTime: TimeInterval
     public var endTime: TimeInterval
@@ -44,7 +44,7 @@ public struct TranscriptSegment: Identifiable, Codable, Equatable {
     }
 }
 
-public enum NoteStyle: String, Codable, CaseIterable {
+public enum NoteStyle: String, Codable, CaseIterable, Sendable {
     case detailedOutline = "detailedOutline"
     case keyPoints = "keyPoints"
     case examReview = "examReview"
@@ -58,7 +58,7 @@ public enum NoteStyle: String, Codable, CaseIterable {
     }
 }
 
-public struct LessonNote: Identifiable, Codable {
+public struct LessonNote: Identifiable, Codable, Sendable {
     public var id: UUID
     public var style: NoteStyle
     public var content: String
@@ -72,7 +72,7 @@ public struct LessonNote: Identifiable, Codable {
     }
 }
 
-public struct QAPair: Identifiable, Codable {
+public struct QAPair: Identifiable, Codable, Sendable {
     public var id: UUID
     public var question: String
     public var answer: String
@@ -88,7 +88,7 @@ public struct QAPair: Identifiable, Codable {
     }
 }
 
-public struct Course: Identifiable, Codable, Equatable {
+public struct Course: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var name: String
     public var teacher: String
@@ -106,7 +106,7 @@ public struct Course: Identifiable, Codable, Equatable {
     }
 }
 
-public struct TimetableSlot: Identifiable, Codable, Equatable {
+public struct TimetableSlot: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
     public var courseName: String
     public var teacher: String
@@ -132,7 +132,7 @@ public struct TimetableSlot: Identifiable, Codable, Equatable {
     }
 }
 
-public struct TimetableData: Codable {
+public struct TimetableData: Codable, Sendable {
     public var currentWeek: Int
     public var slots: [TimetableSlot]
     public var updatedAt: Date
@@ -144,7 +144,7 @@ public struct TimetableData: Codable {
     }
 }
 
-public struct LessonSession: Identifiable, Codable {
+public struct LessonSession: Identifiable, Codable, Sendable {
     public var id: UUID
     public var courseId: UUID?
     public var title: String

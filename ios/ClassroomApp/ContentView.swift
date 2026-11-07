@@ -57,8 +57,7 @@ public struct ContentView: View {
                                 .frame(width: 10, height: 10)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(cur.title)
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
+                                    .font(.system(size: 15, weight: .semibold))
                                     .lineLimit(1)
                                 Text(manager.isPaused ? "已暂停 · 点击返回" : "正在录音 \(formatTime(manager.recordingElapsed))")
                                     .font(.caption)
@@ -697,8 +696,7 @@ struct TimetableScreen: View {
                                 manager.updateCourseSuggestion()
                             } label: {
                                 Text("第\(w)周")
-                                    .font(.subheadline)
-                                    .fontWeight(selectedWeek == w ? .bold : .regular)
+                                    .font(.system(size: 15, weight: selectedWeek == w ? .bold : .regular))
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 6)
                                     .background(selectedWeek == w ? Color.accentColor : Color(UIColor.secondarySystemFill))
@@ -732,8 +730,7 @@ struct TimetableScreen: View {
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("星期\(days[day - 1])")
-                                    .font(.subheadline)
-                                    .fontWeight(.bold)
+                                    .font(.system(size: 15, weight: .bold))
                                     .foregroundColor(.secondary)
 
                                 if daySlots.isEmpty {
@@ -746,12 +743,10 @@ struct TimetableScreen: View {
                                         HStack(spacing: 12) {
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text("第\(slot.fromPeriod)-\(slot.toPeriod)节")
-                                                    .font(.caption)
-                                                    .fontWeight(.semibold)
+                                                    .font(.system(size: 12, weight: .semibold))
                                                     .foregroundColor(.accentColor)
                                                 Text(slot.courseName)
-                                                    .font(.body)
-                                                    .fontWeight(.semibold)
+                                                    .font(.system(size: 17, weight: .semibold))
                                                 if !slot.room.isEmpty || !slot.teacher.isEmpty {
                                                     Text([slot.room, slot.teacher].filter { !$0.isEmpty }.joined(separator: " · "))
                                                         .font(.caption)
@@ -1036,9 +1031,7 @@ struct TranscriptTabView: View {
                                         manager.playAudio(session: session, seekTo: seg.startTime)
                                     } label: {
                                         Text(formatDuration(seg.startTime))
-                                            .font(.caption2)
-                                            .fontWeight(.bold)
-                                            .fontDesign(.monospaced)
+                                            .font(.system(size: 11, weight: .bold, design: .monospaced))
                                             .padding(.horizontal, 6)
                                             .padding(.vertical, 3)
                                             .background(Color(UIColor.tertiarySystemFill))
@@ -1089,8 +1082,7 @@ struct TranscriptTabView: View {
                             Text("最新 \(unreadCount) 段文字")
                             Image(systemName: "arrow.down")
                         }
-                        .font(.caption)
-                        .fontWeight(.bold)
+                        .font(.system(size: 12, weight: .bold))
                         .padding(.horizontal, 14)
                         .padding(.vertical, 8)
                         .background(Color.accentColor)
@@ -1157,8 +1149,7 @@ struct NotesTabView: View {
                                 }
                             } label: {
                                 Label(copiedNotice ? "已复制到剪贴板！" : "复制全部笔记", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
-                                    .font(.subheadline)
-                                    .fontWeight(.semibold)
+                                    .font(.system(size: 15, weight: .semibold))
                             }
 
                             Spacer()
@@ -1291,8 +1282,7 @@ struct QATabView: View {
                                             onCitationTapped(cit)
                                         } label: {
                                             Label("跳转到课堂录音 \(formatTime(cit))", systemImage: "play.circle.fill")
-                                                .font(.caption2)
-                                                .fontWeight(.bold)
+                                                .font(.system(size: 11, weight: .bold))
                                                 .foregroundColor(.accentColor)
                                         }
                                         .padding(.top, 4)
@@ -1458,8 +1448,7 @@ struct AudioPlayerControlBar: View {
                             manager.setPlaybackRate(rate)
                         } label: {
                             Text(String(format: "%.2gx", rate))
-                                .font(.caption2)
-                                .fontWeight(manager.playbackRate == rate ? .bold : .regular)
+                                .font(.system(size: 11, weight: manager.playbackRate == rate ? .bold : .regular))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .background(manager.playbackRate == rate ? Color.accentColor : Color(UIColor.tertiarySystemFill))
@@ -1488,8 +1477,7 @@ struct StatusBadge: View {
 
     var body: some View {
         Text(status.title)
-            .font(.caption2)
-            .fontWeight(.semibold)
+            .font(.system(size: 11, weight: .semibold))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(color.opacity(0.12))

@@ -594,7 +594,7 @@ public final class ClassroomManager: ObservableObject {
         }
     }
     
-    private static func synthesizeNotes(fullText: String, marks: [TimeInterval], style: NoteStyle, courseTitle: String) -> String {
+    nonisolated private static func synthesizeNotes(fullText: String, marks: [TimeInterval], style: NoteStyle, courseTitle: String) -> String {
         guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "当前课堂尚未完成语音转写，无法提炼课堂笔记。请等待实时转写完成或在课后点击「转写录音」。"
         }
