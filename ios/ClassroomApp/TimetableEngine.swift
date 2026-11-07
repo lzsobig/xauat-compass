@@ -7,12 +7,13 @@ public struct TimetableEngine {
     public static let RADICALS: [Character: Character] = [
         "⻄": "西", "⻩": "黄", "⻔": "门", "⻓": "长", "⻛": "风", "⻜": "飞", "⻢": "马", "⻥": "鱼",
         "⻝": "食", "⻅": "见", "⻉": "贝", "⻋": "车", "⻚": "页", "⻮": "竹", "⻰": "龙", "⻳": "龟",
-        "⻆": "角", "⻘": "青", "⻬": "齐", "⻧": "卤", "⻨": "麦", "⻦": "鸟", "⻤": "鬼", "⻣": "骨"
+        "⻆": "角", "⻘": "青", "⻬": "齐", "⻧": "卤", "⻨": "麦", "⻦": "鸟", "⻤": "鬼", "⻣": "骨",
+        "⼀": "一", "⼆": "二", "⽇": "日"
     ]
     
     public static func normalizeText(_ text: String) -> String {
         guard !text.isEmpty else { return "" }
-        var result = text.precomposedStringWithCanonicalMapping
+        let result = text.precomposedStringWithCompatibilityMapping
         var mapped = String()
         mapped.reserveCapacity(result.count)
         for ch in result {
@@ -134,17 +135,16 @@ public struct TimetableEngine {
         var items: [TextItem] = []
         
         if let pageString = page.string, !pageString.isEmpty {
+            let chars = Array(pageString)
             var curText = ""
             var minX: CGFloat = 1000
             var maxX: CGFloat = 0
             var curY: CGFloat = -1
             
-            let charCount = page.numberOfCharacters
+            let charCount = min(page.numberOfCharacters, chars.count)
             for i in 0..<charCount {
                 let rect = page.characterBounds(at: i)
-                guard i < pageString.count else { break }
-                let charIndex = pageString.index(pageString.startIndex, offsetBy: i)
-                let ch = pageString[charIndex]
+                let ch = chars[i]
                 
                 if curY < 0 { curY = rect.origin.y }
                 if abs(rect.origin.y - curY) > 4 || ch == "\n" {
