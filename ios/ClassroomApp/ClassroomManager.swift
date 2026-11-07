@@ -90,17 +90,11 @@ public final class ClassroomManager: ObservableObject {
     @Published public var stepfunBaseURL: String {
         didSet { UserDefaults.standard.set(stepfunBaseURL, forKey: "stepfunBaseURL") }
     }
-    @Published public var stepfunChatModel: String {
-        didSet { UserDefaults.standard.set(stepfunChatModel, forKey: "stepfunChatModel") }
-    }
     @Published public var stepfunAsrModel: String {
         didSet { UserDefaults.standard.set(stepfunAsrModel, forKey: "stepfunAsrModel") }
     }
     @Published public var stepfunApiKey: String {
         didSet { UserDefaults.standard.set(stepfunApiKey, forKey: "stepfunApiKey") }
-    }
-    @Published public var useStepfunFallback: Bool {
-        didSet { UserDefaults.standard.set(useStepfunFallback, forKey: "useStepfunFallback") }
     }
 
     // 播放器状态
@@ -131,16 +125,14 @@ public final class ClassroomManager: ObservableObject {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         self.storageRoot = appSupport.appendingPathComponent("ClassroomRecordings", isDirectory: true)
         
-        // 读取或初始化 AI Key 配置
+        // 读取或初始化 AI Key 配置 (专属 DeepSeek 大模型 + StepFun ASR)
         self.llmBaseURL = UserDefaults.standard.string(forKey: "llmBaseURL") ?? "https://tokenrhythm.studio/v1"
         self.llmModel = UserDefaults.standard.string(forKey: "llmModel") ?? "deepseek-v4.1-flash-1017"
         self.llmApiKey = UserDefaults.standard.string(forKey: "llmApiKey") ?? decodeB64(kDefaultTokenRhythmKeyB64)
         
         self.stepfunBaseURL = UserDefaults.standard.string(forKey: "stepfunBaseURL") ?? "https://api.stepfun.com/v1"
-        self.stepfunChatModel = UserDefaults.standard.string(forKey: "stepfunChatModel") ?? "stepaudio-2.5-chat"
         self.stepfunAsrModel = UserDefaults.standard.string(forKey: "stepfunAsrModel") ?? "stepaudio-2.5-asr"
         self.stepfunApiKey = UserDefaults.standard.string(forKey: "stepfunApiKey") ?? decodeB64(kDefaultStepFunKeyB64)
-        self.useStepfunFallback = UserDefaults.standard.object(forKey: "useStepfunFallback") as? Bool ?? true
 
         try? FileManager.default.createDirectory(at: storageRoot, withIntermediateDirectories: true)
         
@@ -156,10 +148,8 @@ public final class ClassroomManager: ObservableObject {
         self.llmModel = "deepseek-v4.1-flash-1017"
         self.llmApiKey = decodeB64(kDefaultTokenRhythmKeyB64)
         self.stepfunBaseURL = "https://api.stepfun.com/v1"
-        self.stepfunChatModel = "stepaudio-2.5-chat"
         self.stepfunAsrModel = "stepaudio-2.5-asr"
         self.stepfunApiKey = decodeB64(kDefaultStepFunKeyB64)
-        self.useStepfunFallback = true
     }
     
     // MARK: - 持久化与文件管理
@@ -175,20 +165,34 @@ public final class ClassroomManager: ObservableObject {
     private func loadData() {
         let decoder = JSONDecoder()
         
-        if let data = try? Data(contentsOf: coursesURL), let loaded = try? decoder.decode([Course].self, from: data) {
-            self.courses = loaded
+        let defaults = TimetableEngine.defaultSlots()
+        
+        if let data = try? Data(contentsOf: timetableURL), let loaded = try? decoder.decode(TimetableData.self, from: data), !loaded.slots.isEmpty {
+            self.timetable = loaded
         } else {
-            self.courses = [
-                Course(name: "线性代数 A", teacher: "栗雪娟", room: "草堂9-210", colorHex: "#0A84FF"),
-                Course(name: "大学物理 B2", teacher: "谢海霞", room: "草堂9-102", colorHex: "#30D158"),
-                Course(name: "建设法规", teacher: "黄莺", room: "草堂8-204", colorHex: "#FF9F0A"),
-                Course(name: "材料力学Ⅰ（土木类）", teacher: "刘韡", room: "草堂9-101", colorHex: "#AF52DE")
-            ]
-            saveCourses()
+            self.timetable = TimetableData(currentWeek: 10, slots: defaults, updatedAt: Date())
+            saveTimetable()
         }
         
-        if let data = try? Data(contentsOf: timetableURL), let loaded = try? decoder.decode(TimetableData.self, from: data) {
-            self.timetable = loaded
+        if let data = try? Data(contentsOf: coursesURL), let loaded = try? decoder.decode([Course].self, from: data), loaded.count > 4 {
+            self.courses = loaded
+        } else {
+            var uniqueCourses: [String: Course] = [:]
+            let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
+            var idx = 0
+            for slot in defaults {
+                if uniqueCourses[slot.courseName] == nil {
+                    uniqueCourses[slot.courseName] = Course(
+                        name: slot.courseName,
+                        teacher: slot.teacher,
+                        room: slot.room,
+                        colorHex: colors[idx % colors.count]
+                    )
+                    idx += 1
+                }
+            }
+            self.courses = Array(uniqueCourses.values).sorted { $0.name < $1.name }
+            saveCourses()
         }
         
         if let data = try? Data(contentsOf: sessionsURL), let loaded = try? decoder.decode([LessonSession].self, from: data) {
@@ -739,28 +743,13 @@ public final class ClassroomManager: ObservableObject {
         return res.text ?? ""
     }
 
-    // MARK: - 大模型 HTTP 调用 (TokenRhythm + StepFun 双备选)
+    // MARK: - 大模型 HTTP 调用 (DeepSeek 专属大模型问答与笔记生成)
     
     public func callLLMApi(systemPrompt: String, userPrompt: String) async throws -> String {
-        // 首选 TokenRhythm DeepSeek
-        if !llmApiKey.isEmpty {
-            do {
-                return try await executeChatCompletion(baseURL: llmBaseURL, model: llmModel, apiKey: llmApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt)
-            } catch {
-                print("TokenRhythm LLM 调用失败，尝试阶跃星辰备用：", error)
-                if useStepfunFallback && !stepfunApiKey.isEmpty {
-                    return try await executeChatCompletion(baseURL: stepfunBaseURL, model: stepfunChatModel, apiKey: stepfunApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt)
-                }
-                throw error
-            }
+        guard !llmApiKey.isEmpty else {
+            throw NSError(domain: "LLMError", code: 401, userInfo: [NSLocalizedDescriptionKey: "尚未配置有效的 DeepSeek API Key"])
         }
-        
-        // 若只有 StepFun
-        if !stepfunApiKey.isEmpty {
-            return try await executeChatCompletion(baseURL: stepfunBaseURL, model: stepfunChatModel, apiKey: stepfunApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt)
-        }
-        
-        throw NSError(domain: "LLMError", code: 401, userInfo: [NSLocalizedDescriptionKey: "尚未配置有效的 AI API Key"])
+        return try await executeChatCompletion(baseURL: llmBaseURL, model: llmModel, apiKey: llmApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt)
     }
     
     private func executeChatCompletion(baseURL: String, model: String, apiKey: String, systemPrompt: String, userPrompt: String) async throws -> String {
@@ -1114,10 +1103,8 @@ public final class ClassroomManager: ObservableObject {
         self.llmApiKey = decodeB64(kDefaultTokenRhythmKeyB64)
         
         self.stepfunBaseURL = "https://api.stepfun.com/v1"
-        self.stepfunChatModel = "stepaudio-2.5-chat"
         self.stepfunAsrModel = "stepaudio-2.5-asr"
         self.stepfunApiKey = decodeB64(kDefaultStepFunKeyB64)
-        self.useStepfunFallback = true
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {

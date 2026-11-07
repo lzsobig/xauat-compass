@@ -31,7 +31,10 @@ public struct ContentView: View {
                 }
                 .tag(1)
 
-                TimetableScreen()
+                TimetableScreen(onSelectCourseForRecord: { course in
+                    selectedCourseForRecord = course
+                    selectedTab = 0
+                })
                 .tabItem {
                     Label("课表", systemImage: "calendar")
                 }
@@ -672,22 +675,258 @@ struct UnassignedDetailScreen: View {
     }
 }
 
-// MARK: - 课表视图 (PDF 导入 + 1~20周课表)
+// MARK: - 课表视图 (7天周网格课表，完全对标建大官方教务与手机排版)
+
+struct CourseCardPalette {
+    let bg: Color
+    let text: Color
+}
+
+private let kTimetablePalettes: [CourseCardPalette] = [
+    CourseCardPalette(bg: Color(red: 0.99, green: 0.94, blue: 0.91), text: Color(red: 0.55, green: 0.23, blue: 0.17)), // 浅粉桃
+    CourseCardPalette(bg: Color(red: 0.99, green: 0.89, blue: 0.93), text: Color(red: 0.62, green: 0.15, blue: 0.38)), // 嫩粉紫
+    CourseCardPalette(bg: Color(red: 1.00, green: 0.95, blue: 0.78), text: Color(red: 0.57, green: 0.25, blue: 0.05)), // 暖黄姜
+    CourseCardPalette(bg: Color(red: 0.95, green: 0.91, blue: 1.00), text: Color(red: 0.49, green: 0.13, blue: 0.81)), // 浅薰衣草
+    CourseCardPalette(bg: Color(red: 0.99, green: 0.91, blue: 0.95), text: Color(red: 0.61, green: 0.09, blue: 0.30)), // 柔和玫粉
+    CourseCardPalette(bg: Color(red: 0.86, green: 0.99, blue: 0.91), text: Color(red: 0.08, green: 0.50, blue: 0.24)), // 薄荷淡绿
+    CourseCardPalette(bg: Color(red: 0.88, green: 0.95, blue: 0.99), text: Color(red: 0.01, green: 0.41, blue: 0.63)), // 冰川浅蓝
+    CourseCardPalette(bg: Color(red: 1.00, green: 0.98, blue: 0.76), text: Color(red: 0.52, green: 0.30, blue: 0.05))  // 柠檬浅黄
+]
+
+struct PeriodSlotInfo {
+    let period: Int
+    let start: String
+    let end: String
+}
+
+private let kClassPeriods: [PeriodSlotInfo] = [
+    PeriodSlotInfo(period: 1, start: "08:30", end: "09:15"),
+    PeriodSlotInfo(period: 2, start: "09:20", end: "10:05"),
+    PeriodSlotInfo(period: 3, start: "10:25", end: "11:10"),
+    PeriodSlotInfo(period: 4, start: "11:15", end: "12:00"),
+    PeriodSlotInfo(period: 5, start: "12:10", end: "12:55"),
+    PeriodSlotInfo(period: 6, start: "13:00", end: "13:45"),
+    PeriodSlotInfo(period: 7, start: "14:00", end: "14:45"),
+    PeriodSlotInfo(period: 8, start: "14:50", end: "15:35"),
+    PeriodSlotInfo(period: 9, start: "15:45", end: "16:30"),
+    PeriodSlotInfo(period: 10, start: "16:35", end: "17:20"),
+    PeriodSlotInfo(period: 11, start: "19:00", end: "19:45"),
+    PeriodSlotInfo(period: 12, start: "19:50", end: "20:35")
+]
+
+public struct SemesterCalendar {
+    public static let semesterStart: Date = {
+        var comp = DateComponents()
+        comp.year = 2026
+        comp.month = 8
+        comp.day = 31
+        comp.hour = 0
+        comp.minute = 0
+        comp.second = 0
+        return Calendar(identifier: .gregorian).date(from: comp) ?? Date()
+    }()
+
+    public static func currentWeek() -> Int {
+        let cal = Calendar(identifier: .gregorian)
+        let diff = cal.dateComponents([.day], from: semesterStart, to: Date()).day ?? 0
+        let w = (diff / 7) + 1
+        return max(1, min(25, w))
+    }
+
+    public static func datesForWeek(_ week: Int) -> [Date] {
+        let cal = Calendar(identifier: .gregorian)
+        guard let weekStart = cal.date(byAdding: .day, value: (week - 1) * 7, to: semesterStart) else {
+            return []
+        }
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: weekStart) }
+    }
+}
 
 struct TimetableScreen: View {
     @EnvironmentObject var manager: ClassroomManager
-    @State private var selectedWeek: Int = 1
+    var onSelectCourseForRecord: ((Course) -> Void)? = nil
+
+    @State private var selectedWeek: Int = 10
     @State private var showingFileImporter = false
     @State private var importStatus = ""
+    @State private var selectedSlotForDetail: TimetableSlot?
 
     let days = ["一", "二", "三", "四", "五", "六", "日"]
+    let timeColWidth: CGFloat = 34.0
+    let slotHeight: CGFloat = 58.0
+
+    var weekDates: [Date] {
+        SemesterCalendar.datesForWeek(selectedWeek)
+    }
+
+    var monthNumber: Int {
+        guard let first = weekDates.first else { return 11 }
+        return Calendar(identifier: .gregorian).component(.month, from: first)
+    }
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // 周次横向选择栏
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+            GeometryReader { geo in
+                let dayColWidth = (geo.size.width - timeColWidth) / 7.0
+                let totalGridHeight = CGFloat(kClassPeriods.count) * slotHeight
+
+                VStack(spacing: 0) {
+                    // 状态提示条（导入反馈）
+                    if !importStatus.isEmpty {
+                        Text(importStatus)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                            .padding(.vertical, 4)
+                            .frame(maxWidth: .infinity)
+                            .background(Color(UIColor.tertiarySystemFill))
+                    }
+
+                    // 1. 顶部日期表头 (11月 / 一 2, 二 3, 三 4, 四 5, 五 6, 六 7, 日 8)
+                    HStack(spacing: 0) {
+                        // 左上角月份
+                        VStack(spacing: 1) {
+                            Text("\(monthNumber)")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.primary)
+                            Text("月")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(width: timeColWidth, height: 46)
+
+                        // 星期一到星期日
+                        ForEach(0..<7, id: \.self) { i in
+                            let date = i < weekDates.count ? weekDates[i] : Date()
+                            let dayNum = Calendar(identifier: .gregorian).component(.day, from: date)
+                            let isToday = Calendar.current.isDateInToday(date)
+
+                            VStack(spacing: 3) {
+                                Text(days[i])
+                                    .font(.system(size: 12))
+                                    .foregroundColor(isToday ? .primary : .secondary)
+
+                                if isToday {
+                                    Text("\(dayNum)")
+                                        .font(.system(size: 12, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .frame(width: 22, height: 22)
+                                        .background(Color.primary)
+                                        .clipShape(Circle())
+                                } else {
+                                    Text("\(dayNum)")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.primary)
+                                        .frame(width: 22, height: 22)
+                                }
+                            }
+                            .frame(width: dayColWidth, height: 46)
+                        }
+                    }
+                    .background(Color(UIColor.systemBackground))
+
+                    Divider()
+
+                    // 2. 课表时间轴与周网格主体
+                    ScrollView {
+                        ZStack(alignment: .topLeading) {
+                            // 背景网格线 (水平分割线)
+                            VStack(spacing: 0) {
+                                ForEach(0..<kClassPeriods.count, id: \.self) { p in
+                                    Rectangle()
+                                        .fill(Color(UIColor.separator).opacity(0.18))
+                                        .frame(height: 0.5)
+                                        .offset(y: slotHeight - 0.5)
+                                        .frame(height: slotHeight)
+                                }
+                            }
+                            .offset(x: timeColWidth)
+
+                            // 垂直列分割线
+                            HStack(spacing: 0) {
+                                Spacer().frame(width: timeColWidth)
+                                ForEach(0..<7, id: \.self) { _ in
+                                    Rectangle()
+                                        .fill(Color(UIColor.separator).opacity(0.15))
+                                        .frame(width: 0.5, height: totalGridHeight)
+                                        .frame(maxWidth: .infinity, alignment: .trailing)
+                                }
+                            }
+
+                            // 左侧节次与时间戳
+                            ForEach(0..<kClassPeriods.count, id: \.self) { p in
+                                let pInfo = kClassPeriods[p]
+                                let y = CGFloat(p) * slotHeight
+                                VStack(spacing: 1) {
+                                    Text("\(pInfo.period)")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.primary)
+                                    Text(pInfo.start)
+                                        .font(.system(size: 8, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                    Text(pInfo.end)
+                                        .font(.system(size: 8, design: .monospaced))
+                                        .foregroundColor(.secondary)
+                                }
+                                .frame(width: timeColWidth, height: slotHeight)
+                                .position(x: timeColWidth / 2, y: y + slotHeight / 2)
+                            }
+
+                            // 课程彩色卡片层
+                            let activeSlots = manager.timetable.slots.filter { slot in
+                                selectedWeek >= slot.weekFrom &&
+                                selectedWeek <= slot.weekTo &&
+                                (slot.parity == "all" || (slot.parity == "odd" && selectedWeek % 2 == 1) || (slot.parity == "even" && selectedWeek % 2 == 0))
+                            }
+
+                            ForEach(activeSlots) { slot in
+                                let d = slot.day - 1
+                                if d >= 0 && d < 7 {
+                                    let fromP = max(1, min(kClassPeriods.count, slot.fromPeriod))
+                                    let toP = max(fromP, min(kClassPeriods.count, slot.toPeriod))
+                                    let span = toP - fromP + 1
+
+                                    let cardX = timeColWidth + CGFloat(d) * dayColWidth + 1.5
+                                    let cardY = CGFloat(fromP - 1) * slotHeight + 1.5
+                                    let cardW = max(10, dayColWidth - 3.0)
+                                    let cardH = max(20, CGFloat(span) * slotHeight - 3.0)
+
+                                    let palette = kTimetablePalettes[abs(slot.courseName.hashValue) % kTimetablePalettes.count]
+                                    let roomText = slot.room.isEmpty ? "" : (slot.room.contains("草堂") ? "@ \(slot.room)" : "@ 草堂校区 \(slot.room)")
+
+                                    VStack(spacing: 2) {
+                                        Text(slot.courseName)
+                                            .font(.system(size: 10.5, weight: .semibold))
+                                            .foregroundColor(palette.text)
+                                            .multilineTextAlignment(.center)
+                                            .lineLimit(span > 1 ? 4 : 2)
+
+                                        if !roomText.isEmpty {
+                                            Text(roomText)
+                                                .font(.system(size: 9.5))
+                                                .foregroundColor(palette.text.opacity(0.85))
+                                                .multilineTextAlignment(.center)
+                                                .lineLimit(span > 1 ? 3 : 1)
+                                        }
+                                    }
+                                    .padding(2)
+                                    .frame(width: cardW, height: cardH)
+                                    .background(palette.bg)
+                                    .cornerRadius(6)
+                                    .position(x: cardX + cardW / 2, y: cardY + cardH / 2)
+                                    .onTapGesture {
+                                        selectedSlotForDetail = slot
+                                    }
+                                }
+                            }
+                        }
+                        .frame(width: geo.size.width, height: totalGridHeight)
+                    }
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Menu {
                         ForEach(1...20, id: \.self) { w in
                             Button {
                                 selectedWeek = w
@@ -695,85 +934,50 @@ struct TimetableScreen: View {
                                 manager.saveTimetable()
                                 manager.updateCourseSuggestion()
                             } label: {
-                                Text("第\(w)周")
-                                    .font(.system(size: 15, weight: selectedWeek == w ? .bold : .regular))
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(selectedWeek == w ? Color.accentColor : Color(UIColor.secondarySystemFill))
-                                    .foregroundColor(selectedWeek == w ? .white : .primary)
-                                    .cornerRadius(12)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                }
-                .background(Color(UIColor.secondarySystemGroupedBackground))
-
-                if !importStatus.isEmpty {
-                    Text(importStatus)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .padding(.vertical, 6)
-                }
-
-                // 课表格子
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        ForEach(1...7, id: \.self) { day in
-                            let daySlots = manager.timetable.slots.filter { slot in
-                                slot.day == day &&
-                                selectedWeek >= slot.weekFrom &&
-                                selectedWeek <= slot.weekTo &&
-                                (slot.parity == "all" || (slot.parity == "odd" && selectedWeek % 2 == 1) || (slot.parity == "even" && selectedWeek % 2 == 0))
-                            }.sorted { $0.fromPeriod < $1.fromPeriod }
-
-                            VStack(alignment: .leading, spacing: 6) {
-                                Text("星期\(days[day - 1])")
-                                    .font(.system(size: 15, weight: .bold))
-                                    .foregroundColor(.secondary)
-
-                                if daySlots.isEmpty {
-                                    Text("无课程安排")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary.opacity(0.6))
-                                        .padding(.vertical, 4)
+                                if w == SemesterCalendar.currentWeek() {
+                                    Label("第 \(w) 周 (本周)", systemImage: "checkmark")
                                 } else {
-                                    ForEach(daySlots) { slot in
-                                        HStack(spacing: 12) {
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text("第\(slot.fromPeriod)-\(slot.toPeriod)节")
-                                                    .font(.system(size: 12, weight: .semibold))
-                                                    .foregroundColor(.accentColor)
-                                                Text(slot.courseName)
-                                                    .font(.system(size: 17, weight: .semibold))
-                                                if !slot.room.isEmpty || !slot.teacher.isEmpty {
-                                                    Text([slot.room, slot.teacher].filter { !$0.isEmpty }.joined(separator: " · "))
-                                                        .font(.caption)
-                                                        .foregroundColor(.secondary)
-                                                }
-                                            }
-                                            Spacer()
-                                        }
-                                        .padding(12)
-                                        .background(Color(UIColor.secondarySystemGroupedBackground))
-                                        .cornerRadius(12)
-                                    }
+                                    Text("第 \(w) 周")
                                 }
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 6)
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("第 \(selectedWeek) 周")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 11, weight: .bold))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color(UIColor.secondarySystemFill))
+                        .cornerRadius(8)
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack(spacing: 16) {
+                        Button {
+                            showingFileImporter = true
+                        } label: {
+                            Image(systemName: "icloud.and.arrow.up")
+                                .font(.system(size: 16))
+                                .foregroundColor(.primary)
                         }
                     }
-                    .padding(.vertical, 10)
                 }
             }
-            .navigationTitle("建大课表")
-            .toolbar {
-                Button {
-                    showingFileImporter = true
-                } label: {
-                    Label("导入 PDF", systemImage: "doc.badge.plus")
+            .sheet(item: $selectedSlotForDetail) { slot in
+                CourseSlotDetailSheet(slot: slot) { targetSlot in
+                    let course = manager.courses.first(where: { $0.name == targetSlot.courseName }) ?? Course(
+                        name: targetSlot.courseName,
+                        teacher: targetSlot.teacher,
+                        room: targetSlot.room,
+                        colorHex: "#007AFF"
+                    )
+                    onSelectCourseForRecord?(course)
                 }
             }
             .fileImporter(
@@ -798,8 +1002,109 @@ struct TimetableScreen: View {
                     importStatus = "读取文件失败：\(err.localizedDescription)"
                 }
             }
+            .onAppear {
+                selectedWeek = manager.timetable.currentWeek > 0 ? manager.timetable.currentWeek : SemesterCalendar.currentWeek()
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+    }
+}
+
+// MARK: - 课程卡片轻触详情弹窗 (可一键开启录音)
+
+struct CourseSlotDetailSheet: View {
+    @Environment(\.presentationMode) var presentationMode
+    let slot: TimetableSlot
+    var onRecord: (TimetableSlot) -> Void
+
+    let days = ["一", "二", "三", "四", "五", "六", "日"]
+
+    var body: some View {
+        NavigationView {
+            VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(slot.courseName)
+                        .font(.system(size: 22, weight: .bold))
+                        .foregroundColor(.primary)
+                    if !slot.teacher.isEmpty {
+                        Label("任课教师：\(slot.teacher)", systemImage: "person.fill")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.top, 8)
+
+                Divider()
+
+                VStack(spacing: 14) {
+                    HStack {
+                        Label("上课地点", systemImage: "mappin.and.ellipse")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text(slot.room.isEmpty ? "未标注教室" : slot.room)
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+
+                    HStack {
+                        Label("上课时间", systemImage: "clock.fill")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        let pStart = max(1, min(kClassPeriods.count, slot.fromPeriod))
+                        let pEnd = max(pStart, min(kClassPeriods.count, slot.toPeriod))
+                        let tStr = "\(kClassPeriods[pStart - 1].start) - \(kClassPeriods[pEnd - 1].end)"
+                        Text("星期\(days[max(0, min(6, slot.day - 1))]) 第 \(slot.fromPeriod)-\(slot.toPeriod) 节 (\(tStr))")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+
+                    HStack {
+                        Label("教学周次", systemImage: "calendar")
+                            .foregroundColor(.secondary)
+                        Spacer()
+                        Text("第 \(slot.weekFrom)-\(slot.weekTo) 周\(parityDescription(slot.parity))")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                }
+                .padding(16)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .cornerRadius(14)
+
+                Spacer()
+
+                Button {
+                    onRecord(slot)
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    HStack {
+                        Image(systemName: "mic.fill")
+                        Text("录制这节课")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                    .background(Color.accentColor)
+                    .cornerRadius(14)
+                }
+            }
+            .padding(20)
+            .navigationTitle("课程详情")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("关闭") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func parityDescription(_ parity: String) -> String {
+        switch parity {
+        case "odd": return " (单周)"
+        case "even": return " (双周)"
+        default: return ""
+        }
     }
 }
 
@@ -816,37 +1121,15 @@ struct SettingsScreen: View {
         NavigationView {
             List {
                 Section(
-                    header: Text("AI 助教大模型 (笔记与问答)"),
-                    footer: Text("默认使用 TokenRhythm 提供的 DeepSeek v4.1 Flash，具备卓越的课程理解与 Markdown 表格生成能力。")
+                    header: Text("AI 助教大模型 (DeepSeek 问答与笔记)"),
+                    footer: Text("使用 TokenRhythm 提供的 DeepSeek v4.1 Flash，针对课堂录音实录进行问答、解题推理与 Markdown 表格笔记生成。")
                 ) {
                     HStack {
-                        Text("预设快捷切换")
+                        Text("当前模型")
                         Spacer()
-                        Button {
-                            manager.llmBaseURL = "https://tokenrhythm.studio/v1"
-                            manager.llmModel = "deepseek-v4.1-flash-1017"
-                        } label: {
-                            Text("DeepSeek Flash")
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color.accentColor.opacity(0.15))
-                                .foregroundColor(.accentColor)
-                                .cornerRadius(6)
-                        }
-
-                        Button {
-                            manager.llmBaseURL = "https://api.stepfun.com/v1"
-                            manager.llmModel = "stepaudio-2.5-chat"
-                        } label: {
-                            Text("阶跃 2.5")
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
-                                .background(Color(UIColor.tertiarySystemFill))
-                                .foregroundColor(.primary)
-                                .cornerRadius(6)
-                        }
+                        Text("deepseek-v4.1-flash-1017")
+                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.accentColor)
                     }
 
                     HStack {
@@ -884,8 +1167,6 @@ struct SettingsScreen: View {
                                 .foregroundColor(.secondary)
                         }
                     }
-
-                    Toggle("主模型异常时自动调用阶跃星辰备用", isOn: $manager.useStepfunFallback)
                 }
 
                 Section(

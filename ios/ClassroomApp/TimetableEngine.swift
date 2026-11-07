@@ -257,21 +257,91 @@ public struct TimetableEngine {
         let courseList = Array(coursesDict.values).sorted { $0.name < $1.name }
         return (timetable: timetable, courses: courseList)
     }
+
+    public static func defaultSlots() -> [TimetableSlot] {
+        return [
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 1, fromPeriod: 1, toPeriod: 2, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 1, fromPeriod: 1, toPeriod: 2, weekFrom: 7, weekTo: 8, parity: "all"),
+            TimetableSlot(courseName: "Python程序设计", teacher: "曾珂", room: "草堂9-213", day: 1, fromPeriod: 3, toPeriod: 4, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "大学物理实验", teacher: "庞庆", room: "4-415", day: 1, fromPeriod: 7, toPeriod: 8, weekFrom: 2, weekTo: 2, parity: "all"),
+            TimetableSlot(courseName: "大学物理实验", teacher: "庞庆", room: "草堂物理实验室", day: 1, fromPeriod: 7, toPeriod: 8, weekFrom: 3, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "大学物理实验", teacher: "庞庆", room: "草堂物理实验室", day: 1, fromPeriod: 7, toPeriod: 8, weekFrom: 7, weekTo: 14, parity: "all"),
+            TimetableSlot(courseName: "材料力学Ⅰ（土木类）", teacher: "刘韡", room: "草堂9-101", day: 1, fromPeriod: 7, toPeriod: 8, weekFrom: 16, weekTo: 18, parity: "all"),
+            TimetableSlot(courseName: "大学物理实验", teacher: "庞庆", room: "4-415", day: 1, fromPeriod: 9, toPeriod: 10, weekFrom: 2, weekTo: 2, parity: "all"),
+            TimetableSlot(courseName: "大学物理实验", teacher: "庞庆", room: "草堂物理实验室", day: 1, fromPeriod: 9, toPeriod: 10, weekFrom: 3, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "大学物理实验", teacher: "庞庆", room: "草堂物理实验室", day: 1, fromPeriod: 9, toPeriod: 10, weekFrom: 7, weekTo: 14, parity: "all"),
+            TimetableSlot(courseName: "Python程序设计", teacher: "曾珂", room: "草堂8-308(机房)", day: 1, fromPeriod: 11, toPeriod: 12, weekFrom: 2, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "大学物理B2", teacher: "谢海霞", room: "草堂9-102", day: 2, fromPeriod: 1, toPeriod: 2, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "大学物理B2", teacher: "谢海霞", room: "草堂9-102", day: 2, fromPeriod: 1, toPeriod: 2, weekFrom: 7, weekTo: 13, parity: "all"),
+            TimetableSlot(courseName: "建设法规", teacher: "黄莺", room: "草堂8-204", day: 2, fromPeriod: 3, toPeriod: 4, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "建设法规", teacher: "黄莺", room: "草堂8-204", day: 2, fromPeriod: 3, toPeriod: 4, weekFrom: 7, weekTo: 7, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂13-315", day: 2, fromPeriod: 7, toPeriod: 8, weekFrom: 2, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂13-315", day: 2, fromPeriod: 7, toPeriod: 8, weekFrom: 7, weekTo: 18, parity: "all"),
+            TimetableSlot(courseName: "毛泽东思想和中国特色社会主义理论体系概论", teacher: "胡阿丽", room: "草堂9-311", day: 2, fromPeriod: 9, toPeriod: 10, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "毛泽东思想和中国特色社会主义理论体系概论", teacher: "胡阿丽", room: "草堂9-311", day: 2, fromPeriod: 9, toPeriod: 10, weekFrom: 7, weekTo: 9, parity: "all"),
+            TimetableSlot(courseName: "习近平新时代中国特色社会主义思想概论", teacher: "胡阿丽", room: "草堂9-311", day: 2, fromPeriod: 9, toPeriod: 10, weekFrom: 10, weekTo: 17, parity: "all"),
+            TimetableSlot(courseName: "计算机辅助设计", teacher: "李睿", room: "草堂9-103", day: 2, fromPeriod: 11, toPeriod: 12, weekFrom: 1, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "MATLAB程序设计", teacher: "郭师虹/王宝顺", room: "草堂9-404", day: 3, fromPeriod: 1, toPeriod: 2, weekFrom: 9, weekTo: 12, parity: "all"),
+            TimetableSlot(courseName: "智能建造导论", teacher: "门进杰", room: "草堂9-113", day: 3, fromPeriod: 1, toPeriod: 2, weekFrom: 15, weekTo: 15, parity: "all"),
+            TimetableSlot(courseName: "智能建造导论", teacher: "门进杰", room: "草堂9-113", day: 3, fromPeriod: 1, toPeriod: 2, weekFrom: 16, weekTo: 16, parity: "all"),
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 3, fromPeriod: 1, toPeriod: 2, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 3, fromPeriod: 1, toPeriod: 2, weekFrom: 7, weekTo: 8, parity: "all"),
+            TimetableSlot(courseName: "智能建造导论", teacher: "门进杰", room: "草堂9-113", day: 3, fromPeriod: 3, toPeriod: 4, weekFrom: 15, weekTo: 15, parity: "all"),
+            TimetableSlot(courseName: "智能建造导论", teacher: "门进杰", room: "草堂9-113", day: 3, fromPeriod: 3, toPeriod: 4, weekFrom: 16, weekTo: 16, parity: "all"),
+            TimetableSlot(courseName: "创新创业基础", teacher: "彭莉峻", room: "草堂13-213", day: 3, fromPeriod: 3, toPeriod: 4, weekFrom: 1, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "创新创业基础", teacher: "彭莉峻", room: "草堂13-213", day: 3, fromPeriod: 3, toPeriod: 4, weekFrom: 7, weekTo: 8, parity: "all"),
+            TimetableSlot(courseName: "材料力学Ⅰ（土木类）", teacher: "刘韡", room: "草堂9-101", day: 3, fromPeriod: 7, toPeriod: 8, weekFrom: 1, weekTo: 5, parity: "all"),
+            TimetableSlot(courseName: "材料力学Ⅰ（土木类）", teacher: "刘韡", room: "草堂9-101", day: 3, fromPeriod: 7, toPeriod: 8, weekFrom: 7, weekTo: 18, parity: "all"),
+            TimetableSlot(courseName: "计算机辅助设计", teacher: "李睿", room: "草堂9-103", day: 3, fromPeriod: 9, toPeriod: 10, weekFrom: 1, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "聆听百年--西方浪漫主义时期音乐鉴赏", teacher: "苏杰", room: "南山书院305", day: 3, fromPeriod: 9, toPeriod: 10, weekFrom: 9, weekTo: 16, parity: "all"),
+            TimetableSlot(courseName: "大学物理B2", teacher: "谢海霞", room: "草堂9-102", day: 4, fromPeriod: 1, toPeriod: 2, weekFrom: 1, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "大学物理B2", teacher: "谢海霞", room: "草堂9-102", day: 4, fromPeriod: 1, toPeriod: 2, weekFrom: 6, weekTo: 13, parity: "all"),
+            TimetableSlot(courseName: "形势与政策2", teacher: "贾开发", room: "草堂8-106", day: 4, fromPeriod: 1, toPeriod: 2, weekFrom: 14, weekTo: 17, parity: "all"),
+            TimetableSlot(courseName: "毛泽东思想和中国特色社会主义理论体系概论", teacher: "胡阿丽", room: "草堂9-311", day: 4, fromPeriod: 3, toPeriod: 4, weekFrom: 1, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "毛泽东思想和中国特色社会主义理论体系概论", teacher: "胡阿丽", room: "草堂9-311", day: 4, fromPeriod: 3, toPeriod: 4, weekFrom: 6, weekTo: 9, parity: "all"),
+            TimetableSlot(courseName: "习近平新时代中国特色社会主义思想概论", teacher: "胡阿丽", room: "草堂9-311", day: 4, fromPeriod: 3, toPeriod: 4, weekFrom: 10, weekTo: 17, parity: "all"),
+            TimetableSlot(courseName: "大学生职业生涯规划与就业指导", teacher: "张紫微", room: "草堂9-416", day: 4, fromPeriod: 7, toPeriod: 8, weekFrom: 3, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "大学生职业生涯规划与就业指导", teacher: "张紫微", room: "草堂9-416", day: 4, fromPeriod: 7, toPeriod: 8, weekFrom: 6, weekTo: 12, parity: "all"),
+            TimetableSlot(courseName: "MATLAB程序设计", teacher: "郭师虹/王宝顺", room: "草堂9-404", day: 4, fromPeriod: 9, toPeriod: 10, weekFrom: 9, weekTo: 12, parity: "all"),
+            TimetableSlot(courseName: "建设法规", teacher: "黄莺", room: "草堂8-204", day: 4, fromPeriod: 9, toPeriod: 10, weekFrom: 1, weekTo: 3, parity: "odd"),
+            TimetableSlot(courseName: "建设法规", teacher: "黄莺", room: "草堂8-204", day: 4, fromPeriod: 9, toPeriod: 10, weekFrom: 4, weekTo: 6, parity: "even"),
+            TimetableSlot(courseName: "建设法规", teacher: "黄莺", room: "草堂8-204", day: 4, fromPeriod: 9, toPeriod: 10, weekFrom: 7, weekTo: 7, parity: "all"),
+            TimetableSlot(courseName: "MATLAB程序设计", teacher: "郭师虹/王宝顺", room: "草堂8-308(机房)", day: 4, fromPeriod: 11, toPeriod: 12, weekFrom: 10, weekTo: 13, parity: "all"),
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 5, fromPeriod: 1, toPeriod: 2, weekFrom: 2, weekTo: 3, parity: "all"),
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 5, fromPeriod: 1, toPeriod: 2, weekFrom: 6, weekTo: 8, parity: "all"),
+            TimetableSlot(courseName: "大学体育3", teacher: "曾孝云", room: "南山篮球场", day: 5, fromPeriod: 3, toPeriod: 4, weekFrom: 1, weekTo: 3, parity: "all"),
+            TimetableSlot(courseName: "大学体育3", teacher: "曾孝云", room: "南山篮球场", day: 5, fromPeriod: 3, toPeriod: 4, weekFrom: 6, weekTo: 17, parity: "all"),
+            TimetableSlot(courseName: "材料力学Ⅰ（土木类）", teacher: "刘韡", room: "草堂9-101", day: 5, fromPeriod: 7, toPeriod: 8, weekFrom: 1, weekTo: 3, parity: "all"),
+            TimetableSlot(courseName: "材料力学Ⅰ（土木类）", teacher: "刘韡", room: "草堂9-101", day: 5, fromPeriod: 7, toPeriod: 8, weekFrom: 6, weekTo: 17, parity: "all"),
+            TimetableSlot(courseName: "Python程序设计", teacher: "曾珂", room: "草堂9-213", day: 5, fromPeriod: 9, toPeriod: 10, weekFrom: 1, weekTo: 3, parity: "all"),
+            TimetableSlot(courseName: "计算机辅助设计", teacher: "李睿", room: "草堂8-309-310(机房)", day: 5, fromPeriod: 11, toPeriod: 12, weekFrom: 2, weekTo: 3, parity: "all"),
+            TimetableSlot(courseName: "计算机辅助设计", teacher: "李睿", room: "草堂8-309-310(机房)", day: 5, fromPeriod: 11, toPeriod: 12, weekFrom: 6, weekTo: 7, parity: "all"),
+            TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 6, fromPeriod: 1, toPeriod: 2, weekFrom: 6, weekTo: 6, parity: "all"),
+            TimetableSlot(courseName: "大学体育3", teacher: "曾孝云", room: "南山篮球场", day: 7, fromPeriod: 1, toPeriod: 2, weekFrom: 4, weekTo: 4, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 7, toPeriod: 8, weekFrom: 9, weekTo: 9, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 7, toPeriod: 8, weekFrom: 12, weekTo: 12, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 7, toPeriod: 8, weekFrom: 16, weekTo: 16, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 9, toPeriod: 9, weekFrom: 9, weekTo: 9, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 9, toPeriod: 9, weekFrom: 12, weekTo: 12, parity: "all"),
+            TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 9, toPeriod: 9, weekFrom: 16, weekTo: 16, parity: "all"),
+        ]
+    }
 }
 
 public struct CourseSuggester {
     public static let PERIOD_TIMES: [(start: Int, end: Int)] = [
-        (start: 8 * 60 + 0, end: 8 * 60 + 45),    // 第1节 08:00 - 08:45
-        (start: 8 * 60 + 55, end: 9 * 60 + 40),   // 第2节 08:55 - 09:40
-        (start: 10 * 60 + 0, end: 10 * 60 + 45),  // 第3节 10:00 - 10:45
-        (start: 10 * 60 + 55, end: 11 * 60 + 40), // 第4节 10:55 - 11:40
-        (start: 14 * 60 + 0, end: 14 * 60 + 45),  // 第5节 14:00 - 14:45
-        (start: 14 * 60 + 55, end: 15 * 60 + 40), // 第6节 14:55 - 15:40
-        (start: 16 * 60 + 0, end: 16 * 60 + 45),  // 第7节 16:00 - 16:45
-        (start: 16 * 60 + 55, end: 17 * 60 + 40), // 第8节 16:55 - 17:40
-        (start: 19 * 60 + 0, end: 19 * 60 + 45),  // 第9节 19:00 - 19:45
-        (start: 19 * 60 + 55, end: 20 * 60 + 40), // 第10节 19:55 - 20:40
-        (start: 20 * 60 + 50, end: 21 * 60 + 35)  // 第11节 20:50 - 21:35
+        (start: 8 * 60 + 30, end: 9 * 60 + 15),   // 第1节 08:30 - 09:15
+        (start: 9 * 60 + 20, end: 10 * 60 + 5),   // 第2节 09:20 - 10:05
+        (start: 10 * 60 + 25, end: 11 * 60 + 10), // 第3节 10:25 - 11:10
+        (start: 11 * 60 + 15, end: 12 * 60 + 0),  // 第4节 11:15 - 12:00
+        (start: 12 * 60 + 10, end: 12 * 60 + 55), // 第5节 12:10 - 12:55
+        (start: 13 * 60 + 0, end: 13 * 60 + 45),  // 第6节 13:00 - 13:45
+        (start: 14 * 60 + 0, end: 14 * 60 + 45),  // 第7节 14:00 - 14:45
+        (start: 14 * 60 + 50, end: 15 * 60 + 35), // 第8节 14:50 - 15:35
+        (start: 15 * 60 + 45, end: 16 * 60 + 30), // 第9节 15:45 - 16:30
+        (start: 16 * 60 + 35, end: 17 * 60 + 20), // 第10节 16:35 - 17:20
+        (start: 19 * 60 + 0, end: 19 * 60 + 45),  // 第11节 19:00 - 19:45
+        (start: 19 * 60 + 50, end: 20 * 60 + 35)  // 第12节 19:50 - 20:35
     ]
     
     public static func suggestCourse(
@@ -298,8 +368,8 @@ public struct CourseSuggester {
             if slot.parity == "odd" && currentWeek % 2 == 0 { continue }
             if slot.parity == "even" && currentWeek % 2 == 1 { continue }
             
-            let pStart = max(1, min(11, slot.fromPeriod)) - 1
-            let pEnd = max(1, min(11, slot.toPeriod)) - 1
+            let pStart = max(1, min(PERIOD_TIMES.count, slot.fromPeriod)) - 1
+            let pEnd = max(1, min(PERIOD_TIMES.count, slot.toPeriod)) - 1
             let startMins = PERIOD_TIMES[pStart].start
             let endMins = PERIOD_TIMES[pEnd].end
             
