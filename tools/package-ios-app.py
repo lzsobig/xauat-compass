@@ -31,12 +31,13 @@ def main():
         bundle = root / "Payload" / "ClassroomApp.app"
         bundle.mkdir(parents=True)
         executable = bundle / "ClassroomApp"
+        swift_sources = [str(p) for p in sorted(SOURCE.glob("*.swift"))]
         subprocess.run(
             [
                 "xcrun", "--sdk", "iphoneos", "swiftc", "-sdk", sdk,
                 "-target", f"arm64-apple-ios{MINIMUM_IOS}", "-O", "-parse-as-library",
                 "-module-name", "ClassroomApp",
-                str(SOURCE / "ClassroomApp.swift"), str(SOURCE / "ContentView.swift"),
+                *swift_sources,
                 "-o", str(executable),
             ],
             check=True,
