@@ -809,10 +809,137 @@ struct SettingsScreen: View {
     @EnvironmentObject var manager: ClassroomManager
     @State private var serverUrl = "http://127.0.0.1:4180"
     @State private var deviceAuthCode = ""
+    @State private var showResetSuccess = false
+    @State private var showKey = false
 
     var body: some View {
         NavigationView {
             List {
+                Section(
+                    header: Text("AI 助教大模型 (笔记与问答)"),
+                    footer: Text("默认使用 TokenRhythm 提供的 DeepSeek v4.1 Flash，具备卓越的课程理解与 Markdown 表格生成能力。")
+                ) {
+                    HStack {
+                        Text("预设快捷切换")
+                        Spacer()
+                        Button {
+                            manager.llmBaseURL = "https://tokenrhythm.studio/v1"
+                            manager.llmModel = "deepseek-v4.1-flash-1017"
+                        } label: {
+                            Text("DeepSeek Flash")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.accentColor.opacity(0.15))
+                                .foregroundColor(.accentColor)
+                                .cornerRadius(6)
+                        }
+
+                        Button {
+                            manager.llmBaseURL = "https://api.stepfun.com/v1"
+                            manager.llmModel = "stepaudio-2.5-chat"
+                        } label: {
+                            Text("阶跃 2.5")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(UIColor.tertiarySystemFill))
+                                .foregroundColor(.primary)
+                                .cornerRadius(6)
+                        }
+                    }
+
+                    HStack {
+                        Text("接口地址")
+                        Spacer()
+                        TextField("Base URL", text: $manager.llmBaseURL)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 13, design: .monospaced))
+                    }
+
+                    HStack {
+                        Text("模型名称")
+                        Spacer()
+                        TextField("Model", text: $manager.llmModel)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 13, design: .monospaced))
+                    }
+
+                    HStack {
+                        Text("API Key")
+                        Spacer()
+                        if showKey {
+                            TextField("API Key", text: $manager.llmApiKey)
+                                .multilineTextAlignment(.trailing)
+                                .font(.system(size: 11, design: .monospaced))
+                        } else {
+                            SecureField("API Key", text: $manager.llmApiKey)
+                                .multilineTextAlignment(.trailing)
+                                .font(.system(size: 11, design: .monospaced))
+                        }
+                        Button {
+                            showKey.toggle()
+                        } label: {
+                            Image(systemName: showKey ? "eye.slash" : "eye")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    Toggle("主模型异常时自动调用阶跃星辰备用", isOn: $manager.useStepfunFallback)
+                }
+
+                Section(
+                    header: Text("阶跃星辰 ASR 语音识别"),
+                    footer: Text("使用 stepaudio-2.5-asr 处理离线音频的高精度转写，麦克风录音时采用原生实时识别。")
+                ) {
+                    HStack {
+                        Text("ASR 接口")
+                        Spacer()
+                        TextField("Base URL", text: $manager.stepfunBaseURL)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 13, design: .monospaced))
+                    }
+
+                    HStack {
+                        Text("ASR 模型")
+                        Spacer()
+                        TextField("Model", text: $manager.stepfunAsrModel)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 13, design: .monospaced))
+                    }
+
+                    HStack {
+                        Text("ASR Key")
+                        Spacer()
+                        if showKey {
+                            TextField("Key", text: $manager.stepfunApiKey)
+                                .multilineTextAlignment(.trailing)
+                                .font(.system(size: 11, design: .monospaced))
+                        } else {
+                            SecureField("Key", text: $manager.stepfunApiKey)
+                                .multilineTextAlignment(.trailing)
+                                .font(.system(size: 11, design: .monospaced))
+                        }
+                    }
+                }
+
+                Section {
+                    Button {
+                        manager.resetAIDefaults()
+                        showResetSuccess = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            showResetSuccess = false
+                        }
+                    } label: {
+                        HStack {
+                            Spacer()
+                            Label(showResetSuccess ? "已成功恢复官方密钥配置！" : "恢复内置官方 API 密钥", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
+                                .foregroundColor(showResetSuccess ? .green : .accentColor)
+                            Spacer()
+                        }
+                    }
+                }
+
                 Section("在线服务与设备认证") {
                     HStack {
                         Text("服务地址")
@@ -910,7 +1037,11 @@ struct LessonDetailView: View {
                             session: activeSession,
                             isLive: isLiveActive,
                             followBottom: $followBottom,
-                            unreadCount: $unreadSegmentCount
+                            unreadCount: $unreadSegmentCount,
+                            onAskAboutSegment: { seg, q in
+                                manager.askQuestion(for: activeSession, query: q, segment: seg)
+                                currentTab = 2
+                            }
                         )
                     } else if currentTab == 1 {
                         NotesTabView(
@@ -972,6 +1103,9 @@ struct TranscriptTabView: View {
     let isLive: Bool
     @Binding var followBottom: Bool
     @Binding var unreadCount: Int
+    var onAskAboutSegment: ((TranscriptSegment, String) -> Void)? = nil
+
+    @State private var selectedSegmentForQA: TranscriptSegment?
 
     var body: some View {
         ZStack {
@@ -1050,12 +1184,47 @@ struct TranscriptTabView: View {
                                             .foregroundColor(.primary)
                                             .textSelection(.enabled)
                                     }
+                                    
                                     Spacer()
+
+                                    // 快捷提问 AI 按钮
+                                    Button {
+                                        selectedSegmentForQA = seg
+                                    } label: {
+                                        Image(systemName: "sparkles")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.accentColor)
+                                            .padding(6)
+                                            .background(Color.accentColor.opacity(0.12))
+                                            .clipShape(Circle())
+                                    }
                                 }
                                 .padding(12)
                                 .background(seg.isMarked ? Color.orange.opacity(0.08) : Color(UIColor.secondarySystemGroupedBackground))
                                 .cornerRadius(12)
                                 .id(seg.id)
+                                .contextMenu {
+                                    Button {
+                                        selectedSegmentForQA = seg
+                                    } label: {
+                                        Label("针对此段提问 (AI)", systemImage: "bubble.left.and.text.bubble.right")
+                                    }
+                                    Button {
+                                        manager.toggleSegmentMark(session: session, segmentId: seg.id)
+                                    } label: {
+                                        Label(seg.isMarked ? "取消重点" : "标为重点", systemImage: seg.isMarked ? "bookmark.slash" : "bookmark.fill")
+                                    }
+                                    Button {
+                                        UIPasteboard.general.string = seg.text
+                                    } label: {
+                                        Label("复制本段文字", systemImage: "doc.on.doc")
+                                    }
+                                    Button {
+                                        manager.playAudio(session: session, seekTo: seg.startTime)
+                                    } label: {
+                                        Label("从本句开始播放", systemImage: "play.circle")
+                                    }
+                                }
                             }
                         }
                     }
@@ -1094,9 +1263,123 @@ struct TranscriptTabView: View {
                 }
             }
         }
+        .sheet(item: $selectedSegmentForQA) { seg in
+            SegmentQASheet(session: session, segment: seg) { question in
+                onAskAboutSegment?(seg, question)
+            }
+        }
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {
+        let whole = Int(sec)
+        return String(format: "%02d:%02d", whole / 60, whole % 60)
+    }
+}
+
+// MARK: - 选段专属 AI 追问弹窗
+
+struct SegmentQASheet: View {
+    @Environment(\.presentationMode) var presentationMode
+    let session: LessonSession
+    let segment: TranscriptSegment
+    var onAsk: (String) -> Void
+
+    @State private var customQuestion = ""
+
+    let defaultPrompts = [
+        "深入解释这句原话的含义与背景",
+        "这句话涉及哪些期末考点与易错陷阱？",
+        "帮我推导这句话里的公式或逻辑推演",
+        "用通俗生活案例比喻说明本句概念"
+    ]
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    // 原文卡片
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Label("课堂原话引用 [\(formatTime(segment.startTime))]", systemImage: "quote.opening")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(.accentColor)
+                            Spacer()
+                        }
+                        Text(segment.text)
+                            .font(.system(size: 15))
+                            .foregroundColor(.primary)
+                            .lineSpacing(4)
+                            .padding(12)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(UIColor.tertiarySystemFill))
+                            .cornerRadius(10)
+                    }
+                    .padding(14)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    .cornerRadius(14)
+
+                    // 快捷追问
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("快捷追问方向")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.secondary)
+                        ForEach(defaultPrompts, id: \.self) { prompt in
+                            Button {
+                                onAsk(prompt)
+                                presentationMode.wrappedValue.dismiss()
+                            } label: {
+                                HStack {
+                                    Text(prompt)
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "arrow.right.circle.fill")
+                                        .foregroundColor(.accentColor)
+                                }
+                                .padding(12)
+                                .background(Color(UIColor.secondarySystemGroupedBackground))
+                                .cornerRadius(10)
+                            }
+                        }
+                    }
+
+                    // 自定义提问
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("自定义提问")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.secondary)
+                        HStack(spacing: 8) {
+                            TextField("例如：这句话里的变量分别代表什么？", text: $customQuestion)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            Button {
+                                let q = customQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+                                guard !q.isEmpty else { return }
+                                onAsk(q)
+                                presentationMode.wrappedValue.dismiss()
+                            } label: {
+                                Image(systemName: "arrow.up.circle.fill")
+                                    .font(.system(size: 28))
+                                    .foregroundColor(.accentColor)
+                            }
+                            .disabled(customQuestion.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                        }
+                    }
+                }
+                .padding(16)
+            }
+            .navigationTitle("针对选段提问")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("取消") {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                }
+            }
+        }
+    }
+
+    private func formatTime(_ sec: TimeInterval) -> String {
         let whole = Int(sec)
         return String(format: "%02d:%02d", whole / 60, whole % 60)
     }
@@ -1131,10 +1414,7 @@ struct NotesTabView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if let note = currentNote {
-                        Text(note.content)
-                            .font(.body)
-                            .lineSpacing(6)
-                            .textSelection(.enabled)
+                        MarkdownContentView(content: note.content)
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
@@ -1272,10 +1552,8 @@ struct QATabView: View {
 
                                 // 答
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Text(pair.answer)
-                                        .font(.subheadline)
-                                        .foregroundColor(.primary)
-                                        .textSelection(.enabled)
+                                    MarkdownContentView(content: pair.answer)
+                                        .padding(.vertical, 2)
 
                                     if let cit = pair.citationSeconds {
                                         Button {
@@ -1297,6 +1575,20 @@ struct QATabView: View {
                     }
                 }
                 .padding(16)
+            }
+
+            if manager.isAskingQA {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
+                    Text("AI 助教正在结合课堂实录思考解答中...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
             }
 
             // 底部输入框
