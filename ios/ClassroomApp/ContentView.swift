@@ -152,6 +152,43 @@ struct RecordHomeView: View {
                         .buttonStyle(PlainButtonStyle())
 
                         // 双模式入口
+                        // 转录引擎快速选择 (苹果原生 vs 阶跃星辰 ASR)
+                        HStack {
+                            Text("转录引擎")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Menu {
+                                ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
+                                    Button {
+                                        manager.transcriptionEngine = engine
+                                    } label: {
+                                        HStack {
+                                            Text(engine.title)
+                                            if manager.transcriptionEngine == engine {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Image(systemName: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill")
+                                        .font(.caption2)
+                                    Text(manager.transcriptionEngine.title)
+                                        .font(.caption)
+                                    Image(systemName: "chevron.down")
+                                        .font(.system(size: 9))
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(UIColor.tertiarySystemFill))
+                                .foregroundColor(.primary)
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+
                         HStack(spacing: 12) {
                             Button {
                                 Task {
@@ -1121,6 +1158,36 @@ struct SettingsScreen: View {
         NavigationView {
             List {
                 Section(
+                    header: Text("语音转录引擎偏好"),
+                    footer: Text(manager.transcriptionEngine == .apple ? "苹果原生：内置 iOS 本地模型，离线可用，不耗流量，边录音边实时出字。" : "阶跃星辰 ASR：基于 stepaudio-2.5-asr 云端模型，学术术语与公式识别准确率极高。")
+                ) {
+                    Picker("转录引擎", selection: $manager.transcriptionEngine) {
+                        ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
+                            Text(engine.title).tag(engine)
+                        }
+                    }
+                    .pickerStyle(SegmentedPickerStyle())
+
+                    HStack {
+                        Label(
+                            manager.transcriptionEngine == .apple ? "苹果原生识别引擎 (已激活)" : "阶跃星辰 ASR (已激活)",
+                            systemImage: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill"
+                        )
+                        .font(.footnote)
+                        .foregroundColor(manager.transcriptionEngine == .apple ? .accentColor : .blue)
+
+                        Spacer()
+
+                        Text(manager.transcriptionEngine.badge)
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(UIColor.tertiarySystemFill))
+                            .cornerRadius(4)
+                    }
+                }
+
+                Section(
                     header: Text("AI 助教大模型 (DeepSeek 问答与笔记)"),
                     footer: Text("使用 TokenRhythm 提供的 DeepSeek v4.1 Flash，针对课堂录音实录进行问答、解题推理与 Markdown 表格笔记生成。")
                 ) {
@@ -1387,12 +1454,62 @@ struct TranscriptTabView: View {
     var onAskAboutSegment: ((TranscriptSegment, String) -> Void)? = nil
 
     @State private var selectedSegmentForQA: TranscriptSegment?
+    @State private var isSelectMode: Bool = false
+    @State private var selectedIds: Set<UUID> = []
+    @State private var toastMessage: String? = nil
 
     var body: some View {
         ZStack {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
+            VStack(spacing: 0) {
+                // 多选操作顶栏
+                if !session.segments.isEmpty && !isLive {
+                    HStack {
+                        if isSelectMode {
+                            Button("退出多选") {
+                                isSelectMode = false
+                                selectedIds.removeAll()
+                            }
+                            .font(.subheadline)
+
+                            Spacer()
+
+                            Text("已选 \(selectedIds.count) 段")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Spacer()
+
+                            Button(selectedIds.count == session.segments.count ? "取消全选" : "全选") {
+                                if selectedIds.count == session.segments.count {
+                                    selectedIds.removeAll()
+                                } else {
+                                    selectedIds = Set(session.segments.map { $0.id })
+                                }
+                            }
+                            .font(.subheadline)
+                        } else {
+                            Spacer()
+                            Button {
+                                isSelectMode = true
+                            } label: {
+                                Label("多选复制", systemImage: "checklist")
+                                    .font(.subheadline)
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .cornerRadius(8)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                    Divider()
+                }
+
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 14) {
                         // 顶部大计时
                         if isLive {
                             VStack(spacing: 6) {
@@ -1442,8 +1559,25 @@ struct TranscriptTabView: View {
                         } else {
                             ForEach(session.segments) { seg in
                                 HStack(alignment: .top, spacing: 10) {
+                                    if isSelectMode {
+                                        Button {
+                                            if selectedIds.contains(seg.id) {
+                                                selectedIds.remove(seg.id)
+                                            } else {
+                                                selectedIds.insert(seg.id)
+                                            }
+                                        } label: {
+                                            Image(systemName: selectedIds.contains(seg.id) ? "checkmark.circle.fill" : "circle")
+                                                .font(.system(size: 20))
+                                                .foregroundColor(selectedIds.contains(seg.id) ? .accentColor : .secondary)
+                                        }
+                                        .padding(.top, 2)
+                                    }
+
                                     Button {
-                                        manager.playAudio(session: session, seekTo: seg.startTime)
+                                        if manager.hasAudioFile(for: session) {
+                                            manager.playAudio(session: session, seekTo: seg.startTime)
+                                        }
                                     } label: {
                                         Text(formatDuration(seg.startTime))
                                             .font(.system(size: 11, weight: .bold, design: .monospaced))
@@ -1465,23 +1599,34 @@ struct TranscriptTabView: View {
                                             .foregroundColor(.primary)
                                             .textSelection(.enabled)
                                     }
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        if isSelectMode {
+                                            if selectedIds.contains(seg.id) {
+                                                selectedIds.remove(seg.id)
+                                            } else {
+                                                selectedIds.insert(seg.id)
+                                            }
+                                        }
+                                    }
                                     
                                     Spacer()
 
-                                    // 快捷提问 AI 按钮
-                                    Button {
-                                        selectedSegmentForQA = seg
-                                    } label: {
-                                        Image(systemName: "sparkles")
-                                            .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(.accentColor)
-                                            .padding(6)
-                                            .background(Color.accentColor.opacity(0.12))
-                                            .clipShape(Circle())
+                                    if !isSelectMode {
+                                        Button {
+                                            selectedSegmentForQA = seg
+                                        } label: {
+                                            Image(systemName: "sparkles")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(.accentColor)
+                                                .padding(6)
+                                                .background(Color.accentColor.opacity(0.12))
+                                                .clipShape(Circle())
+                                        }
                                     }
                                 }
                                 .padding(12)
-                                .background(seg.isMarked ? Color.orange.opacity(0.08) : Color(UIColor.secondarySystemGroupedBackground))
+                                .background(selectedIds.contains(seg.id) ? Color.accentColor.opacity(0.1) : (seg.isMarked ? Color.orange.opacity(0.08) : Color(UIColor.secondarySystemGroupedBackground)))
                                 .cornerRadius(12)
                                 .id(seg.id)
                                 .contextMenu {
@@ -1497,8 +1642,15 @@ struct TranscriptTabView: View {
                                     }
                                     Button {
                                         UIPasteboard.general.string = seg.text
+                                        toastMessage = "已复制该段文字"
                                     } label: {
                                         Label("复制本段文字", systemImage: "doc.on.doc")
+                                    }
+                                    Button {
+                                        isSelectMode = true
+                                        selectedIds.insert(seg.id)
+                                    } label: {
+                                        Label("多选此段及其他", systemImage: "checklist")
                                     }
                                     Button {
                                         manager.playAudio(session: session, seekTo: seg.startTime)
@@ -1544,7 +1696,64 @@ struct TranscriptTabView: View {
                 }
             }
         }
-        .sheet(item: $selectedSegmentForQA) { seg in
+
+        // 底部多选复制悬浮操作栏
+        if isSelectMode && !selectedIds.isEmpty {
+            VStack(spacing: 0) {
+                Divider()
+                HStack {
+                    Text("已选择 \(selectedIds.count) 段语音实录")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Button {
+                        let chosen = session.segments.filter { selectedIds.contains($0.id) }
+                            .sorted { $0.startTime < $1.startTime }
+                        let result = chosen.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
+                        UIPasteboard.general.string = result
+                        toastMessage = "已复制 \(chosen.count) 段文字到剪贴板"
+                        isSelectMode = false
+                        selectedIds.removeAll()
+                    } label: {
+                        Label("复制所选文字", systemImage: "doc.on.doc")
+                            .font(.system(size: 14, weight: .semibold))
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color(UIColor.systemBackground))
+            }
+        }
+
+    // 浮层提示 Toast
+    if let msg = toastMessage {
+        VStack {
+            Spacer()
+            Text(msg)
+                .font(.subheadline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Color.black.opacity(0.85))
+                .cornerRadius(20)
+                .padding(.bottom, 60)
+        }
+        .transition(.opacity)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation {
+                    toastMessage = nil
+                }
+            }
+        }
+    }
+}
+.sheet(item: $selectedSegmentForQA) { seg in
             SegmentQASheet(session: session, segment: seg) { question in
                 onAskAboutSegment?(seg, question)
             }
@@ -1978,7 +2187,8 @@ struct AudioPlayerControlBar: View {
     let speedOptions: [Float] = [1.0, 1.25, 1.5, 2.0]
 
     var body: some View {
-        VStack(spacing: 6) {
+        if manager.hasAudioFile(for: session) {
+            VStack(spacing: 6) {
             // 滑动进度条
             Slider(
                 value: Binding(
@@ -2035,6 +2245,22 @@ struct AudioPlayerControlBar: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 10)
         .background(Color(UIColor.secondarySystemGroupedBackground))
+        } else {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.system(size: 15))
+                Text("课堂文字与 AI 纪要已安全归档（未保留音频，已释放手机存储）")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 10)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
+            .cornerRadius(12)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 8)
+        }
     }
 
     private func formatTime(_ sec: TimeInterval) -> String {

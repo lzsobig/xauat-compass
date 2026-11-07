@@ -244,20 +244,37 @@ struct NativeTableView: View {
     let headers: [String]
     let rows: [[String]]
 
+    var columnWidths: [CGFloat] {
+        let colCount = headers.count
+        guard colCount > 0 else { return [] }
+        return (0..<colCount).map { cIdx in
+            let headerLen = headers[cIdx].count
+            let maxRowLen = rows.compactMap { row in
+                cIdx < row.count ? row[cIdx].count : 0
+            }.max() ?? 0
+            let effectiveLen = max(headerLen, maxRowLen)
+            let calculated = CGFloat(effectiveLen) * 12.0 + 24.0
+            return max(75, min(240, calculated))
+        }
+    }
+
     var body: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             VStack(alignment: .leading, spacing: 0) {
                 // 表头
                 HStack(spacing: 0) {
                     ForEach(0..<headers.count, id: \.self) { idx in
+                        let w = idx < columnWidths.count ? columnWidths[idx] : 90.0
                         Text(LocalizedStringKey(headers[idx]))
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(.white)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 8)
-                            .frame(minWidth: 100, alignment: .leading)
+                            .frame(width: w, alignment: .leading)
                         if idx < headers.count - 1 {
-                            Divider().background(Color.white.opacity(0.3))
+                            Rectangle()
+                                .fill(Color.white.opacity(0.3))
+                                .frame(width: 1)
                         }
                     }
                 }
@@ -266,31 +283,36 @@ struct NativeTableView: View {
                 // 数据行
                 ForEach(0..<rows.count, id: \.self) { rIdx in
                     let row = rows[rIdx]
+                    Rectangle()
+                        .fill(Color(UIColor.separator).opacity(0.6))
+                        .frame(height: 1)
+
                     HStack(spacing: 0) {
                         ForEach(0..<headers.count, id: \.self) { cIdx in
+                            let w = cIdx < columnWidths.count ? columnWidths[cIdx] : 90.0
                             let text = cIdx < row.count ? row[cIdx] : ""
                             Text(LocalizedStringKey(text))
                                 .font(.system(size: 13))
                                 .foregroundColor(.primary)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 8)
-                                .frame(minWidth: 100, alignment: .leading)
+                                .frame(width: w, alignment: .leading)
                             if cIdx < headers.count - 1 {
-                                Divider().background(Color(UIColor.separator))
+                                Rectangle()
+                                    .fill(Color(UIColor.separator).opacity(0.6))
+                                    .frame(width: 1)
                             }
                         }
                     }
-                    .background(rIdx % 2 == 0 ? Color(UIColor.secondarySystemGroupedBackground) : Color(UIColor.tertiarySystemGroupedBackground))
-                    if rIdx < rows.count - 1 {
-                        Divider()
-                    }
+                    .background(rIdx % 2 == 0 ? Color(UIColor.systemBackground) : Color(UIColor.secondarySystemGroupedBackground).opacity(0.6))
                 }
             }
-            .cornerRadius(10)
+            .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(Color(UIColor.separator), lineWidth: 1)
             )
         }
+        .padding(.vertical, 4)
     }
 }

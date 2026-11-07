@@ -12,6 +12,33 @@ public enum RecordingMode: String, Codable, CaseIterable, Sendable {
     }
 }
 
+
+public enum TranscriptionEngine: String, Codable, CaseIterable, Sendable {
+    case apple = "apple"
+    case stepfun = "stepfun"
+    
+    public var title: String {
+        switch self {
+        case .apple: return "苹果原生语音识别"
+        case .stepfun: return "阶跃星辰 ASR (云端高精)"
+        }
+    }
+    
+    public var shortTitle: String {
+        switch self {
+        case .apple: return "苹果原生"
+        case .stepfun: return "阶跃 ASR"
+        }
+    }
+    
+    public var badge: String {
+        switch self {
+        case .apple: return "免Key/本地"
+        case .stepfun: return "stepaudio-2.5-asr"
+        }
+    }
+}
+
 public enum LessonStatus: String, Codable, Sendable {
     case recording = "recording"
     case paused = "paused"

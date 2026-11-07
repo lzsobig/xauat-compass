@@ -96,6 +96,11 @@ public final class ClassroomManager: ObservableObject {
     @Published public var stepfunApiKey: String {
         didSet { UserDefaults.standard.set(stepfunApiKey, forKey: "stepfunApiKey") }
     }
+    
+    // 转录引擎选择 (苹果原生 / 阶跃星辰 ASR)
+    @Published public var transcriptionEngine: TranscriptionEngine {
+        didSet { UserDefaults.standard.set(transcriptionEngine.rawValue, forKey: "transcriptionEngine") }
+    }
 
     // 播放器状态
     @Published public var isPlayingAudio: Bool = false
@@ -133,6 +138,8 @@ public final class ClassroomManager: ObservableObject {
         self.stepfunBaseURL = UserDefaults.standard.string(forKey: "stepfunBaseURL") ?? "https://api.stepfun.com/v1"
         self.stepfunAsrModel = UserDefaults.standard.string(forKey: "stepfunAsrModel") ?? "stepaudio-2.5-asr"
         self.stepfunApiKey = UserDefaults.standard.string(forKey: "stepfunApiKey") ?? decodeB64(kDefaultStepFunKeyB64)
+        let savedEngine = UserDefaults.standard.string(forKey: "transcriptionEngine") ?? "apple"
+        self.transcriptionEngine = TranscriptionEngine(rawValue: savedEngine) ?? .apple
 
         try? FileManager.default.createDirectory(at: storageRoot, withIntermediateDirectories: true)
         
@@ -533,6 +540,8 @@ public final class ClassroomManager: ObservableObject {
         capture?.close()
         capture = nil
         
+        let fileURL = audioURL(for: cur)
+        
         cur.status = .completed
         cur.endedAt = Date()
         cur.duration = max(finalDuration, cur.duration)
@@ -546,6 +555,17 @@ public final class ClassroomManager: ObservableObject {
             sessions[idx] = cur
         }
         saveSessions()
+        
+        if transcriptionEngine == .stepfun && !stepfunApiKey.isEmpty {
+            // 阶跃 ASR 模式：保留音频由 transcribeOffline 上传转写，完成后自动删除音频文件
+            let sessionToTranscribe = cur
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.transcribeOffline(for: sessionToTranscribe)
+            }
+        } else {
+            // 苹果原生模式：实录文字已实时转写完毕，直接删除音频文件释放存储
+            try? FileManager.default.removeItem(at: fileURL)
+        }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
@@ -652,6 +672,8 @@ public final class ClassroomManager: ObservableObject {
                         if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                             self.sessions[idx].segments = segs
                             self.saveSessions()
+                            // 转写完成后清理本地音频，释放存储空间
+                            try? FileManager.default.removeItem(at: url)
                         }
                         self.isTranscribingOffline = false
                         return
@@ -695,6 +717,8 @@ public final class ClassroomManager: ObservableObject {
                         if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                             self.sessions[idx].segments = newSegments
                             self.saveSessions()
+                            // 转写完成后清理本地音频，释放存储空间
+                            try? FileManager.default.removeItem(at: url)
                         }
                     } else if let err = error {
                         self.errorMessage = "离线识别失败：\(err.localizedDescription)"
@@ -906,7 +930,7 @@ public final class ClassroomManager: ObservableObject {
         let citTime = segment?.startTime
         
         Task {
-            if !llmApiKey.isEmpty || !stepfunApiKey.isEmpty {
+            if !llmApiKey.isEmpty {
                 do {
                     let sysPrompt = """
                     你是西安建筑科技大学专属课程智能助教。请根据课堂录音实录回答学生的提问。
@@ -978,10 +1002,15 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 音频回放与倍速控制
     
+    public func hasAudioFile(for session: LessonSession) -> Bool {
+        let url = audioURL(for: session)
+        return FileManager.default.fileExists(atPath: url.path)
+    }
+
     public func playAudio(session: LessonSession, seekTo: TimeInterval? = nil) {
         let url = audioURL(for: session)
         guard FileManager.default.fileExists(atPath: url.path) else {
-            errorMessage = "音频文件不存在"
+            errorMessage = "音频未保存以节省存储空间，文字纪要完整保留"
             return
         }
         
