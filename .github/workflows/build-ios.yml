@@ -1,0 +1,27 @@
+name: Build iOS IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'codex/ios-build-*'
+    paths:
+      - 'ios/ClassroomApp/**'
+      - 'tools/package-ios-app.py'
+      - '.github/workflows/build-ios.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build-ipa:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and package for iPhone
+        run: python3 tools/package-ios-app.py output/ClassroomApp.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ClassroomApp-ipa
+          path: output/ClassroomApp.ipa
+          if-no-files-found: error
