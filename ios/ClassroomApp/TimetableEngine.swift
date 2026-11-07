@@ -133,28 +133,16 @@ public struct TimetableEngine {
         
         var items: [TextItem] = []
         
-        // 尝试使用 selectionsByLine 获取行文本
-        let lines = page.selectionsByLine()
-        if !lines.isEmpty {
-            for line in lines {
-                let bounds = line.bounds(for: page)
-                if let str = line.string {
-                    let norm = normalizeText(str).trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !norm.isEmpty {
-                        items.append(TextItem(text: norm, x: bounds.origin.x, y: bounds.origin.y, width: bounds.size.width))
-                    }
-                }
-            }
-        } else if let pageString = page.string, !pageString.isEmpty {
-            // 回退字符解析
+        if let pageString = page.string, !pageString.isEmpty {
             var curText = ""
             var minX: CGFloat = 1000
             var maxX: CGFloat = 0
             var curY: CGFloat = -1
             
-            let charCount = pageString.count
+            let charCount = page.numberOfCharacters
             for i in 0..<charCount {
                 let rect = page.characterBounds(at: i)
+                guard i < pageString.count else { break }
                 let charIndex = pageString.index(pageString.startIndex, offsetBy: i)
                 let ch = pageString[charIndex]
                 
