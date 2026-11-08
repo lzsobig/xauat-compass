@@ -645,7 +645,7 @@ public final class ClassroomManager: ObservableObject {
         let courseName = course?.name ?? "未归档"
         let defaultTitle = "\(courseName) - \(dateStr)课堂"
         
-        var newSession = LessonSession(
+        let newSession = LessonSession(
             courseId: course?.id,
             title: defaultTitle,
             startedAt: Date(),
@@ -807,7 +807,7 @@ public final class ClassroomManager: ObservableObject {
         
         do {
             let transcribed = try await self.callStepFunASR(audioData: audioData, prompt: promptSnippet)
-            let stitched = self.stitchTranscripts(previous: lastText, current: transcribed)
+            let stitched = stitchTranscripts(previous: lastText, current: transcribed)
             let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
             
             self.isChunkTranscribing = false
