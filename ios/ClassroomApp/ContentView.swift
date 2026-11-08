@@ -1194,8 +1194,6 @@ struct CourseSlotDetailSheet: View {
 
 struct SettingsScreen: View {
     @EnvironmentObject var manager: ClassroomManager
-    @State private var serverUrl = "http://127.0.0.1:4180"
-    @State private var deviceAuthCode = ""
     @State private var showResetSuccess = false
     @State private var showKey = false
 
@@ -1341,20 +1339,6 @@ struct SettingsScreen: View {
                     }
                 }
 
-                Section("在线服务与设备认证") {
-                    HStack {
-                        Text("服务地址")
-                        Spacer()
-                        TextField("http://...", text: $serverUrl)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    HStack {
-                        Text("6位授权码")
-                        Spacer()
-                        TextField("无需输密码", text: $deviceAuthCode)
-                            .multilineTextAlignment(.trailing)
-                    }
-                }
 
                 Section("本机存储用量") {
                     HStack {
