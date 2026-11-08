@@ -1910,8 +1910,45 @@ public final class ClassroomManager: ObservableObject {
         self.timetable = parsedTimetable
         saveTimetable()
         
+        // 智能映射与同步课程资料库：
+        // 1. 找出所有已有录音关联的课程 ID（绝不能误删有录音的课程，即使新课表中没有也完整保留）
+        let activeCourseIdsWithSessions = Set(sessions.compactMap { $0.courseId })
+        
+        // 2. 自动清理旧课程：凡是「既没有录音」、又「不在新导入课表中」的废弃/误识别课程，自动彻底清理！
+        courses.removeAll { c in
+            !activeCourseIdsWithSessions.contains(c.id) && !parsedCourses.contains(where: { $0.name == c.name })
+        }
+        
+        // 3. 将新课表中的课程同步/映射到课程资料库（自动更新教师/教室）
         for pc in parsedCourses {
-            if !courses.contains(where: { $0.name == pc.name }) {
+            if let existingIdx = courses.firstIndex(where: { $0.name == pc.name }) {
+                if !pc.teacher.isEmpty { courses[existingIdx].teacher = pc.teacher }
+                if !pc.room.isEmpty { courses[existingIdx].room = pc.room }
+            } else {
+                courses.append(pc)
+            }
+        }
+        saveCourses()
+        updateCourseSuggestion()
+    }
+
+    public func cleanupUnusedCourses() {
+        let activeCourseIdsWithSessions = Set(sessions.compactMap { $0.courseId })
+        let timetableCourseNames = Set(timetable.slots.map { $0.courseName })
+        courses.removeAll { c in
+            !activeCourseIdsWithSessions.contains(c.id) && !timetableCourseNames.contains(c.name)
+        }
+        saveCourses()
+        updateCourseSuggestion()
+    }
+
+    public func syncCoursesFromTimetable() {
+        let timetableCourses = TimetableEngine.coursesFrom(slots: timetable.slots)
+        for pc in timetableCourses {
+            if let existingIdx = courses.firstIndex(where: { $0.name == pc.name }) {
+                if !pc.teacher.isEmpty { courses[existingIdx].teacher = pc.teacher }
+                if !pc.room.isEmpty { courses[existingIdx].room = pc.room }
+            } else {
                 courses.append(pc)
             }
         }

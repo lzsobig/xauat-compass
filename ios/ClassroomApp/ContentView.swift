@@ -551,6 +551,19 @@ struct CourseArchiveView: View {
                             }
                             .padding(.vertical, 4)
                         }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                manager.deleteCourse(course: c)
+                            } label: {
+                                Label("删除课程文件夹", systemImage: "trash")
+                            }
+                        }
+                    }
+                    .onDelete { indexSet in
+                        for index in indexSet {
+                            let courseToDelete = filteredCourses[index]
+                            manager.deleteCourse(course: courseToDelete)
+                        }
                     }
 
                     // 未归档文件夹
@@ -573,6 +586,26 @@ struct CourseArchiveView: View {
                 }
             }
             .navigationTitle("课程资料库")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button {
+                            manager.cleanupUnusedCourses()
+                        } label: {
+                            Label("清理无录音废弃课程", systemImage: "sparkles")
+                        }
+                        
+                        Button {
+                            manager.syncCoursesFromTimetable()
+                        } label: {
+                            Label("从当前课表补齐课程", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .font(.system(size: 16))
+                    }
+                }
+            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -580,11 +613,13 @@ struct CourseArchiveView: View {
 
 struct CourseDetailScreen: View {
     @EnvironmentObject var manager: ClassroomManager
+    @Environment(\.presentationMode) var presentationMode
     let course: Course
     var onOpenSession: (LessonSession) -> Void
     @State private var sessionToMove: LessonSession?
     @State private var sessionToRename: LessonSession?
     @State private var newTitle = ""
+    @State private var showDeleteConfirm = false
 
     var courseSessions: [LessonSession] {
         manager.sessions.filter { $0.courseId == course.id }
@@ -665,6 +700,25 @@ struct CourseDetailScreen: View {
             Button("确定") {
                 if let s = sessionToRename { manager.renameSession(s, newTitle: newTitle) }
             }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .alert("确认删除课程文件夹？", isPresented: $showDeleteConfirm) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                manager.deleteCourse(course: course)
+                presentationMode.wrappedValue.dismiss()
+            }
+        } message: {
+            Text("删除后，该课程下的录音记录将安全移入【未归档】，录音文件与笔记不会丢失。")
         }
     }
 
@@ -1138,7 +1192,8 @@ struct TimetableScreen: View {
                         do {
                             let data = try Data(contentsOf: url)
                             try manager.importTimetable(data: data)
-                            importStatus = "课表导入成功！共识别 \(manager.timetable.slots.count) 个课程节次"
+                            selectedWeek = manager.timetable.currentWeek > 0 ? manager.timetable.currentWeek : SemesterCalendar.currentWeek()
+                            importStatus = "课表导入成功！共识别 \(manager.timetable.slots.count) 个节次，已智能同步课程库"
                         } catch {
                             importStatus = "导入失败：\(error.localizedDescription)"
                         }
@@ -1450,7 +1505,7 @@ struct SettingsScreen: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.3.2 (2026.11.08 TXT导出与全选复制版)")
+                        Text("1.3.3 (2026.11.08 课表64节精析与课程库清理版)")
                             .foregroundColor(.secondary)
                     }
                 }
