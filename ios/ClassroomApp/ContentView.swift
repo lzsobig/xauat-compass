@@ -407,78 +407,87 @@ struct CourseSelectionSheet: View {
     @State private var newCourseName = ""
     @State private var showingAddAlert = false
 
-    var body: some View {
-        NavigationView {
-            List {
-                Section("课表与已有课程") {
-                    ForEach(manager.courses) { c in
-                        Button {
-                            selectedCourse = c
-                            presentationMode.wrappedValue.dismiss()
-                        } label: {
-                            HStack {
-                                Circle()
-                                    .fill(Color(hex: c.colorHex))
-                                    .frame(width: 12, height: 12)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(c.name)
-                                        .font(.body)
-                                        .foregroundColor(.primary)
-                                    if !c.room.isEmpty || !c.teacher.isEmpty {
-                                        Text([c.room, c.teacher].filter { !$0.isEmpty }.joined(separator: " · "))
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                Spacer()
-                                if selectedCourse?.id == c.id {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.accentColor)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Section {
-                    Button {
-                        selectedCourse = nil
-                        presentationMode.wrappedValue.dismiss()
-                    } label: {
-                        HStack {
-                            Image(systemName: "tray")
-                                .foregroundColor(.secondary)
-                            Text("未归档 (不预选课程)")
+    private var courseListSection: some View {
+        Section("课表与课程库") {
+            ForEach(manager.courses) { c in
+                Button {
+                    selectedCourse = c
+                    presentationMode.wrappedValue.dismiss()
+                } label: {
+                    HStack {
+                        Circle()
+                            .fill(Color(hex: c.colorHex))
+                            .frame(width: 12, height: 12)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(c.name)
+                                .font(.body)
                                 .foregroundColor(.primary)
-                            Spacer()
-                            if selectedCourse == nil {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.accentColor)
+                            if !c.room.isEmpty || !c.teacher.isEmpty {
+                                Text([c.room, c.teacher].filter { !$0.isEmpty }.joined(separator: " · "))
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
                             }
                         }
-                    }
-                }
-
-                Section {
-                    Button {
-                        showingAddAlert = true
-                    } label: {
-                        Label("新建课程分类", systemImage: "plus")
+                        Spacer()
+                        if selectedCourse?.id == c.id {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.accentColor)
+                        }
                     }
                 }
             }
-            .navigationTitle("更换关联课程")
+        }
+    }
+
+    private var unassignedSection: some View {
+        Section {
+            Button {
+                selectedCourse = nil
+                presentationMode.wrappedValue.dismiss()
+            } label: {
+                HStack {
+                    Image(systemName: "tray")
+                        .foregroundColor(.secondary)
+                    Text("未归档 (不预选课程)")
+                        .foregroundColor(.primary)
+                    Spacer()
+                    if selectedCourse == nil {
+                        Image(systemName: "checkmark")
+                            .foregroundColor(.accentColor)
+                    }
+                }
+            }
+        }
+    }
+
+    private var addCourseSection: some View {
+        Section {
+            Button {
+                showingAddAlert = true
+            } label: {
+                Label("新建课程分类", systemImage: "plus")
+            }
+        }
+    }
+
+    var body: some View {
+        NavigationView {
+            List {
+                courseListSection
+                unassignedSection
+                addCourseSection
+            }
+            .navigationTitle("选择课程")
             .navigationBarItems(trailing: Button("完成") { presentationMode.wrappedValue.dismiss() })
             .alert("新建课程", isPresented: $showingAddAlert) {
                 TextField("课程名称", text: $newCourseName)
                 Button("取消", role: .cancel) { newCourseName = "" }
-                Button("添加") {
+                Button("创建") {
                     let trim = newCourseName.trimmingCharacters(in: .whitespacesAndNewlines)
                     if !trim.isEmpty {
                         manager.createCourse(name: trim)
                         selectedCourse = manager.courses.last
                         newCourseName = ""
-                        presentationMode.wrappedValue.dismiss()
                     }
                 }
             }

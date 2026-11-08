@@ -2010,6 +2010,21 @@ public final class ClassroomManager: ObservableObject {
         updateCourseSuggestion()
     }
     
+    public func createCourse(name: String, teacher: String = "", room: String = "") {
+        let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
+        let newC = Course(
+            name: name.trimmingCharacters(in: .whitespacesAndNewlines),
+            teacher: teacher,
+            room: room,
+            colorHex: colors[courses.count % colors.count],
+            source: .manual,
+            status: .active
+        )
+        courses.append(newC)
+        saveCourses()
+        updateCourseSuggestion()
+    }
+
     public func syncCoursesFromTimetable() {
         let timetableCourses = TimetableEngine.coursesFrom(slots: timetable.slots)
         for pc in timetableCourses {
