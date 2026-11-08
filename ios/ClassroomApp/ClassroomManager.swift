@@ -503,7 +503,7 @@ public final class ClassroomManager: ObservableObject {
             self.recordingElapsed = 0
             self.lastChunkTime = 0
             
-            if mode == .realtime {
+            if mode == .realtime && transcriptionEngine == .apple {
                 startSpeechRecognition()
             }
             
@@ -582,7 +582,7 @@ public final class ClassroomManager: ObservableObject {
             try engine.start()
             isPaused = false
             currentSession?.status = .recording
-            if currentSession?.mode == .realtime {
+            if currentSession?.mode == .realtime && transcriptionEngine == .apple {
                 startSpeechRecognition()
             }
             saveSessions()
@@ -659,6 +659,7 @@ public final class ClassroomManager: ObservableObject {
         speechTask?.cancel()
         speechTask = nil
         
+        let remainingWav = (transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0) ? capture?.takeCurrentSliceWavData() : nil
         let finalDuration = capture?.recordedDuration ?? recordingElapsed
         capture?.close()
         capture = nil
@@ -681,13 +682,13 @@ public final class ClassroomManager: ObservableObject {
         
         // 阶跃 ASR 切片模式：上传最后残留的音频切片
         if transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0 && !stepfunApiKey.isEmpty {
-            if let remainingWav = self.capture?.takeCurrentSliceWavData(), remainingWav.count > 44 + 8000 {
+            if let wav = remainingWav, wav.count > 44 + 8000 {
                 let chunkStart = self.lastChunkTime
-                let chunkEnd = self.recordingElapsed
+                let chunkEnd = finalDuration
                 let targetId = cur.id
                 Task {
                     do {
-                        let transcribed = try await self.callStepFunASR(audioData: remainingWav)
+                        let transcribed = try await self.callStepFunASR(audioData: wav)
                         let clean = transcribed.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !clean.isEmpty {
                             DispatchQueue.main.async {
@@ -716,6 +717,26 @@ public final class ClassroomManager: ObservableObject {
             try? FileManager.default.removeItem(at: fileURL)
         }
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    public func switchTranscriptionEngine(_ engine: TranscriptionEngine, interval: StepfunChunkInterval? = nil) {
+        self.transcriptionEngine = engine
+        if let iv = interval {
+            self.stepfunChunkInterval = iv
+            UserDefaults.standard.set(iv.rawValue, forKey: "stepfunChunkInterval")
+        }
+        UserDefaults.standard.set(engine.rawValue, forKey: "transcriptionEngine")
+        
+        if isRecording && !isPaused {
+            if engine == .apple {
+                startSpeechRecognition()
+            } else {
+                speechTask?.cancel()
+                speechTask = nil
+                capture?.attachSpeechRequest(nil)
+                self.lastChunkTime = self.recordingElapsed
+            }
+        }
     }
 
     // MARK: - 实时语音识别流

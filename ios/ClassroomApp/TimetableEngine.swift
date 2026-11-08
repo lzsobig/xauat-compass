@@ -74,7 +74,7 @@ public struct TimetableEngine {
         }
         
         var name = nsEntry.substring(with: NSRange(location: 0, length: parts[0].start))
-        name = name.replacingOccurrences(of: "^[●\\s◇]+|[◇\\s]+$", with: "", options: .regularExpression)
+        name = name.replacingOccurrences(of: "^[●\\s◇˖]+|[◇˖\\s]+$", with: "", options: .regularExpression)
         name = name.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression).trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty { name = "未命名课程" }
         
@@ -85,7 +85,7 @@ public struct TimetableEngine {
             let p = parts[i]
             let tailEnd = (i + 1 < parts.count) ? parts[i + 1].start : nsEntry.length
             let tail = nsEntry.substring(with: NSRange(location: p.end, length: tailEnd - p.end))
-            var fields = tail.components(separatedBy: "◇").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+            var fields = tail.components(separatedBy: CharacterSet(charactersIn: "◇˖\n")).map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
             if fields.count == 1 {
                 let bits = fields[0].components(separatedBy: .whitespaces).filter { !$0.isEmpty }
                 if bits.count >= 2 {

@@ -151,37 +151,82 @@ struct RecordHomeView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        // 双模式入口
-                        // 转录引擎快速选择 (苹果原生 vs 阶跃星辰 ASR)
+                        // 转录引擎快速选择 (苹果原生 vs 阶跃星辰 ASR 10秒/20秒/30秒切片)
                         HStack {
-                            Text("转录引擎")
+                            Text("转录方式")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
                             Menu {
-                                ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
+                                Button {
+                                    manager.switchTranscriptionEngine(.apple)
+                                } label: {
+                                    HStack {
+                                        Text("苹果原生输入法 (本地免Key·边说边出字)")
+                                        if manager.transcriptionEngine == .apple {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+
+                                Divider()
+
+                                Section("阶跃星辰 ASR (使用您的 StepFun Key)") {
                                     Button {
-                                        manager.transcriptionEngine = engine
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
                                     } label: {
                                         HStack {
-                                            Text(engine.title)
-                                            if manager.transcriptionEngine == engine {
+                                            Text("10 秒切片转录 (高频快速出字)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
+                                    } label: {
+                                        HStack {
+                                            Text("20 秒切片转录 (推荐·整句连贯准确)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .thirtySeconds)
+                                    } label: {
+                                        HStack {
+                                            Text("30 秒切片转录 (长段落)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .thirtySeconds {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .fullLesson)
+                                    } label: {
+                                        HStack {
+                                            Text("课后整节转写 (最完整)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .fullLesson {
                                                 Image(systemName: "checkmark")
                                             }
                                         }
                                     }
                                 }
                             } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill")
+                                HStack(spacing: 5) {
+                                    Image(systemName: manager.transcriptionEngine == .apple ? "applelogo" : "waveform.badge.magnifyingglass")
                                         .font(.caption2)
-                                    Text(manager.transcriptionEngine.title)
+                                    Text(manager.transcriptionEngine == .apple ? "苹果原生转录" : "阶跃 ASR (\(manager.stepfunChunkInterval.shortTitle))")
                                         .font(.caption)
                                     Image(systemName: "chevron.down")
                                         .font(.system(size: 9))
                                 }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
                                 .background(Color(UIColor.tertiarySystemFill))
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
@@ -1566,7 +1611,7 @@ struct LessonDetailView: View {
         .navigationViewStyle(StackNavigationViewStyle())
     }
 
-    private func formatDuration    private func formatDuration(_ sec: TimeInterval) -> String {
+    private func formatDuration(_ sec: TimeInterval) -> String {
         let whole = Int(sec)
         return String(format: "%02d:%02d", whole / 60, whole % 60)
     }
@@ -1646,30 +1691,86 @@ struct TranscriptTabView: View {
                                 Text(formatDuration(manager.recordingElapsed))
                                     .font(.system(size: 42, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.primary)
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(manager.isPaused ? Color.orange : (manager.transcriptionEngine == .apple ? Color.green : Color.blue))
-                                        .frame(width: 8, height: 8)
-                                    
-                                    if manager.isPaused {
-                                        Text("已暂停录音")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    } else if manager.transcriptionEngine == .apple {
-                                        Text("苹果原生实时转录中 (免Key·边说边出字)")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    } else {
-                                        HStack(spacing: 4) {
-                                            Text("阶跃星辰 ASR (\(manager.stepfunChunkInterval.shortTitle)) 转写中")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                            if manager.isChunkTranscribing {
-                                                ProgressView()
-                                                    .scaleEffect(0.6)
+                                Menu {
+                                    Button {
+                                        manager.switchTranscriptionEngine(.apple)
+                                    } label: {
+                                        HStack {
+                                            Text("苹果原生输入法 (本地边说边出字)")
+                                            if manager.transcriptionEngine == .apple {
+                                                Image(systemName: "checkmark")
                                             }
                                         }
                                     }
+
+                                    Section("阶跃星辰 ASR (使用您的 StepFun Key)") {
+                                        Button {
+                                            manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
+                                        } label: {
+                                            HStack {
+                                                Text("10 秒切片转录 (高频快速)")
+                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+
+                                        Button {
+                                            manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
+                                        } label: {
+                                            HStack {
+                                                Text("20 秒切片转录 (推荐·整句连贯)")
+                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+
+                                        Button {
+                                            manager.switchTranscriptionEngine(.stepfun, interval: .thirtySeconds)
+                                        } label: {
+                                            HStack {
+                                                Text("30 秒切片转录 (长段落)")
+                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .thirtySeconds {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(manager.isPaused ? Color.orange : (manager.transcriptionEngine == .apple ? Color.green : Color.blue))
+                                            .frame(width: 8, height: 8)
+                                        
+                                        if manager.isPaused {
+                                            Text("已暂停录音 (点击切换转录)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        } else if manager.transcriptionEngine == .apple {
+                                            Text("苹果原生实时转录中 (点击可换阶跃ASR)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        } else {
+                                            HStack(spacing: 4) {
+                                                Text("阶跃星辰 ASR (\(manager.stepfunChunkInterval.shortTitle)) 转写中")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                                if manager.isChunkTranscribing {
+                                                    ProgressView()
+                                                        .scaleEffect(0.6)
+                                                }
+                                            }
+                                        }
+                                        
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 8))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill).opacity(0.6))
+                                    .cornerRadius(12)
                                 }
                             }
                             .frame(maxWidth: .infinity)
