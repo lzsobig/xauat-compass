@@ -1450,7 +1450,7 @@ struct SettingsScreen: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.3.1 (2026.11.08 手势翻页与笔记去重版)")
+                        Text("1.3.2 (2026.11.08 TXT导出与全选复制版)")
                             .foregroundColor(.secondary)
                     }
                 }
@@ -1565,6 +1565,35 @@ struct NoteGenerationCard: View {
     }
 }
 
+// MARK: - TXT 导出与原生分享组件
+
+struct ShareItem: Identifiable {
+    let id = UUID()
+    let fileURL: URL
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+func createTempTXT(filename: String, content: String) -> URL? {
+    let tempDir = FileManager.default.temporaryDirectory
+    let safeName = filename.components(separatedBy: CharacterSet(charactersIn: "/\\?%*|\"<>:")).joined(separator: "_")
+    let fileURL = tempDir.appendingPathComponent("\(safeName).txt")
+    do {
+        try content.write(to: fileURL, atomically: true, encoding: .utf8)
+        return fileURL
+    } catch {
+        return nil
+    }
+}
+
 struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
@@ -1576,6 +1605,7 @@ struct LessonDetailView: View {
     @State private var unreadSegmentCount = 0
     @State private var showRenameAlert = false
     @State private var editTitle = ""
+    @State private var shareItem: ShareItem? = nil
 
     var activeSession: LessonSession {
         manager.sessions.first(where: { $0.id == session.id }) ?? session
@@ -1777,13 +1807,108 @@ struct LessonDetailView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
-                        presentationMode.wrappedValue.dismiss()
+                    HStack(spacing: 12) {
+                        Menu {
+                            Button {
+                                exportAllToTXT(session: activeSession)
+                            } label: {
+                                Label("导出整堂课 (实录+笔记) 为 TXT", systemImage: "doc.text.fill")
+                            }
+                            if !activeSession.segments.isEmpty {
+                                Button {
+                                    exportTranscriptOnlyToTXT(session: activeSession)
+                                } label: {
+                                    Label("仅导出语音实录为 TXT", systemImage: "waveform")
+                                }
+                            }
+                            if !activeSession.notes.isEmpty {
+                                Button {
+                                    exportNotesOnlyToTXT(session: activeSession)
+                                } label: {
+                                    Label("仅导出课堂笔记为 TXT", systemImage: "note.text")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 16))
+                                .foregroundColor(.primary)
+                                .padding(4)
+                        }
+
+                        Button("完成") {
+                            presentationMode.wrappedValue.dismiss()
+                        }
                     }
                 }
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.fileURL])
+        }
+    }
+
+    private func exportAllToTXT(session: LessonSession) {
+        var text = """
+========================================
+课程：\(session.courseName)
+主题：\(session.title)
+课堂时长：\(formatDuration(session.duration))
+========================================
+
+"""
+        if !session.notes.isEmpty {
+            text += "\n----------------------------------------\n【智能课堂笔记】\n----------------------------------------\n\n"
+            for n in session.notes {
+                text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
+            }
+        }
+        if !session.segments.isEmpty {
+            text += "\n----------------------------------------\n【课堂逐句实录】\n----------------------------------------\n\n"
+            let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
+            text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
+        }
+        let name = "\(session.courseName)-\(session.title)-整节课记录"
+        if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
+    }
+
+    private func exportTranscriptOnlyToTXT(session: LessonSession) {
+        var text = """
+========================================
+【课堂语音实录】
+课程：\(session.courseName)
+主题：\(session.title)
+课堂时长：\(formatDuration(session.duration))
+实录分段：共 \(session.segments.count) 段
+========================================
+
+"""
+        let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
+        text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
+        let name = "\(session.courseName)-\(session.title)-实录文本"
+        if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
+    }
+
+    private func exportNotesOnlyToTXT(session: LessonSession) {
+        var text = """
+========================================
+【课堂笔记与纪要】
+课程：\(session.courseName)
+主题：\(session.title)
+========================================
+
+"""
+        for n in session.notes {
+            text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
+        }
+        let name = "\(session.courseName)-\(session.title)-课堂笔记"
+        if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {
@@ -1807,6 +1932,7 @@ struct TranscriptTabView: View {
     @State private var isSelectMode: Bool = false
     @State private var selectedIds: Set<UUID> = []
     @State private var toastMessage: String? = nil
+    @State private var shareItem: ShareItem? = nil
 
     var body: some View {
         ZStack {
@@ -1892,12 +2018,60 @@ struct TranscriptTabView: View {
                             }
                             .font(.subheadline)
                         } else {
+                            // 1. 全选复制全部实录文字
+                            Button {
+                                let allText = session.segments
+                                    .sorted { $0.startTime < $1.startTime }
+                                    .map { "[\(formatDuration($0.startTime))] \($0.text)" }
+                                    .joined(separator: "\n\n")
+                                UIPasteboard.general.string = allText
+                                toastMessage = "已全选复制全部 \(session.segments.count) 段实录"
+                            } label: {
+                                Label("全选复制", systemImage: "doc.on.doc")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .cornerRadius(8)
+                            }
+
+                            // 2. 导出为 TXT 文档
+                            Button {
+                                let header = """
+========================================
+【课堂语音实录】
+课程：\(session.courseName)
+主题：\(session.title)
+录音时长：\(formatDuration(session.duration))
+实录分段：共 \(session.segments.count) 段
+========================================
+
+"""
+                                let body = session.segments
+                                    .sorted { $0.startTime < $1.startTime }
+                                    .map { "[\(formatDuration($0.startTime))] \($0.text)" }
+                                    .joined(separator: "\n\n")
+                                let name = "\(session.courseName)-\(session.title)-语音实录"
+                                if let url = createTempTXT(filename: name, content: header + body) {
+                                    shareItem = ShareItem(fileURL: url)
+                                }
+                            } label: {
+                                Label("导出 TXT", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .cornerRadius(8)
+                            }
+
                             Spacer()
+
+                            // 3. 多选模式
                             Button {
                                 isSelectMode = true
                             } label: {
-                                Label("多选复制", systemImage: "checklist")
-                                    .font(.subheadline)
+                                Label("多选", systemImage: "checklist")
+                                    .font(.system(size: 12, weight: .medium))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
                                     .background(Color(UIColor.tertiarySystemFill))
@@ -2235,6 +2409,9 @@ struct TranscriptTabView: View {
                 onAskAboutSegment?(seg, question)
             }
         }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.fileURL])
+        }
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {
@@ -2360,6 +2537,7 @@ struct NotesTabView: View {
     @Binding var selectedStyle: NoteStyle
     var onSwitchToQA: (() -> Void)? = nil
     @State private var copiedNotice = false
+    @State private var shareItem: ShareItem? = nil
 
     var currentNote: LessonNote? {
         session.notes.first(where: { $0.style == selectedStyle })
@@ -2444,9 +2622,33 @@ struct NotesTabView: View {
                                     copiedNotice = false
                                 }
                             } label: {
-                                Label(copiedNotice ? "已复制！" : "复制全部笔记", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .padding(.horizontal, 14)
+                                Label(copiedNotice ? "已复制！" : "全选复制", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .foregroundColor(.primary)
+                                    .cornerRadius(10)
+                            }
+
+                            Button {
+                                let name = "\(session.courseName)-\(session.title)-\(selectedStyle.title)"
+                                let header = """
+========================================
+【智能课堂笔记 - \(selectedStyle.title)】
+课程：\(session.courseName)
+主题：\(session.title)
+整理：DeepSeek AI
+========================================
+
+"""
+                                if let url = createTempTXT(filename: name, content: header + note.content) {
+                                    shareItem = ShareItem(fileURL: url)
+                                }
+                            } label: {
+                                Label("导出 TXT", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(Color(UIColor.tertiarySystemFill))
                                     .foregroundColor(.primary)
@@ -2528,6 +2730,9 @@ struct NotesTabView: View {
                     }
                 }
                 .padding(16)
+            }
+            .sheet(item: $shareItem) { item in
+                ShareSheet(activityItems: [item.fileURL])
             }
         }
     }
