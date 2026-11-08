@@ -273,13 +273,13 @@ public struct QAPair: Identifiable, Codable, Sendable {
 }
 
 public enum CourseSource: String, Codable, CaseIterable, Sendable {
-    case timetable = "timetable"
-    case manual = "manual"
+    case timetable
+    case manual
 }
 
 public enum CourseStatus: String, Codable, CaseIterable, Sendable {
-    case active = "active"       // 当前学期在学
-    case historical = "historical" // 历史学期/已结课
+    case active
+    case historical
 }
 
 public struct Course: Identifiable, Codable, Equatable, Sendable {
@@ -288,10 +288,10 @@ public struct Course: Identifiable, Codable, Equatable, Sendable {
     public var teacher: String
     public var room: String
     public var colorHex: String
+    public var createdAt: Date
     public var semester: String
     public var source: CourseSource
     public var status: CourseStatus
-    public var createdAt: Date
     
     public init(
         id: UUID = UUID(),
@@ -299,44 +299,44 @@ public struct Course: Identifiable, Codable, Equatable, Sendable {
         teacher: String = "",
         room: String = "",
         colorHex: String = "#0A84FF",
+        createdAt: Date = Date(),
         semester: String = "2026-2027-1",
         source: CourseSource = .timetable,
-        status: CourseStatus = .active,
-        createdAt: Date = Date()
+        status: CourseStatus = .active
     ) {
         self.id = id
         self.name = name
         self.teacher = teacher
         self.room = room
         self.colorHex = colorHex
+        self.createdAt = createdAt
         self.semester = semester
         self.source = source
         self.status = status
-        self.createdAt = createdAt
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, name, teacher, room, colorHex, semester, source, status, createdAt
+        case id, name, teacher, room, colorHex, createdAt, semester, source, status
     }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         name = try container.decode(String.self, forKey: .name)
         teacher = try container.decodeIfPresent(String.self, forKey: .teacher) ?? ""
         room = try container.decodeIfPresent(String.self, forKey: .room) ?? ""
         colorHex = try container.decodeIfPresent(String.self, forKey: .colorHex) ?? "#0A84FF"
+        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
         semester = try container.decodeIfPresent(String.self, forKey: .semester) ?? "2026-2027-1"
         source = try container.decodeIfPresent(CourseSource.self, forKey: .source) ?? .timetable
         status = try container.decodeIfPresent(CourseStatus.self, forKey: .status) ?? .active
-        createdAt = try container.decodeIfPresent(Date.self, forKey: .createdAt) ?? Date()
     }
 }
 
 public struct TimetableSlot: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
-    public var courseId: UUID?
     public var courseName: String
+    public var courseId: UUID?
     public var teacher: String
     public var room: String
     public var day: Int // 1 (Mon) - 7 (Sun)
@@ -349,8 +349,8 @@ public struct TimetableSlot: Identifiable, Codable, Equatable, Sendable {
     
     public init(
         id: UUID = UUID(),
-        courseId: UUID? = nil,
         courseName: String,
+        courseId: UUID? = nil,
         teacher: String = "",
         room: String = "",
         day: Int,
@@ -362,8 +362,8 @@ public struct TimetableSlot: Identifiable, Codable, Equatable, Sendable {
         semester: String = "2026-2027-1"
     ) {
         self.id = id
-        self.courseId = courseId
         self.courseName = courseName
+        self.courseId = courseId
         self.teacher = teacher
         self.room = room
         self.day = day
@@ -376,14 +376,14 @@ public struct TimetableSlot: Identifiable, Codable, Equatable, Sendable {
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, courseId, courseName, teacher, room, day, fromPeriod, toPeriod, weekFrom, weekTo, parity, semester
+        case id, courseName, courseId, teacher, room, day, fromPeriod, toPeriod, weekFrom, weekTo, parity, semester
     }
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        id = try container.decode(UUID.self, forKey: .id)
-        courseId = try container.decodeIfPresent(UUID.self, forKey: .courseId)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
         courseName = try container.decode(String.self, forKey: .courseName)
+        courseId = try container.decodeIfPresent(UUID.self, forKey: .courseId)
         teacher = try container.decodeIfPresent(String.self, forKey: .teacher) ?? ""
         room = try container.decodeIfPresent(String.self, forKey: .room) ?? ""
         day = try container.decode(Int.self, forKey: .day)
@@ -396,46 +396,20 @@ public struct TimetableSlot: Identifiable, Codable, Equatable, Sendable {
     }
 }
 
-public struct TimetableData: Codable, Sendable {
-    public var semester: String
-    public var currentWeek: Int
-    public var slots: [TimetableSlot]
-    public var updatedAt: Date
-    
-    public init(semester: String = "2026-2027-1", currentWeek: Int = 1, slots: [TimetableSlot] = [], updatedAt: Date = Date()) {
-        self.semester = semester
-        self.currentWeek = currentWeek
-        self.slots = slots
-        self.updatedAt = updatedAt
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case semester, currentWeek, slots, updatedAt
-    }
-    
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        semester = try container.decodeIfPresent(String.self, forKey: .semester) ?? "2026-2027-1"
-        currentWeek = try container.decodeIfPresent(Int.self, forKey: .currentWeek) ?? 1
-        slots = try container.decodeIfPresent([TimetableSlot].self, forKey: .slots) ?? []
-        updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt) ?? Date()
-    }
+public enum DraftCourseAction: String, Codable, Sendable {
+    case create
+    case matchExisting
+    case ignore
 }
 
-public enum DraftAction: String, Codable, Sendable {
-    case create = "create"
-    case matchExisting = "matchExisting"
-    case ignore = "ignore"
-}
-
-public struct DraftCourseItem: Identifiable, Codable, Equatable, Sendable {
+public struct DraftCourseItem: Identifiable, Codable, Sendable {
     public var id: UUID
     public var originalName: String
     public var editedName: String
     public var teacher: String
     public var room: String
+    public var action: DraftCourseAction
     public var matchedCourseId: UUID?
-    public var action: DraftAction
     public var isSelected: Bool
     
     public init(
@@ -444,8 +418,8 @@ public struct DraftCourseItem: Identifiable, Codable, Equatable, Sendable {
         editedName: String? = nil,
         teacher: String = "",
         room: String = "",
+        action: DraftCourseAction = .create,
         matchedCourseId: UUID? = nil,
-        action: DraftAction = .create,
         isSelected: Bool = true
     ) {
         self.id = id
@@ -453,14 +427,13 @@ public struct DraftCourseItem: Identifiable, Codable, Equatable, Sendable {
         self.editedName = editedName ?? originalName
         self.teacher = teacher
         self.room = room
-        self.matchedCourseId = matchedCourseId
         self.action = action
+        self.matchedCourseId = matchedCourseId
         self.isSelected = isSelected
     }
 }
 
-public struct TimetableImportDraft: Identifiable, Codable, Sendable {
-    public var id: UUID
+public struct TimetableImportDraft: Codable, Sendable {
     public var semester: String
     public var studentName: String
     public var className: String
@@ -470,16 +443,14 @@ public struct TimetableImportDraft: Identifiable, Codable, Sendable {
     public var warnings: [String]
     
     public init(
-        id: UUID = UUID(),
         semester: String = "2026-2027-1",
         studentName: String = "",
         className: String = "",
-        schoolName: String = "",
+        schoolName: String = "西安建筑科技大学",
         slots: [TimetableSlot] = [],
         items: [DraftCourseItem] = [],
         warnings: [String] = []
     ) {
-        self.id = id
         self.semester = semester
         self.studentName = studentName
         self.className = className
@@ -487,6 +458,18 @@ public struct TimetableImportDraft: Identifiable, Codable, Sendable {
         self.slots = slots
         self.items = items
         self.warnings = warnings
+    }
+}
+
+public struct TimetableData: Codable, Sendable {
+    public var currentWeek: Int
+    public var slots: [TimetableSlot]
+    public var updatedAt: Date
+    
+    public init(currentWeek: Int = 1, slots: [TimetableSlot] = [], updatedAt: Date = Date()) {
+        self.currentWeek = currentWeek
+        self.slots = slots
+        self.updatedAt = updatedAt
     }
 }
 

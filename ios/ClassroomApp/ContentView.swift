@@ -151,37 +151,82 @@ struct RecordHomeView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        // 双模式入口
-                        // 转录引擎快速选择 (苹果原生 vs 阶跃星辰 ASR)
+                        // 转录引擎快速选择 (苹果原生 vs 阶跃星辰 ASR 10秒/20秒/30秒切片)
                         HStack {
-                            Text("转录引擎")
+                            Text("转录方式")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
                             Menu {
-                                ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
+                                Button {
+                                    manager.switchTranscriptionEngine(.apple)
+                                } label: {
+                                    HStack {
+                                        Text("苹果原生输入法 (本地免Key·边说边出字)")
+                                        if manager.transcriptionEngine == .apple {
+                                            Image(systemName: "checkmark")
+                                        }
+                                    }
+                                }
+
+                                Divider()
+
+                                Section("阶跃星辰 ASR (使用您的 StepFun Key)") {
                                     Button {
-                                        manager.transcriptionEngine = engine
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
                                     } label: {
                                         HStack {
-                                            Text(engine.title)
-                                            if manager.transcriptionEngine == engine {
+                                            Text("10 秒切片转录 (高频快速出字)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
+                                    } label: {
+                                        HStack {
+                                            Text("20 秒切片转录 (推荐·整句连贯准确)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .thirtySeconds)
+                                    } label: {
+                                        HStack {
+                                            Text("30 秒切片转录 (长段落)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .thirtySeconds {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Button {
+                                        manager.switchTranscriptionEngine(.stepfun, interval: .fullLesson)
+                                    } label: {
+                                        HStack {
+                                            Text("课后整节转写 (最完整)")
+                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .fullLesson {
                                                 Image(systemName: "checkmark")
                                             }
                                         }
                                     }
                                 }
                             } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill")
+                                HStack(spacing: 5) {
+                                    Image(systemName: manager.transcriptionEngine == .apple ? "applelogo" : "waveform.badge.magnifyingglass")
                                         .font(.caption2)
-                                    Text(manager.transcriptionEngine.title)
+                                    Text(manager.transcriptionEngine == .apple ? "苹果原生转录" : "阶跃 ASR (\(manager.stepfunChunkInterval.shortTitle))")
                                         .font(.caption)
                                     Image(systemName: "chevron.down")
                                         .font(.system(size: 9))
                                 }
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 5)
                                 .background(Color(UIColor.tertiarySystemFill))
                                 .foregroundColor(.primary)
                                 .cornerRadius(8)
@@ -446,39 +491,37 @@ struct CourseSelectionSheet: View {
 struct CourseArchiveView: View {
     @EnvironmentObject var manager: ClassroomManager
     @State private var searchText = ""
-    @State private var isHistoricalExpanded = false
-    @State private var coursePendingDelete: Course?
-    @State private var showDeleteConfirm = false
-    @State private var showCreateManualCourse = false
+    @State private var coursePendingDelete: Course? = nil
+    @State private var showDeleteConfirmation = false
+    @State private var showAddCourseSheet = false
     @State private var newCourseName = ""
-    @State private var newTeacher = ""
-    @State private var newRoom = ""
+    @State private var newCourseTeacher = ""
+    @State private var newCourseRoom = ""
     var onOpenSession: (LessonSession) -> Void
 
-    func matchesSearch(_ c: Course) -> Bool {
-        if searchText.isEmpty { return true }
-        return c.name.localizedCaseInsensitiveContains(searchText) ||
-               c.teacher.localizedCaseInsensitiveContains(searchText) ||
-               manager.sessions.contains(where: { $0.courseId == c.id && ($0.title.localizedCaseInsensitiveContains(searchText) || $0.fullTranscript.localizedCaseInsensitiveContains(searchText)) })
+    var filteredCourses: [Course] {
+        if searchText.isEmpty { return manager.courses }
+        return manager.courses.filter { c in
+            c.name.localizedCaseInsensitiveContains(searchText) ||
+            c.teacher.localizedCaseInsensitiveContains(searchText) ||
+            manager.sessions.contains(where: { $0.courseId == c.id && ($0.title.localizedCaseInsensitiveContains(searchText) || $0.fullTranscript.localizedCaseInsensitiveContains(searchText)) })
+        }
     }
 
-    var currentTimetableCourses: [Course] {
-        manager.courses.filter { $0.status == .active && $0.source == .timetable && matchesSearch($0) }
+    var activeTimetableCourses: [Course] {
+        filteredCourses.filter { $0.source == .timetable && $0.status == .active }
     }
 
     var manualCourses: [Course] {
-        manager.courses.filter { $0.source == .manual && matchesSearch($0) }
+        filteredCourses.filter { $0.source == .manual }
     }
 
     var historicalCourses: [Course] {
-        manager.courses.filter { $0.status == .historical && matchesSearch($0) }
+        filteredCourses.filter { $0.status == .historical }
     }
 
     var unassignedSessions: [LessonSession] {
-        if searchText.isEmpty {
-            return manager.sessions.filter { $0.courseId == nil }
-        }
-        return manager.sessions.filter { $0.courseId == nil && ($0.title.localizedCaseInsensitiveContains(searchText) || $0.fullTranscript.localizedCaseInsensitiveContains(searchText)) }
+        manager.sessions.filter { $0.courseId == nil }
     }
 
     var body: some View {
@@ -488,7 +531,7 @@ struct CourseArchiveView: View {
                     HStack {
                         Image(systemName: "magnifyingglass")
                             .foregroundColor(.secondary)
-                        TextField("搜索课程名、课堂标题或转写正文...", text: $searchText)
+                        TextField("搜索课程、教师、转写内容...", text: $searchText)
                         if !searchText.isEmpty {
                             Button { searchText = "" } label: {
                                 Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
@@ -501,68 +544,34 @@ struct CourseArchiveView: View {
                 }
 
                 // 1. 当前课表课程
-                Section(header: HStack {
-                    Text("当前课表课程")
-                        .font(.subheadline)
-                        .bold()
-                    Spacer()
-                    Text(manager.timetable.semester)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }) {
-                    if currentTimetableCourses.isEmpty {
-                        Text("当前课表暂无活跃课程，可前往「课表」页面导入")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                            .padding(.vertical, 4)
-                    } else {
-                        ForEach(currentTimetableCourses) { c in
-                            courseRow(for: c)
+                if !activeTimetableCourses.isEmpty {
+                    Section(header: Text("当前课表课程 (\(activeTimetableCourses.count))"), footer: Text("由当前学期课表自动关联")) {
+                        ForEach(activeTimetableCourses) { c in
+                            courseRow(c)
                         }
                     }
                 }
 
                 // 2. 自建与拓展课程
-                if !manualCourses.isEmpty || searchText.isEmpty {
-                    Section(header: Text("自建与拓展课程").font(.subheadline).bold()) {
-                        if manualCourses.isEmpty {
-                            Text("暂无自建课程，可点击右上角添加")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .padding(.vertical, 4)
-                        } else {
-                            ForEach(manualCourses) { c in
-                                courseRow(for: c)
-                            }
+                if !manualCourses.isEmpty {
+                    Section(header: Text("自建与拓展课程 (\(manualCourses.count))"), footer: Text("手动创建的课程，不受课表变动影响")) {
+                        ForEach(manualCourses) { c in
+                            courseRow(c)
                         }
                     }
                 }
 
                 // 3. 历史学期课程
                 if !historicalCourses.isEmpty {
-                    Section(header: Button {
-                        withAnimation { isHistoricalExpanded.toggle() }
-                    } label: {
-                        HStack {
-                            Text("历史课程 (不在当前课表 · \(historicalCourses.count)门)")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Image(systemName: (isHistoricalExpanded || !searchText.isEmpty) ? "chevron.up" : "chevron.down")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }) {
-                        if isHistoricalExpanded || !searchText.isEmpty {
-                            ForEach(historicalCourses) { c in
-                                courseRow(for: c)
-                            }
+                    Section(header: Text("历史课程 (\(historicalCourses.count))"), footer: Text("不在当前课表中，但保留全部课堂录音与资料")) {
+                        ForEach(historicalCourses) { c in
+                            courseRow(c)
                         }
                     }
                 }
 
-                // 4. 未归档文件夹
-                Section(header: Text("未分类记录").font(.subheadline).bold()) {
+                // 4. 未归档课堂记录
+                Section(header: Text("未归档资料")) {
                     NavigationLink {
                         UnassignedDetailScreen(onOpenSession: onOpenSession)
                     } label: {
@@ -570,8 +579,13 @@ struct CourseArchiveView: View {
                             Image(systemName: "tray.fill")
                                 .foregroundColor(.secondary)
                                 .frame(width: 20)
-                            Text("未归档课堂记录")
-                                .font(.headline)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("未归档课堂记录")
+                                    .font(.headline)
+                                Text("未关联到具体课程或已解绑文件夹的录音")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
                             Spacer()
                             Text("\(unassignedSessions.count) 节课")
                                 .font(.caption)
@@ -584,76 +598,84 @@ struct CourseArchiveView: View {
             .navigationTitle("课程资料库")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 14) {
                         Button {
-                            showCreateManualCourse = true
+                            newCourseName = ""
+                            newCourseTeacher = ""
+                            newCourseRoom = ""
+                            showAddCourseSheet = true
                         } label: {
-                            Image(systemName: "folder.badge.plus")
+                            Image(systemName: "plus")
+                                .font(.system(size: 16, weight: .bold))
                         }
-                        
+
                         Menu {
-                            if manager.lastCommittedTimetable != nil {
-                                Button {
-                                    manager.rollbackTimetableImport()
-                                } label: {
-                                    Label("撤销上次课表导入", systemImage: "arrow.uturn.backward")
-                                }
+                            Button {
+                                manager.syncCoursesFromTimetable()
+                            } label: {
+                                Label("从当前课表同步课程", systemImage: "arrow.triangle.2.circlepath")
                             }
                         } label: {
                             Image(systemName: "ellipsis.circle")
+                                .font(.system(size: 16))
                         }
                     }
                 }
             }
             .confirmationDialog(
                 "删除课程文件夹「\(coursePendingDelete?.name ?? "")」",
-                isPresented: $showDeleteConfirm,
+                isPresented: $showDeleteConfirmation,
                 titleVisibility: .visible
             ) {
-                Button("仅移除课程文件夹 (保留录音至未归档)") {
+                Button("仅移除课程文件夹 (保留所有录音至未归档)") {
                     if let c = coursePendingDelete {
                         manager.deleteCourse(course: c, purgeAllData: false)
                         coursePendingDelete = nil
                     }
                 }
-                
-                let sessionCount = manager.sessions.filter { $0.courseId == coursePendingDelete?.id }.count
-                Button("彻底删除课程及全部 \(sessionCount) 篇录音资料", role: .destructive) {
+                Button("彻底删除课程及全部资料 (包含录音文件)", role: .destructive) {
                     if let c = coursePendingDelete {
                         manager.deleteCourse(course: c, purgeAllData: true)
                         coursePendingDelete = nil
                     }
                 }
-                
                 Button("取消", role: .cancel) {
                     coursePendingDelete = nil
                 }
             } message: {
-                Text("选择「仅移除」会将全部录音和AI笔记完整转移至未归档，绝不丢失；选择「彻底删除」将清空此课程下的全部录音音频文件。")
+                Text("移至未归档可随时在「未归档」分类中继续查看和播放录音与笔记。彻底删除将永久清除该课程及其名下全部录音和文件。")
             }
-            .sheet(isPresented: $showCreateManualCourse) {
+            .sheet(isPresented: $showAddCourseSheet) {
                 NavigationView {
                     Form {
-                        Section("课程信息") {
-                            TextField("课程名称 (如: 毕业设计/学术讲座)", text: $newCourseName)
-                            TextField("授课教师 (选填)", text: $newTeacher)
-                            TextField("教室/地点 (选填)", text: $newRoom)
+                        Section("课程基本信息") {
+                            TextField("课程名称 (如: 线性代数)", text: $newCourseName)
+                            TextField("任课教师 (可选)", text: $newCourseTeacher)
+                            TextField("上课教室 (可选)", text: $newCourseRoom)
                         }
                     }
                     .navigationTitle("新建自建课程")
+                    .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("取消") { showCreateManualCourse = false; newCourseName = "" }
+                        ToolbarItem(placement: .navigationBarLeading) {
+                            Button("取消") { showAddCourseSheet = false }
                         }
-                        ToolbarItem(placement: .confirmationAction) {
+                        ToolbarItem(placement: .navigationBarTrailing) {
                             Button("创建") {
-                                if !newCourseName.trimmingCharacters(in: .whitespaces).isEmpty {
-                                    manager.createCourse(name: newCourseName, teacher: newTeacher, room: newRoom, semester: manager.timetable.semester, source: .manual)
-                                }
-                                showCreateManualCourse = false
-                                newCourseName = ""
+                                let trimmed = newCourseName.trimmingCharacters(in: .whitespacesAndNewlines)
+                                guard !trimmed.isEmpty else { return }
+                                let newC = Course(
+                                    name: trimmed,
+                                    teacher: newCourseTeacher.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    room: newCourseRoom.trimmingCharacters(in: .whitespacesAndNewlines),
+                                    source: .manual,
+                                    status: .active
+                                )
+                                manager.courses.append(newC)
+                                manager.saveCourses()
+                                showAddCourseSheet = false
                             }
-                            .disabled(newCourseName.trimmingCharacters(in: .whitespaces).isEmpty)
+                            .disabled(newCourseName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                         }
                     }
                 }
@@ -663,7 +685,7 @@ struct CourseArchiveView: View {
     }
 
     @ViewBuilder
-    private func courseRow(for c: Course) -> some View {
+    private func courseRow(_ c: Course) -> some View {
         let count = manager.sessions.filter { $0.courseId == c.id }.count
         NavigationLink {
             CourseDetailScreen(course: c, onOpenSession: onOpenSession)
@@ -673,23 +695,23 @@ struct CourseArchiveView: View {
                     .fill(Color(hex: c.colorHex))
                     .frame(width: 14, height: 36)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(c.name)
-                        .font(.headline)
                     HStack(spacing: 6) {
-                        if !c.room.isEmpty || !c.teacher.isEmpty {
-                            Text([c.room, c.teacher].filter { !$0.isEmpty }.joined(separator: " · "))
-                        }
+                        Text(c.name)
+                            .font(.headline)
                         if c.source == .manual {
                             Text("自建")
-                                .font(.system(size: 10, weight: .bold))
+                                .font(.system(size: 9, weight: .bold))
                                 .padding(.horizontal, 4)
-                                .background(Color.orange.opacity(0.15))
-                                .foregroundColor(.orange)
+                                .padding(.vertical, 1)
+                                .background(Color.secondary.opacity(0.15))
                                 .cornerRadius(3)
                         }
                     }
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    if !c.room.isEmpty || !c.teacher.isEmpty {
+                        Text([c.room, c.teacher].filter { !$0.isEmpty }.joined(separator: " · "))
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 Spacer()
                 Text("\(count) 节课")
@@ -698,20 +720,20 @@ struct CourseArchiveView: View {
             }
             .padding(.vertical, 4)
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive) {
-                coursePendingDelete = c
-                showDeleteConfirm = true
-            } label: {
-                Label("删除", systemImage: "trash")
-            }
-        }
         .contextMenu {
             Button(role: .destructive) {
                 coursePendingDelete = c
-                showDeleteConfirm = true
+                showDeleteConfirmation = true
             } label: {
-                Label("删除该课程文件夹...", systemImage: "trash")
+                Label("删除课程文件夹...", systemImage: "trash")
+            }
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+            Button(role: .destructive) {
+                coursePendingDelete = c
+                showDeleteConfirmation = true
+            } label: {
+                Label("删除", systemImage: "trash")
             }
         }
     }
@@ -719,11 +741,13 @@ struct CourseArchiveView: View {
 
 struct CourseDetailScreen: View {
     @EnvironmentObject var manager: ClassroomManager
+    @Environment(\.presentationMode) var presentationMode
     let course: Course
     var onOpenSession: (LessonSession) -> Void
     @State private var sessionToMove: LessonSession?
     @State private var sessionToRename: LessonSession?
     @State private var newTitle = ""
+    @State private var showDeleteConfirm = false
 
     var courseSessions: [LessonSession] {
         manager.sessions.filter { $0.courseId == course.id }
@@ -804,6 +828,25 @@ struct CourseDetailScreen: View {
             Button("确定") {
                 if let s = sessionToRename { manager.renameSession(s, newTitle: newTitle) }
             }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(role: .destructive) {
+                    showDeleteConfirm = true
+                } label: {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                }
+            }
+        }
+        .alert("确认删除课程文件夹？", isPresented: $showDeleteConfirm) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
+                manager.deleteCourse(course: course)
+                presentationMode.wrappedValue.dismiss()
+            }
+        } message: {
+            Text("删除后，该课程下的录音记录将安全移入【未归档】，录音文件与笔记不会丢失。")
         }
     }
 
@@ -963,29 +1006,184 @@ public struct SemesterCalendar {
     }
 }
 
-struct TimetableScreen: View {
-    @EnvironmentObject var manager: ClassroomManager
-    var onSelectCourseForRecord: ((Course) -> Void)? = nil
+// MARK: - 单周课表渲染组件 (支持左右滑动换周)
 
-    @State private var selectedWeek: Int = 10
-    @State private var showingFileImporter = false
-    @State private var showingPreviewSheet = false
-    @State private var importDraft: TimetableImportDraft?
-    @State private var importStatus = ""
-    @State private var selectedSlotForDetail: TimetableSlot?
+struct WeekGridView: View {
+    let week: Int
+    let timetable: TimetableData
+    let dayColWidth: CGFloat
+    let timeColWidth: CGFloat
+    let slotHeight: CGFloat
+    let totalGridHeight: CGFloat
+    var onSlotTap: (TimetableSlot) -> Void
 
     let days = ["一", "二", "三", "四", "五", "六", "日"]
-    let timeColWidth: CGFloat = 34.0
-    let slotHeight: CGFloat = 58.0
 
     var weekDates: [Date] {
-        SemesterCalendar.datesForWeek(selectedWeek)
+        SemesterCalendar.datesForWeek(week)
     }
 
     var monthNumber: Int {
         guard let first = weekDates.first else { return 11 }
         return Calendar(identifier: .gregorian).component(.month, from: first)
     }
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // 1. 顶部日期表头
+            HStack(spacing: 0) {
+                VStack(spacing: 1) {
+                    Text("\(monthNumber)")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text("月")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                }
+                .frame(width: timeColWidth, height: 46)
+
+                ForEach(0..<7, id: \.self) { i in
+                    let date = i < weekDates.count ? weekDates[i] : Date()
+                    let dayNum = Calendar(identifier: .gregorian).component(.day, from: date)
+                    let isToday = Calendar.current.isDateInToday(date)
+
+                    VStack(spacing: 3) {
+                        Text(days[i])
+                            .font(.system(size: 12))
+                            .foregroundColor(isToday ? .primary : .secondary)
+
+                        if isToday {
+                            Text("\(dayNum)")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 22, height: 22)
+                                .background(Color.primary)
+                                .clipShape(Circle())
+                        } else {
+                            Text("\(dayNum)")
+                                .font(.system(size: 12))
+                                .foregroundColor(.primary)
+                                .frame(width: 22, height: 22)
+                        }
+                    }
+                    .frame(width: dayColWidth, height: 46)
+                }
+            }
+            .background(Color(UIColor.systemBackground))
+
+            Divider()
+
+            // 2. 课表时间轴与周网格主体
+            ScrollView {
+                ZStack(alignment: .topLeading) {
+                    // 背景网格线 (水平分割线)
+                    VStack(spacing: 0) {
+                        ForEach(0..<kClassPeriods.count, id: \.self) { p in
+                            Rectangle()
+                                .fill(Color(UIColor.separator).opacity(0.18))
+                                .frame(height: 0.5)
+                                .offset(y: slotHeight - 0.5)
+                                .frame(height: slotHeight)
+                        }
+                    }
+                    .offset(x: timeColWidth)
+
+                    // 垂直列分割线
+                    HStack(spacing: 0) {
+                        Spacer().frame(width: timeColWidth)
+                        ForEach(0..<7, id: \.self) { _ in
+                            Rectangle()
+                                .fill(Color(UIColor.separator).opacity(0.15))
+                                .frame(width: 0.5, height: totalGridHeight)
+                                .frame(maxWidth: .infinity, alignment: .trailing)
+                        }
+                    }
+
+                    // 左侧节次与时间戳
+                    ForEach(0..<kClassPeriods.count, id: \.self) { p in
+                        let pInfo = kClassPeriods[p]
+                        let y = CGFloat(p) * slotHeight
+                        VStack(spacing: 1) {
+                            Text("\(pInfo.period)")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.primary)
+                            Text(pInfo.start)
+                                .font(.system(size: 8, design: .monospaced))
+                                .foregroundColor(.secondary)
+                            Text(pInfo.end)
+                                .font(.system(size: 8, design: .monospaced))
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(width: timeColWidth, height: slotHeight)
+                        .position(x: timeColWidth / 2, y: y + slotHeight / 2)
+                    }
+
+                    // 课程彩色卡片层
+                    let activeSlots = timetable.slots.filter { slot in
+                        week >= slot.weekFrom &&
+                        week <= slot.weekTo &&
+                        (slot.parity == "all" || (slot.parity == "odd" && week % 2 == 1) || (slot.parity == "even" && week % 2 == 0))
+                    }
+
+                    ForEach(activeSlots) { slot in
+                        let d = slot.day - 1
+                        if d >= 0 && d < 7 {
+                            let fromP = max(1, min(kClassPeriods.count, slot.fromPeriod))
+                            let toP = max(fromP, min(kClassPeriods.count, slot.toPeriod))
+                            let span = toP - fromP + 1
+
+                            let cardX = timeColWidth + CGFloat(d) * dayColWidth + 1.5
+                            let cardY = CGFloat(fromP - 1) * slotHeight + 1.5
+                            let cardW = max(10, dayColWidth - 3.0)
+                            let cardH = max(20, CGFloat(span) * slotHeight - 3.0)
+
+                            let palette = kTimetablePalettes[abs(slot.courseName.hashValue) % kTimetablePalettes.count]
+                            let roomText = slot.room.isEmpty ? "" : (slot.room.contains("草堂") ? "@ \(slot.room)" : "@ 草堂校区 \(slot.room)")
+
+                            VStack(spacing: 2) {
+                                Text(slot.courseName)
+                                    .font(.system(size: 10.5, weight: .semibold))
+                                    .foregroundColor(palette.text)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(span > 1 ? 4 : 2)
+
+                                if !roomText.isEmpty {
+                                    Text(roomText)
+                                        .font(.system(size: 9.5))
+                                        .foregroundColor(palette.text.opacity(0.85))
+                                        .multilineTextAlignment(.center)
+                                        .lineLimit(span > 1 ? 3 : 1)
+                                }
+                            }
+                            .padding(2)
+                            .frame(width: cardW, height: cardH)
+                            .background(palette.bg)
+                            .cornerRadius(6)
+                            .position(x: cardX + cardW / 2, y: cardY + cardH / 2)
+                            .onTapGesture {
+                                onSlotTap(slot)
+                            }
+                        }
+                    }
+                }
+                .frame(width: (timeColWidth + dayColWidth * 7.0), height: totalGridHeight)
+            }
+        }
+    }
+}
+
+struct TimetableScreen: View {
+    @EnvironmentObject var manager: ClassroomManager
+    var onSelectCourseForRecord: ((Course) -> Void)? = nil
+
+    @State private var selectedWeek: Int = 10
+    @State private var showingFileImporter = false
+    @State private var importStatus = ""
+    @State private var selectedSlotForDetail: TimetableSlot?
+    @State private var pendingImportDraft: TimetableImportDraft? = nil
+
+    let timeColWidth: CGFloat = 34.0
+    let slotHeight: CGFloat = 58.0
 
     var body: some View {
         NavigationView {
@@ -1004,181 +1202,88 @@ struct TimetableScreen: View {
                             .background(Color(UIColor.tertiarySystemFill))
                     }
 
-                    // 1. 顶部日期表头 (11月 / 一 2, 二 3, 三 4, 四 5, 五 6, 六 7, 日 8)
-                    HStack(spacing: 0) {
-                        // 左上角月份
-                        VStack(spacing: 1) {
-                            Text("\(monthNumber)")
-                                .font(.system(size: 13, weight: .bold))
-                                .foregroundColor(.primary)
-                            Text("月")
-                                .font(.system(size: 10))
-                                .foregroundColor(.secondary)
-                        }
-                        .frame(width: timeColWidth, height: 46)
-
-                        // 星期一到星期日
-                        ForEach(0..<7, id: \.self) { i in
-                            let date = i < weekDates.count ? weekDates[i] : Date()
-                            let dayNum = Calendar(identifier: .gregorian).component(.day, from: date)
-                            let isToday = Calendar.current.isDateInToday(date)
-
-                            VStack(spacing: 3) {
-                                Text(days[i])
-                                    .font(.system(size: 12))
-                                    .foregroundColor(isToday ? .primary : .secondary)
-
-                                if isToday {
-                                    Text("\(dayNum)")
-                                        .font(.system(size: 12, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .frame(width: 22, height: 22)
-                                        .background(Color.primary)
-                                        .clipShape(Circle())
-                                } else {
-                                    Text("\(dayNum)")
-                                        .font(.system(size: 12))
-                                        .foregroundColor(.primary)
-                                        .frame(width: 22, height: 22)
+                    // 左右滑动翻周核心 TabView 分页容器
+                    TabView(selection: $selectedWeek) {
+                        ForEach(1...20, id: \.self) { w in
+                            WeekGridView(
+                                week: w,
+                                timetable: manager.timetable,
+                                dayColWidth: dayColWidth,
+                                timeColWidth: timeColWidth,
+                                slotHeight: slotHeight,
+                                totalGridHeight: totalGridHeight,
+                                onSlotTap: { slot in
+                                    selectedSlotForDetail = slot
                                 }
-                            }
-                            .frame(width: dayColWidth, height: 46)
+                            )
+                            .tag(w)
                         }
                     }
-                    .background(Color(UIColor.systemBackground))
-
-                    Divider()
-
-                    // 2. 课表时间轴与周网格主体
-                    ScrollView {
-                        ZStack(alignment: .topLeading) {
-                            // 背景网格线 (水平分割线)
-                            VStack(spacing: 0) {
-                                ForEach(0..<kClassPeriods.count, id: \.self) { p in
-                                    Rectangle()
-                                        .fill(Color(UIColor.separator).opacity(0.18))
-                                        .frame(height: 0.5)
-                                        .offset(y: slotHeight - 0.5)
-                                        .frame(height: slotHeight)
-                                }
-                            }
-                            .offset(x: timeColWidth)
-
-                            // 垂直列分割线
-                            HStack(spacing: 0) {
-                                Spacer().frame(width: timeColWidth)
-                                ForEach(0..<7, id: \.self) { _ in
-                                    Rectangle()
-                                        .fill(Color(UIColor.separator).opacity(0.15))
-                                        .frame(width: 0.5, height: totalGridHeight)
-                                        .frame(maxWidth: .infinity, alignment: .trailing)
-                                }
-                            }
-
-                            // 左侧节次与时间戳
-                            ForEach(0..<kClassPeriods.count, id: \.self) { p in
-                                let pInfo = kClassPeriods[p]
-                                let y = CGFloat(p) * slotHeight
-                                VStack(spacing: 1) {
-                                    Text("\(pInfo.period)")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.primary)
-                                    Text(pInfo.start)
-                                        .font(.system(size: 8, design: .monospaced))
-                                        .foregroundColor(.secondary)
-                                    Text(pInfo.end)
-                                        .font(.system(size: 8, design: .monospaced))
-                                        .foregroundColor(.secondary)
-                                }
-                                .frame(width: timeColWidth, height: slotHeight)
-                                .position(x: timeColWidth / 2, y: y + slotHeight / 2)
-                            }
-
-                            // 课程彩色卡片层
-                            let activeSlots = manager.timetable.slots.filter { slot in
-                                selectedWeek >= slot.weekFrom &&
-                                selectedWeek <= slot.weekTo &&
-                                (slot.parity == "all" || (slot.parity == "odd" && selectedWeek % 2 == 1) || (slot.parity == "even" && selectedWeek % 2 == 0))
-                            }
-
-                            ForEach(activeSlots) { slot in
-                                let d = slot.day - 1
-                                if d >= 0 && d < 7 {
-                                    let fromP = max(1, min(kClassPeriods.count, slot.fromPeriod))
-                                    let toP = max(fromP, min(kClassPeriods.count, slot.toPeriod))
-                                    let span = toP - fromP + 1
-
-                                    let cardX = timeColWidth + CGFloat(d) * dayColWidth + 1.5
-                                    let cardY = CGFloat(fromP - 1) * slotHeight + 1.5
-                                    let cardW = max(10, dayColWidth - 3.0)
-                                    let cardH = max(20, CGFloat(span) * slotHeight - 3.0)
-
-                                    let palette = kTimetablePalettes[abs(slot.courseName.hashValue) % kTimetablePalettes.count]
-                                    let roomText = slot.room.isEmpty ? "" : (slot.room.contains("草堂") ? "@ \(slot.room)" : "@ 草堂校区 \(slot.room)")
-
-                                    VStack(spacing: 2) {
-                                        Text(slot.courseName)
-                                            .font(.system(size: 10.5, weight: .semibold))
-                                            .foregroundColor(palette.text)
-                                            .multilineTextAlignment(.center)
-                                            .lineLimit(span > 1 ? 4 : 2)
-
-                                        if !roomText.isEmpty {
-                                            Text(roomText)
-                                                .font(.system(size: 9.5))
-                                                .foregroundColor(palette.text.opacity(0.85))
-                                                .multilineTextAlignment(.center)
-                                                .lineLimit(span > 1 ? 3 : 1)
-                                        }
-                                    }
-                                    .padding(2)
-                                    .frame(width: cardW, height: cardH)
-                                    .background(palette.bg)
-                                    .cornerRadius(6)
-                                    .position(x: cardX + cardW / 2, y: cardY + cardH / 2)
-                                    .onTapGesture {
-                                        selectedSlotForDetail = slot
-                                    }
-                                }
-                            }
-                        }
-                        .frame(width: geo.size.width, height: totalGridHeight)
+                    .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                    .onChange(of: selectedWeek) { newWeek in
+                        manager.timetable.currentWeek = newWeek
+                        manager.saveTimetable()
+                        manager.updateCourseSuggestion()
                     }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Menu {
-                        ForEach(1...20, id: \.self) { w in
-                            Button {
-                                selectedWeek = w
-                                manager.timetable.currentWeek = w
-                                manager.saveTimetable()
-                                manager.updateCourseSuggestion()
-                            } label: {
-                                if w == SemesterCalendar.currentWeek() {
-                                    Label("第 \(w) 周 (本周)", systemImage: "checkmark")
-                                } else {
-                                    Text("第 \(w) 周")
+                    HStack(spacing: 2) {
+                        Button {
+                            if selectedWeek > 1 {
+                                withAnimation { selectedWeek -= 1 }
+                            }
+                        } label: {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(selectedWeek > 1 ? .primary : .secondary.opacity(0.3))
+                                .padding(6)
+                        }
+                        .disabled(selectedWeek <= 1)
+
+                        Menu {
+                            ForEach(1...20, id: \.self) { w in
+                                Button {
+                                    withAnimation { selectedWeek = w }
+                                } label: {
+                                    if w == SemesterCalendar.currentWeek() {
+                                        Label("第 \(w) 周 (本周)", systemImage: "checkmark")
+                                    } else {
+                                        Text("第 \(w) 周")
+                                    }
                                 }
                             }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("第 \(selectedWeek) 周")
+                                    .font(.system(size: 16, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Image(systemName: "chevron.down")
+                                    .font(.system(size: 11, weight: .bold))
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color(UIColor.secondarySystemFill))
+                            .cornerRadius(8)
                         }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text("第 \(selectedWeek) 周")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(.primary)
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundColor(.secondary)
+
+                        Button {
+                            if selectedWeek < 20 {
+                                withAnimation { selectedWeek += 1 }
+                            }
+                        } label: {
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(selectedWeek < 20 ? .primary : .secondary.opacity(0.3))
+                                .padding(6)
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color(UIColor.secondarySystemFill))
-                        .cornerRadius(8)
+                        .disabled(selectedWeek >= 20)
                     }
                 }
+
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 16) {
@@ -1215,14 +1320,34 @@ struct TimetableScreen: View {
                         defer { url.stopAccessingSecurityScopedResource() }
                         do {
                             let data = try Data(contentsOf: url)
-                            try manager.importTimetable(data: data)
-                            importStatus = "课表导入成功！共识别 \(manager.timetable.slots.count) 个课程节次"
+                            let draft = try manager.parseTimetableDraft(data: data)
+                            let reconciled = manager.reconcileCourses(draft: draft)
+                            pendingImportDraft = reconciled
                         } catch {
-                            importStatus = "导入失败：\(error.localizedDescription)"
+                            importStatus = "导入解析失败：\(error.localizedDescription)"
                         }
                     }
                 case .failure(let err):
                     importStatus = "读取文件失败：\(err.localizedDescription)"
+                }
+            }
+            .sheet(isPresented: Binding(
+                get: { pendingImportDraft != nil },
+                set: { if !$0 { pendingImportDraft = nil } }
+            )) {
+                if let draft = pendingImportDraft {
+                    TimetableImportPreviewSheet(
+                        draft: draft,
+                        onConfirm: { finalDraft in
+                            manager.commitTimetableImport(draft: finalDraft)
+                            selectedWeek = manager.timetable.currentWeek > 0 ? manager.timetable.currentWeek : SemesterCalendar.currentWeek()
+                            importStatus = "课表导入成功！共导入 \(finalDraft.items.filter { $0.isSelected }.count) 门课程，\(finalDraft.slots.count) 个课程节次"
+                            pendingImportDraft = nil
+                        },
+                        onCancel: {
+                            pendingImportDraft = nil
+                        }
+                    )
                 }
             }
             .onAppear {
@@ -1335,17 +1460,15 @@ struct CourseSlotDetailSheet: View {
 
 struct SettingsScreen: View {
     @EnvironmentObject var manager: ClassroomManager
-    @State private var serverUrl = "http://127.0.0.1:4180"
-    @State private var deviceAuthCode = ""
     @State private var showResetSuccess = false
     @State private var showKey = false
 
     var body: some View {
         NavigationView {
             List {
-                Section(
-                    header: Text("语音转录引擎偏好"),
-                    footer: Text(manager.transcriptionEngine == .apple ? "苹果原生：内置 iOS 本地模型，离线可用，不耗流量，边录音边实时出字。" : "阶跃星辰 ASR：基于 stepaudio-2.5-asr 云端模型，学术术语与公式识别准确率极高。")
+                                Section(
+                    header: Text("语音转录引擎与分段模式"),
+                    footer: Text(manager.transcriptionEngine == .apple ? "苹果原生：内置 iOS 本地模型，离线可用，不耗流量，边录音边实时出字。" : "阶跃星辰 ASR：基于 stepaudio-2.5-asr 云端学术模型，每 10~20 秒自动切片转录，公式与专业术语准确率极高。")
                 ) {
                     Picker("转录引擎", selection: $manager.transcriptionEngine) {
                         ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
@@ -1354,9 +1477,17 @@ struct SettingsScreen: View {
                     }
                     .pickerStyle(SegmentedPickerStyle())
 
+                    if manager.transcriptionEngine == .stepfun {
+                        Picker("切片转录间隔", selection: $manager.stepfunChunkInterval) {
+                            ForEach(StepfunChunkInterval.allCases, id: \.self) { interval in
+                                Text(interval.title).tag(interval)
+                            }
+                        }
+                    }
+
                     HStack {
                         Label(
-                            manager.transcriptionEngine == .apple ? "苹果原生识别引擎 (已激活)" : "阶跃星辰 ASR (已激活)",
+                            manager.transcriptionEngine == .apple ? "苹果原生识别引擎 (已激活)" : "阶跃星辰 ASR - \(manager.stepfunChunkInterval.shortTitle) (已激活)",
                             systemImage: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill"
                         )
                         .font(.footnote)
@@ -1364,7 +1495,7 @@ struct SettingsScreen: View {
 
                         Spacer()
 
-                        Text(manager.transcriptionEngine.badge)
+                        Text(manager.transcriptionEngine == .apple ? "本地免Key" : "stepaudio-2.5-asr")
                             .font(.caption2)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -1457,6 +1588,27 @@ struct SettingsScreen: View {
                     }
                 }
 
+                Section(
+                    header: Text("录音存储与 Cloudflare R2 云端同步"),
+                    footer: Text(manager.r2StorageMode.detailDescription)
+                ) {
+                    Picker("存储策略", selection: $manager.r2StorageMode) {
+                        ForEach(AudioStorageMode.allCases, id: \.self) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    
+                    Toggle("允许使用蜂窝网络上传", isOn: $manager.r2AllowCellular)
+                    
+                    HStack {
+                        Text("云端同步 Worker")
+                        Spacer()
+                        TextField("https://compass.lzso.top", text: $manager.r2WorkerBaseURL)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 13, design: .monospaced))
+                    }
+                }
+
                 Section {
                     Button {
                         manager.resetAIDefaults()
@@ -1467,27 +1619,13 @@ struct SettingsScreen: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Label(showResetSuccess ? "已成功恢复官方密钥配置！" : "恢复内置官方 API 密钥", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
+                            Label(showResetSuccess ? "已重置默认接口并清空本地密钥！" : "重置为默认配置 (清除敏感密钥)", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
                                 .foregroundColor(showResetSuccess ? .green : .accentColor)
                             Spacer()
                         }
                     }
                 }
 
-                Section("在线服务与设备认证") {
-                    HStack {
-                        Text("服务地址")
-                        Spacer()
-                        TextField("http://...", text: $serverUrl)
-                            .multilineTextAlignment(.trailing)
-                    }
-                    HStack {
-                        Text("6位授权码")
-                        Spacer()
-                        TextField("无需输密码", text: $deviceAuthCode)
-                            .multilineTextAlignment(.trailing)
-                    }
-                }
 
                 Section("本机存储用量") {
                     HStack {
@@ -1515,7 +1653,7 @@ struct SettingsScreen: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.2.0 (原生原生构建)")
+                        Text("1.4.0 (2026.11.08 课表草稿预览与分层安全管理版)")
                             .foregroundColor(.secondary)
                     }
                 }
@@ -1528,6 +1666,137 @@ struct SettingsScreen: View {
 
 // MARK: - 课堂详情页 (从上课录音到课后复习一站式集成)
 
+// MARK: - 自定义高触感 Tab 导航胶囊组件
+
+struct DetailTabPill: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    var badge: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: isSelected ? .bold : .medium))
+                Text(title)
+                    .font(.system(size: 14, weight: isSelected ? .bold : .medium))
+                
+                if let b = badge {
+                    Text(b)
+                        .font(.system(size: 10, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.25))
+                        .foregroundColor(isSelected ? .white : .primary)
+                        .clipShape(Capsule())
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 42)
+            .background(
+                ZStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(Color.accentColor.opacity(0.16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11)
+                                    .stroke(Color.accentColor.opacity(0.35), lineWidth: 1)
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(Color(UIColor.tertiarySystemFill).opacity(0.45))
+                    }
+                }
+            )
+            .foregroundColor(isSelected ? .accentColor : .primary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - 智能笔记生成推荐卡片
+
+struct NoteGenerationCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let accentColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(accentColor)
+                    .frame(width: 44, height: 44)
+                    .background(accentColor.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.secondary.opacity(0.6))
+            }
+            .padding(14)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(accentColor.opacity(0.18), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - TXT 导出与原生分享组件
+
+struct ShareItem: Identifiable {
+    let id = UUID()
+    let fileURL: URL
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+func createTempTXT(filename: String, content: String) -> URL? {
+    let tempDir = FileManager.default.temporaryDirectory
+    let safeName = filename.components(separatedBy: CharacterSet(charactersIn: "/\\?%*|\"<>:")).joined(separator: "_")
+    let fileURL = tempDir.appendingPathComponent("\(safeName).txt")
+    do {
+        try content.write(to: fileURL, atomically: true, encoding: .utf8)
+        return fileURL
+    } catch {
+        return nil
+    }
+}
+
 struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
@@ -1539,6 +1808,7 @@ struct LessonDetailView: View {
     @State private var unreadSegmentCount = 0
     @State private var showRenameAlert = false
     @State private var editTitle = ""
+    @State private var shareItem: ShareItem? = nil
 
     var activeSession: LessonSession {
         manager.sessions.first(where: { $0.id == session.id }) ?? session
@@ -1551,50 +1821,176 @@ struct LessonDetailView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // 顶部 3-Tab 切换栏: 文字 / 笔记 / 问答
-                Picker("课堂模块", selection: $currentTab) {
-                    Text("文字").tag(0)
-                    Text("笔记").tag(1)
-                    Text("问答").tag(2)
+                if isLiveActive {
+                    HStack {
+                        Menu {
+                            Section("切换当前转录引擎") {
+                                Button {
+                                    manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
+                                } label: {
+                                    Label("阶跃星辰 ASR (20秒·语义完整)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds ? "checkmark" : "")
+                                }
+                                Button {
+                                    manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
+                                } label: {
+                                    Label("阶跃星辰 ASR (10秒·极速出字)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds ? "checkmark" : "")
+                                }
+                                Button {
+                                    manager.switchTranscriptionEngine(.stepfun, interval: .fullLesson)
+                                } label: {
+                                    Label("课后统一转写 (录中静默)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .fullLesson ? "checkmark" : "")
+                                }
+                                Button {
+                                    manager.switchTranscriptionEngine(.apple)
+                                } label: {
+                                    Label("苹果原生识别 (免Key·系统输入法)", systemImage: manager.transcriptionEngine == .apple ? "checkmark" : "")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 5) {
+                                Circle()
+                                    .fill(manager.isPaused ? Color.orange : Color.green)
+                                    .frame(width: 8, height: 8)
+                                Text(manager.transcriptionEngine == .stepfun ? "阶跃 ASR (\(manager.stepfunChunkInterval.shortTitle))" : "苹果原生")
+                                    .font(.system(size: 12, weight: .bold))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 9))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color(UIColor.tertiarySystemFill))
+                            .foregroundColor(.primary)
+                            .cornerRadius(12)
+                        }
+
+                        Spacer()
+
+                        Text(manager.isPaused ? "已暂停录音" : "正在录音")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(manager.isPaused ? .orange : .green)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 4)
+                    .padding(.bottom, 2)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                } else {
+                    HStack {
+                        HStack(spacing: 5) {
+                            Image(systemName: activeSession.storageStatus == .cloudOnly || activeSession.storageStatus == .cloudVerified ? "icloud.fill" : (activeSession.storageStatus == .uploadFailed ? "exclamationmark.icloud.fill" : "internaldrive"))
+                                .font(.system(size: 12))
+                                .foregroundColor(activeSession.storageStatus == .uploadFailed ? .red : (activeSession.storageStatus == .cloudOnly || activeSession.storageStatus == .cloudVerified ? .blue : .secondary))
+                            Text(activeSession.storageStatus.title)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        if activeSession.storageStatus == .cloudOnly {
+                            Button {
+                                Task {
+                                    await manager.downloadCloudAudio(for: activeSession)
+                                }
+                            } label: {
+                                Label("下载音频到本地", systemImage: "arrow.down.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(.accentColor)
+                            }
+                        } else if activeSession.storageStatus == .uploadFailed || activeSession.storageStatus == .localOnly {
+                            Button {
+                                manager.retryUpload(session: activeSession)
+                            } label: {
+                                Label("上传备份至云端", systemImage: "arrow.up.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(.accentColor)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.horizontal, 16)
+
+                // 自定义大触控 Tab 导航栏 (带未读/条目角标与动画)
+                HStack(spacing: 6) {
+                    DetailTabPill(
+                        title: "实录文字",
+                        systemImage: "waveform",
+                        isSelected: currentTab == 0,
+                        badge: activeSession.segments.count > 0 ? "\(activeSession.segments.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 0
+                        }
+                    }
+
+                    DetailTabPill(
+                        title: "课堂笔记",
+                        systemImage: "note.text",
+                        isSelected: currentTab == 1,
+                        badge: activeSession.notes.count > 0 ? "\(activeSession.notes.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 1
+                        }
+                    }
+
+                    DetailTabPill(
+                        title: "AI 问答",
+                        systemImage: "sparkles",
+                        isSelected: currentTab == 2,
+                        badge: activeSession.qaPairs.count > 0 ? "\(activeSession.qaPairs.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 2
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(Color(UIColor.secondarySystemGroupedBackground))
 
                 Divider()
 
-                // 主体内容区
-                Group {
-                    if currentTab == 0 {
-                        TranscriptTabView(
-                            session: activeSession,
-                            isLive: isLiveActive,
-                            followBottom: $followBottom,
-                            unreadCount: $unreadSegmentCount,
-                            onAskAboutSegment: { seg, q in
-                                manager.askQuestion(for: activeSession, query: q, segment: seg)
-                                currentTab = 2
-                            }
-                        )
-                    } else if currentTab == 1 {
-                        NotesTabView(
-                            session: activeSession,
-                            selectedStyle: $selectedNoteStyle
-                        )
-                    } else {
-                        QATabView(
-                            session: activeSession,
-                            inputText: $qaInput,
-                            onCitationTapped: { sec in
-                                currentTab = 0
-                                manager.playAudio(session: activeSession, seekTo: sec)
-                            }
-                        )
-                    }
-                }
+                // 主体内容区：支持全屏横向自然滑动切换
+                TabView(selection: $currentTab) {
+                    TranscriptTabView(
+                        session: activeSession,
+                        isLive: isLiveActive,
+                        followBottom: $followBottom,
+                        unreadCount: $unreadSegmentCount,
+                        onAskAboutSegment: { seg, q in
+                            manager.askQuestion(for: activeSession, query: q, segment: seg)
+                            withAnimation { currentTab = 2 }
+                        },
+                        onSwitchToTab: { tab in
+                            withAnimation { currentTab = tab }
+                        }
+                    )
+                    .tag(0)
 
-                // 底部控制条：若正在录音，展示暂停/继续/标重点/结束；若已结束且在文字页，展示音频播放条
+                    NotesTabView(
+                        session: activeSession,
+                        selectedStyle: $selectedNoteStyle,
+                        onSwitchToQA: {
+                            withAnimation { currentTab = 2 }
+                        }
+                    )
+                    .tag(1)
+
+                    QATabView(
+                        session: activeSession,
+                        inputText: $qaInput,
+                        onCitationTapped: { sec in
+                            withAnimation { currentTab = 0 }
+                            manager.playAudio(session: activeSession, seekTo: sec)
+                        }
+                    )
+                    .tag(2)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+
+                // 底部录音控制栏或播放条
                 if isLiveActive {
                     LiveRecordingControlBar(session: activeSession)
                 } else if currentTab == 0 {
@@ -1614,13 +2010,108 @@ struct LessonDetailView: View {
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("完成") {
-                        presentationMode.wrappedValue.dismiss()
+                    HStack(spacing: 12) {
+                        Menu {
+                            Button {
+                                exportAllToTXT(session: activeSession)
+                            } label: {
+                                Label("导出整堂课 (实录+笔记) 为 TXT", systemImage: "doc.text.fill")
+                            }
+                            if !activeSession.segments.isEmpty {
+                                Button {
+                                    exportTranscriptOnlyToTXT(session: activeSession)
+                                } label: {
+                                    Label("仅导出语音实录为 TXT", systemImage: "waveform")
+                                }
+                            }
+                            if !activeSession.notes.isEmpty {
+                                Button {
+                                    exportNotesOnlyToTXT(session: activeSession)
+                                } label: {
+                                    Label("仅导出课堂笔记为 TXT", systemImage: "note.text")
+                                }
+                            }
+                        } label: {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 16))
+                                .foregroundColor(.primary)
+                                .padding(4)
+                        }
+
+                        Button("完成") {
+                            presentationMode.wrappedValue.dismiss()
+                        }
                     }
                 }
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.fileURL])
+        }
+    }
+
+    private func exportAllToTXT(session: LessonSession) {
+        var text = """
+========================================
+课程：\(session.courseName)
+主题：\(session.title)
+课堂时长：\(formatDuration(session.duration))
+========================================
+
+"""
+        if !session.notes.isEmpty {
+            text += "\n----------------------------------------\n【智能课堂笔记】\n----------------------------------------\n\n"
+            for n in session.notes {
+                text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
+            }
+        }
+        if !session.segments.isEmpty {
+            text += "\n----------------------------------------\n【课堂逐句实录】\n----------------------------------------\n\n"
+            let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
+            text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
+        }
+        let name = "\(session.title)-整节课记录"
+        if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
+    }
+
+    private func exportTranscriptOnlyToTXT(session: LessonSession) {
+        var text = """
+========================================
+【课堂语音实录】
+课程：\(session.courseName)
+主题：\(session.title)
+课堂时长：\(formatDuration(session.duration))
+实录分段：共 \(session.segments.count) 段
+========================================
+
+"""
+        let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
+        text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
+        let name = "\(session.title)-实录文本"
+        if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
+    }
+
+    private func exportNotesOnlyToTXT(session: LessonSession) {
+        var text = """
+========================================
+【课堂笔记与纪要】
+课程：\(session.courseName)
+主题：\(session.title)
+========================================
+
+"""
+        for n in session.notes {
+            text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
+        }
+        let name = "\(session.title)-课堂笔记"
+        if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {
@@ -1638,15 +2129,71 @@ struct TranscriptTabView: View {
     @Binding var followBottom: Bool
     @Binding var unreadCount: Int
     var onAskAboutSegment: ((TranscriptSegment, String) -> Void)? = nil
+    var onSwitchToTab: ((Int) -> Void)? = nil
 
     @State private var selectedSegmentForQA: TranscriptSegment?
     @State private var isSelectMode: Bool = false
     @State private var selectedIds: Set<UUID> = []
     @State private var toastMessage: String? = nil
+    @State private var shareItem: ShareItem? = nil
 
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                // 1. 断网或分片待补转写横幅（支持一键断网重试补转）
+                if !isLive && (session.status == .pendingCatchUp || session.status == .transcriptionFailed || session.chunkTasks.contains { $0.status == .pending || $0.status == .failed }) {
+                    let pendingCount = session.chunkTasks.filter { $0.status == .pending || $0.status == .failed }.count
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("因网络波动，尚有 \(max(1, pendingCount)) 个分片待补转写")
+                                .font(.caption.bold())
+                                .foregroundColor(.primary)
+                            Text("原始音频已安全缓存在本地，连网后点击即可补转")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Button {
+                            manager.retryPendingChunks(for: session)
+                        } label: {
+                            HStack(spacing: 4) {
+                                if manager.isChunkTranscribing {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                }
+                                Text("一键补转写")
+                                    .font(.caption.bold())
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .disabled(manager.isChunkTranscribing)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.orange.opacity(0.12))
+                } else if !isLive && session.isTempAudioPurged {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.system(size: 12))
+                        Text("全部分片已完整转写，临时录音已自动清理（已释放手机存储）")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.08))
+                }
+
                 // 多选操作顶栏
                 if !session.segments.isEmpty && !isLive {
                     HStack {
@@ -1674,12 +2221,60 @@ struct TranscriptTabView: View {
                             }
                             .font(.subheadline)
                         } else {
+                            // 1. 全选复制全部实录文字
+                            Button {
+                                let allText = session.segments
+                                    .sorted { $0.startTime < $1.startTime }
+                                    .map { "[\(formatDuration($0.startTime))] \($0.text)" }
+                                    .joined(separator: "\n\n")
+                                UIPasteboard.general.string = allText
+                                toastMessage = "已全选复制全部 \(session.segments.count) 段实录"
+                            } label: {
+                                Label("全选复制", systemImage: "doc.on.doc")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .cornerRadius(8)
+                            }
+
+                            // 2. 导出为 TXT 文档
+                            Button {
+                                let header = """
+========================================
+【课堂语音实录】
+课程：\(session.courseName)
+主题：\(session.title)
+录音时长：\(formatDuration(session.duration))
+实录分段：共 \(session.segments.count) 段
+========================================
+
+"""
+                                let body = session.segments
+                                    .sorted { $0.startTime < $1.startTime }
+                                    .map { "[\(formatDuration($0.startTime))] \($0.text)" }
+                                    .joined(separator: "\n\n")
+                                let name = "\(session.title)-语音实录"
+                                if let url = createTempTXT(filename: name, content: header + body) {
+                                    shareItem = ShareItem(fileURL: url)
+                                }
+                            } label: {
+                                Label("导出 TXT", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .cornerRadius(8)
+                            }
+
                             Spacer()
+
+                            // 3. 多选模式
                             Button {
                                 isSelectMode = true
                             } label: {
-                                Label("多选复制", systemImage: "checklist")
-                                    .font(.subheadline)
+                                Label("多选", systemImage: "checklist")
+                                    .font(.system(size: 12, weight: .medium))
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 5)
                                     .background(Color(UIColor.tertiarySystemFill))
@@ -1696,23 +2291,96 @@ struct TranscriptTabView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(alignment: .leading, spacing: 14) {
-                        // 顶部大计时
+                        // 顶部大计时与实时模式指示
                         if isLive {
-                            VStack(spacing: 6) {
+                            VStack(spacing: 8) {
                                 Text(formatDuration(manager.recordingElapsed))
                                     .font(.system(size: 42, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.primary)
-                                HStack(spacing: 6) {
-                                    Circle()
-                                        .fill(manager.isPaused ? Color.orange : Color.green)
-                                        .frame(width: 8, height: 8)
-                                    Text(manager.isPaused ? "已暂停录音" : "麦克风正在持续写入")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                Menu {
+                                    Button {
+                                        manager.switchTranscriptionEngine(.apple)
+                                    } label: {
+                                        HStack {
+                                            Text("苹果原生输入法 (本地边说边出字)")
+                                            if manager.transcriptionEngine == .apple {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+
+                                    Section("阶跃星辰 ASR (使用您的 StepFun Key)") {
+                                        Button {
+                                            manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
+                                        } label: {
+                                            HStack {
+                                                Text("10 秒切片转录 (高频快速)")
+                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+
+                                        Button {
+                                            manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
+                                        } label: {
+                                            HStack {
+                                                Text("20 秒切片转录 (推荐·整句连贯)")
+                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+
+                                        Button {
+                                            manager.switchTranscriptionEngine(.stepfun, interval: .thirtySeconds)
+                                        } label: {
+                                            HStack {
+                                                Text("30 秒切片转录 (长段落)")
+                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .thirtySeconds {
+                                                    Image(systemName: "checkmark")
+                                                }
+                                            }
+                                        }
+                                    }
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Circle()
+                                            .fill(manager.isPaused ? Color.orange : (manager.transcriptionEngine == .apple ? Color.green : Color.blue))
+                                            .frame(width: 8, height: 8)
+                                        
+                                        if manager.isPaused {
+                                            Text("已暂停录音 (点击切换转录)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        } else if manager.transcriptionEngine == .apple {
+                                            Text("苹果原生实时转录中 (点击可换阶跃ASR)")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                        } else {
+                                            HStack(spacing: 4) {
+                                                Text("阶跃星辰 ASR (\(manager.stepfunChunkInterval.shortTitle)) 转写中")
+                                                    .font(.caption)
+                                                    .foregroundColor(.secondary)
+                                                if manager.isChunkTranscribing {
+                                                    ProgressView()
+                                                        .scaleEffect(0.6)
+                                                }
+                                            }
+                                        }
+                                        
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: 8))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.horizontal, 10)
+                                    .padding(.vertical, 5)
+                                    .background(Color(UIColor.tertiarySystemFill).opacity(0.6))
+                                    .cornerRadius(12)
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
+                            .padding(.vertical, 14)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
                             .cornerRadius(16)
                         }
@@ -1944,6 +2612,9 @@ struct TranscriptTabView: View {
                 onAskAboutSegment?(seg, question)
             }
         }
+        .sheet(item: $shareItem) { item in
+            ShareSheet(activityItems: [item.fileURL])
+        }
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {
@@ -2067,7 +2738,9 @@ struct NotesTabView: View {
     @EnvironmentObject var manager: ClassroomManager
     let session: LessonSession
     @Binding var selectedStyle: NoteStyle
+    var onSwitchToQA: (() -> Void)? = nil
     @State private var copiedNotice = false
+    @State private var shareItem: ShareItem? = nil
 
     var currentNote: LessonNote? {
         session.notes.first(where: { $0.style == selectedStyle })
@@ -2075,28 +2748,76 @@ struct NotesTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 样式选择胶囊
-            Picker("笔记样式", selection: $selectedStyle) {
-                ForEach(NoteStyle.allCases, id: \.self) { style in
-                    Text(style.title).tag(style)
-                }
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-
-            Divider()
-
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    // 生成中动画指示器
+                    if manager.isGeneratingNotes {
+                        HStack(spacing: 12) {
+                            ProgressView()
+                                .scaleEffect(1.1)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("DeepSeek 正在精读课堂实录...")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Text("正在生成【\(selectedStyle.title)】，约需数秒...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.accentColor.opacity(0.1))
+                        .cornerRadius(14)
+                    }
+
                     if let note = currentNote {
+                        // 笔记卡片头部与风格切换
+                        HStack {
+                            Label(selectedStyle.title, systemImage: "doc.text.fill")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundColor(.primary)
+
+                            Spacer()
+
+                            Menu {
+                                ForEach(NoteStyle.allCases, id: \.self) { style in
+                                    Button {
+                                        selectedStyle = style
+                                        if !session.notes.contains(where: { $0.style == style }) {
+                                            manager.generateNotes(for: session, style: style)
+                                        }
+                                    } label: {
+                                        if selectedStyle == style {
+                                            Label(style.title, systemImage: "checkmark")
+                                        } else if session.notes.contains(where: { $0.style == style }) {
+                                            Label(style.title, systemImage: "doc.text")
+                                        } else {
+                                            Text(style.title + " (点击生成)")
+                                        }
+                                    }
+                                }
+                            } label: {
+                                HStack(spacing: 4) {
+                                    Text("切换/生成其他风格")
+                                    Image(systemName: "chevron.up.chevron.down")
+                                }
+                                .font(.system(size: 12, weight: .medium))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(Color(UIColor.tertiarySystemFill))
+                                .foregroundColor(.primary)
+                                .cornerRadius(8)
+                            }
+                        }
+                        .padding(.horizontal, 4)
+
                         MarkdownContentView(content: note.content)
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
                             .cornerRadius(16)
 
-                        HStack {
+                        HStack(spacing: 12) {
                             Button {
                                 UIPasteboard.general.string = note.content
                                 copiedNotice = true
@@ -2104,60 +2825,122 @@ struct NotesTabView: View {
                                     copiedNotice = false
                                 }
                             } label: {
-                                Label(copiedNotice ? "已复制到剪贴板！" : "复制全部笔记", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
-                                    .font(.system(size: 15, weight: .semibold))
+                                Label(copiedNotice ? "已复制！" : "全选复制", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .foregroundColor(.primary)
+                                    .cornerRadius(10)
                             }
+
+                            Button {
+                                let name = "\(session.title)-\(selectedStyle.title)"
+                                let header = """
+========================================
+【智能课堂笔记 - \(selectedStyle.title)】
+课程：\(session.courseName)
+主题：\(session.title)
+整理：DeepSeek AI
+========================================
+
+"""
+                                if let url = createTempTXT(filename: name, content: header + note.content) {
+                                    shareItem = ShareItem(fileURL: url)
+                                }
+                            } label: {
+                                Label("导出 TXT", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .foregroundColor(.primary)
+                                    .cornerRadius(10)
+                            }
+
+                            Button {
+                                manager.generateNotes(for: session, style: selectedStyle)
+                            } label: {
+                                Label("重新生成", systemImage: "arrow.clockwise")
+                                    .font(.system(size: 14))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .foregroundColor(.secondary)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(manager.isGeneratingNotes)
 
                             Spacer()
 
                             Button {
-                                manager.generateNotes(for: session, style: selectedStyle)
+                                onSwitchToQA?()
                             } label: {
-                                Label("重新整理", systemImage: "arrow.clockwise")
-                                    .font(.subheadline)
+                                Label("针对笔记提问", systemImage: "sparkles")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.accentColor)
                             }
-                            .disabled(manager.isGeneratingNotes)
                         }
                         .padding(.horizontal, 4)
-                    } else {
+                    } else if !manager.isGeneratingNotes {
+                        // 空白初始状态：移除顶部重复按钮，仅保留 3 大专业卡片
                         VStack(spacing: 16) {
-                            Image(systemName: "doc.text.below.ecg")
-                                .font(.system(size: 44))
-                                .foregroundColor(.secondary.opacity(0.5))
-                            Text("尚未生成\(selectedStyle.title)笔记")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            Text("智能提炼整节课堂脉络、重要公式与考点复习大纲")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            VStack(spacing: 6) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.accentColor)
+                                Text("智能课堂笔记")
+                                    .font(.title3.bold())
+                                Text("由 DeepSeek 深度理解整堂课语音实录，生成专业结构化笔记")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 10)
 
-                            Button {
-                                manager.generateNotes(for: session, style: selectedStyle)
-                            } label: {
-                                if manager.isGeneratingNotes {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Label("提炼课堂笔记", systemImage: "sparkles")
+                            VStack(spacing: 10) {
+                                NoteGenerationCard(
+                                    title: "系统详细提纲",
+                                    subtitle: "定理推导过程、板书架构与知识层级全面梳理",
+                                    icon: "list.bullet.rectangle",
+                                    accentColor: .blue
+                                ) {
+                                    selectedStyle = .detailedOutline
+                                    manager.generateNotes(for: session, style: .detailedOutline)
+                                }
+
+                                NoteGenerationCard(
+                                    title: "核心公式与要点速记",
+                                    subtitle: "提炼核心定理、公式符号、适用条件与易混淆考点",
+                                    icon: "function",
+                                    accentColor: .green
+                                ) {
+                                    selectedStyle = .keyPoints
+                                    manager.generateNotes(for: session, style: .keyPoints)
+                                }
+
+                                NoteGenerationCard(
+                                    title: "期末重点与作业要求",
+                                    subtitle: "聚焦老师反复强调的作业/实验重点与考查核心",
+                                    icon: "checkmark.seal",
+                                    accentColor: .orange
+                                ) {
+                                    selectedStyle = .examReview
+                                    manager.generateNotes(for: session, style: .examReview)
                                 }
                             }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .cornerRadius(14)
-                            .disabled(manager.isGeneratingNotes)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 60)
+                        .padding(.horizontal, 16)
                     }
                 }
                 .padding(16)
             }
+            .sheet(item: $shareItem) { item in
+                ShareSheet(activityItems: [item.fileURL])
+            }
         }
     }
 }
+
 
 // MARK: - Tab 3: 问答页面
 
@@ -2170,14 +2953,14 @@ struct QATabView: View {
     let quickQuestions = [
         "这节课讲了哪些核心公式？",
         "老师强调了哪些考试或作业要求？",
-        "总结本节课的核心结论"
+        "总结本节课的核心结论与考点"
     ]
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    // 快捷提问气泡
+                    // 快捷问题推荐滑动胶囊
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(quickQuestions, id: \.self) { q in
@@ -2198,80 +2981,127 @@ struct QATabView: View {
                         .padding(.vertical, 8)
                     }
 
-                    if session.qaPairs.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "bubble.left.and.bubble.right")
-                                .font(.system(size: 40))
-                                .foregroundColor(.secondary.opacity(0.5))
-                            Text("针对课堂内容的专属答疑助手")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Text("输入提问或点击上方快捷词，答案将精确关联课堂时间戳")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    if session.qaPairs.isEmpty && !manager.isAskingQA {
+                        VStack(spacing: 16) {
+                            VStack(spacing: 6) {
+                                Image(systemName: "bubble.left.and.bubble.right")
+                                    .font(.system(size: 38))
+                                    .foregroundColor(.accentColor)
+                                Text("课堂 AI 助教")
+                                    .font(.title3.bold())
+                                Text("随时针对课堂讲解中的疑难点、定理推导与考点提问")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 16)
+
+                            VStack(spacing: 10) {
+                                ForEach(quickQuestions, id: \.self) { q in
+                                    Button {
+                                        manager.askQuestion(for: session, query: q)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "questionmark.circle.fill")
+                                                .foregroundColor(.accentColor)
+                                            Text(q)
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                            Image(systemName: "arrow.up.circle.fill")
+                                                .foregroundColor(.accentColor)
+                                        }
+                                        .padding(14)
+                                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                                        .cornerRadius(12)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, 16)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
+                        .padding(.vertical, 10)
                     } else {
                         ForEach(session.qaPairs) { pair in
                             VStack(alignment: .leading, spacing: 8) {
-                                // 问
+                                // 用户提问
                                 HStack {
                                     Spacer()
                                     Text(pair.question)
                                         .font(.subheadline)
                                         .foregroundColor(.white)
-                                        .padding(12)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
                                         .background(Color.accentColor)
-                                        .cornerRadius(14)
+                                        .cornerRadius(16)
                                 }
 
-                                // 答
-                                VStack(alignment: .leading, spacing: 6) {
-                                    MarkdownContentView(content: pair.answer)
-                                        .padding(.vertical, 2)
+                                // AI 回答
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white)
+                                        .padding(6)
+                                        .background(Color(red: 0.0, green: 0.42, blue: 0.40))
+                                        .clipShape(Circle())
 
-                                    if let cit = pair.citationSeconds {
-                                        Button {
-                                            onCitationTapped(cit)
-                                        } label: {
-                                            Label("跳转到课堂录音 \(formatTime(cit))", systemImage: "play.circle.fill")
-                                                .font(.system(size: 11, weight: .bold))
-                                                .foregroundColor(.accentColor)
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        MarkdownContentView(content: pair.answer)
+
+                                        if let sec = pair.citationSeconds {
+                                            Button {
+                                                onCitationTapped(sec)
+                                            } label: {
+                                                Label("定位到实录：\(formatTime(sec))", systemImage: "clock.arrow.circlepath")
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(Color.accentColor.opacity(0.12))
+                                                    .cornerRadius(6)
+                                            }
                                         }
-                                        .padding(.top, 4)
                                     }
+                                    .padding(14)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                                    .cornerRadius(16)
                                 }
-                                .padding(12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color(UIColor.secondarySystemGroupedBackground))
-                                .cornerRadius(14)
                             }
+                            .padding(.horizontal, 16)
                         }
                     }
-                }
-                .padding(16)
-            }
 
-            if manager.isAskingQA {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
-                    Text("AI 助教正在结合课堂实录思考解答中...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
+                    // AI 正在思考回答动态卡片
+                    if manager.isAskingQA {
+                        HStack(alignment: .top, spacing: 10) {
+                            ProgressView()
+                                .scaleEffect(0.9)
+                                .padding(6)
+                            Text("DeepSeek v4.1 Flash 正在精读课堂实录并生成解答...")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                        .cornerRadius(14)
+                        .padding(.horizontal, 16)
+                    }
                 }
-                .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color(UIColor.secondarySystemGroupedBackground))
             }
 
-            // 底部输入框
+            // 底部提问输入栏 (支持回车一键发送)
             Divider()
             HStack(spacing: 8) {
-                TextField("向课堂 AI 提问...", text: $inputText)
+                TextField("向课堂 AI 提问任何公式或知识点...", text: $inputText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onSubmit {
+                        let q = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !q.isEmpty {
+                            manager.askQuestion(for: session, query: q)
+                            inputText = ""
+                        }
+                    }
 
                 Button {
                     let q = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2281,12 +3111,13 @@ struct QATabView: View {
                     }
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 32))
                         .foregroundColor(.accentColor)
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || manager.isAskingQA)
             }
-            .padding(12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(Color(UIColor.secondarySystemGroupedBackground))
         }
     }
@@ -2296,6 +3127,7 @@ struct QATabView: View {
         return String(format: "%02d:%02d", whole / 60, whole % 60)
     }
 }
+
 
 // MARK: - 底部录音控制栏
 
@@ -2375,7 +3207,30 @@ struct AudioPlayerControlBar: View {
     var body: some View {
         if manager.hasAudioFile(for: session) {
             VStack(spacing: 6) {
-            // 滑动进度条
+                HStack {
+                    Label(
+                        manager.hasLocalAudio(for: session) ? "本地离线音频" : "云端 R2 流式播放 (免占本地空间)",
+                        systemImage: manager.hasLocalAudio(for: session) ? "internaldrive" : "icloud"
+                    )
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    if !manager.hasLocalAudio(for: session) {
+                        Button {
+                            Task {
+                                await manager.downloadCloudAudio(for: session)
+                            }
+                        } label: {
+                            Text("下载到本地")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+
+                // 滑动进度条
             Slider(
                 value: Binding(
                     get: { manager.playbackTime },
@@ -2474,9 +3329,11 @@ struct StatusBadge: View {
         switch status {
         case .recording: return .green
         case .paused: return .orange
+        case .pendingCatchUp: return .blue
+        case .transcriptionFailed: return .red
         case .interrupted: return .red
         case .completed: return .secondary
-        default: return .secondary
+        case .recordOnlyCompleted: return .indigo
         }
     }
 }
@@ -2508,13 +3365,13 @@ extension Color {
 }
 
 
-// MARK: - 课表导入对照预览浮层
+
+// MARK: - 课表导入草稿预览对照 Sheet (v1.4.0)
 
 struct TimetableImportPreviewSheet: View {
     @State var draft: TimetableImportDraft
-    @EnvironmentObject var manager: ClassroomManager
+    var onConfirm: (TimetableImportDraft) -> Void
     var onCancel: () -> Void
-    var onCommit: (TimetableImportDraft) -> Void
 
     var selectedCount: Int {
         draft.items.filter { $0.isSelected }.count
@@ -2522,119 +3379,150 @@ struct TimetableImportPreviewSheet: View {
 
     var body: some View {
         NavigationView {
-            List {
-                Section {
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text(draft.schoolName.isEmpty ? "教务系统课表" : draft.schoolName)
+            VStack(spacing: 0) {
+                // 顶部说明卡片
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Image(systemName: "doc.text.magnifyingglass")
+                            .font(.title2)
+                            .foregroundColor(.accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("课表导入预览与对照")
                                 .font(.headline)
-                            Spacer()
-                            Text(draft.semester)
-                                .font(.caption.bold())
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(Color.blue.opacity(0.12))
-                                .foregroundColor(.blue)
-                                .cornerRadius(6)
-                        }
-                        if !draft.className.isEmpty || !draft.studentName.isEmpty {
-                            Text([draft.className, draft.studentName].filter { !$0.isEmpty }.joined(separator: " · "))
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
-                        Text("已解析 \(draft.items.count) 门课程，共 \(draft.slots.count) 个上课时段。您可以直接修改课程名、取消不需要的课程或确认对应关系。")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                if !draft.warnings.isEmpty {
-                    Section("识别提醒") {
-                        ForEach(draft.warnings, id: \.self) { w in
-                            HStack(spacing: 8) {
-                                Image(systemName: "exclamationmark.triangle.fill")
-                                    .foregroundColor(.orange)
-                                Text(w)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                }
-
-                Section(header: Text("待导入课程 (\(selectedCount)/\(draft.items.count))")) {
-                    ForEach($draft.items) { $item in
-                        let isMatched = manager.courses.contains(where: { $0.name == item.originalName })
-                        
-                        HStack(spacing: 12) {
-                            Button {
-                                item.isSelected.toggle()
-                            } label: {
-                                Image(systemName: item.isSelected ? "checkmark.circle.fill" : "circle")
-                                    .font(.system(size: 20))
-                                    .foregroundColor(item.isSelected ? .blue : .secondary)
-                            }
-                            .buttonStyle(PlainButtonStyle())
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    TextField("课程名", text: $item.editedName)
-                                        .font(.headline)
-                                        .foregroundColor(item.isSelected ? .primary : .secondary)
-                                    Spacer()
-                                    if isMatched {
-                                        Text("匹配已有")
-                                            .font(.system(size: 11, weight: .semibold))
-                                            .foregroundColor(.green)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.green.opacity(0.1))
-                                            .cornerRadius(4)
-                                    } else {
-                                        Text("新增课程")
-                                            .font(.system(size: 11, weight: .semibold))
-                                            .foregroundColor(.blue)
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(Color.blue.opacity(0.1))
-                                            .cornerRadius(4)
-                                    }
-                                }
-                                
-                                HStack(spacing: 8) {
-                                    if !item.room.isEmpty {
-                                        Label(item.room, systemImage: "mappin.and.ellipse")
-                                    }
-                                    if !item.teacher.isEmpty {
-                                        Label(item.teacher, systemImage: "person")
-                                    }
-                                }
+                            Text("已解析 \(draft.items.count) 门课程，共 \(draft.slots.count) 个课程节次")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            }
                         }
-                        .padding(.vertical, 4)
-                        .opacity(item.isSelected ? 1.0 : 0.5)
+                        Spacer()
+                        Text(draft.semester)
+                            .font(.caption)
+                            .bold()
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color(UIColor.secondarySystemFill))
+                            .cornerRadius(6)
+                    }
+                    
+                    if !draft.schoolName.isEmpty || !draft.className.isEmpty {
+                        Text([draft.schoolName, draft.className, draft.studentName].filter { !$0.isEmpty }.joined(separator: " · "))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Text("💡 提示：这只是预览草稿，未确认前不会修改本机课程数据。勾选需要导入的课程，可直接点击修改课程名称。")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 2)
+                }
+                .padding(14)
+                .background(Color(UIColor.secondarySystemGroupedBackground))
+                .cornerRadius(12)
+                .padding(.horizontal)
+                .padding(.top, 10)
+
+                // 课程列表
+                List {
+                    Section(header: Text("课程对照清单 (可编辑名称或取消勾选)")) {
+                        ForEach($draft.items) { $item in
+                            HStack(alignment: .center, spacing: 12) {
+                                Button {
+                                    item.isSelected.toggle()
+                                } label: {
+                                    Image(systemName: item.isSelected ? "checkmark.circle.fill" : "circle")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(item.isSelected ? .accentColor : .secondary)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack(spacing: 8) {
+                                        TextField("课程名称", text: $item.editedName)
+                                            .font(.system(size: 15, weight: .semibold))
+                                            .foregroundColor(item.isSelected ? .primary : .secondary)
+
+                                        if item.action == .matchExisting {
+                                            Text("匹配已有")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.blue.opacity(0.12))
+                                                .foregroundColor(.blue)
+                                                .cornerRadius(4)
+                                        } else {
+                                            Text("新增课程")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .padding(.horizontal, 6)
+                                                .padding(.vertical, 2)
+                                                .background(Color.orange.opacity(0.12))
+                                                .foregroundColor(.orange)
+                                                .cornerRadius(4)
+                                        }
+                                    }
+
+                                    let info = [item.teacher, item.room].filter { !$0.isEmpty }.joined(separator: " @ ")
+                                    if !info.isEmpty {
+                                        Text(info)
+                                            .font(.caption2)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                            }
+                            .padding(.vertical, 2)
+                            .opacity(item.isSelected ? 1.0 : 0.5)
+                        }
                     }
                 }
+                .listStyle(InsetGroupedListStyle())
+
+                // 底部操作栏
+                VStack(spacing: 8) {
+                    Divider()
+                    HStack(spacing: 16) {
+                        Button {
+                            onCancel()
+                        } label: {
+                            Text("取消导入")
+                                .font(.system(size: 15, weight: .medium))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(Color(UIColor.tertiarySystemFill))
+                                .foregroundColor(.primary)
+                                .cornerRadius(10)
+                        }
+
+                        Button {
+                            onConfirm(draft)
+                        } label: {
+                            Text("确认导入 (\(selectedCount) 门课程)")
+                                .font(.system(size: 15, weight: .bold))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(selectedCount > 0 ? Color.accentColor : Color.gray)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .disabled(selectedCount == 0)
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 12)
+                }
+                .background(Color(UIColor.systemBackground))
             }
             .navigationTitle("课表导入预览")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("取消") {
-                        onCancel()
-                    }
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("取消") { onCancel() }
                 }
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("确认导入 (\(selectedCount)门)") {
-                        onCommit(draft)
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("全选") {
+                        for i in 0..<draft.items.count {
+                            draft.items[i].isSelected = true
+                        }
                     }
-                    .font(.system(size: 15, weight: .bold))
-                    .disabled(selectedCount == 0)
                 }
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
 }
