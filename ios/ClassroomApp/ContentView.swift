@@ -1157,9 +1157,9 @@ struct SettingsScreen: View {
     var body: some View {
         NavigationView {
             List {
-                Section(
-                    header: Text("语音转录引擎偏好"),
-                    footer: Text(manager.transcriptionEngine == .apple ? "苹果原生：内置 iOS 本地模型，离线可用，不耗流量，边录音边实时出字。" : "阶跃星辰 ASR：基于 stepaudio-2.5-asr 云端模型，学术术语与公式识别准确率极高。")
+                                Section(
+                    header: Text("语音转录引擎与分段模式"),
+                    footer: Text(manager.transcriptionEngine == .apple ? "苹果原生：内置 iOS 本地模型，离线可用，不耗流量，边录音边实时出字。" : "阶跃星辰 ASR：基于 stepaudio-2.5-asr 云端学术模型，每 10~20 秒自动切片转录，公式与专业术语准确率极高。")
                 ) {
                     Picker("转录引擎", selection: $manager.transcriptionEngine) {
                         ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
@@ -1168,9 +1168,17 @@ struct SettingsScreen: View {
                     }
                     .pickerStyle(SegmentedPickerStyle())
 
+                    if manager.transcriptionEngine == .stepfun {
+                        Picker("切片转录间隔", selection: $manager.stepfunChunkInterval) {
+                            ForEach(StepfunChunkInterval.allCases, id: \.self) { interval in
+                                Text(interval.title).tag(interval)
+                            }
+                        }
+                    }
+
                     HStack {
                         Label(
-                            manager.transcriptionEngine == .apple ? "苹果原生识别引擎 (已激活)" : "阶跃星辰 ASR (已激活)",
+                            manager.transcriptionEngine == .apple ? "苹果原生识别引擎 (已激活)" : "阶跃星辰 ASR - \(manager.stepfunChunkInterval.shortTitle) (已激活)",
                             systemImage: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill"
                         )
                         .font(.footnote)
@@ -1178,7 +1186,7 @@ struct SettingsScreen: View {
 
                         Spacer()
 
-                        Text(manager.transcriptionEngine.badge)
+                        Text(manager.transcriptionEngine == .apple ? "本地免Key" : "stepaudio-2.5-asr")
                             .font(.caption2)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -1342,6 +1350,91 @@ struct SettingsScreen: View {
 
 // MARK: - 课堂详情页 (从上课录音到课后复习一站式集成)
 
+// MARK: - 自定义高触感 Tab 导航胶囊组件
+
+struct DetailTabPill: View {
+    let title: String
+    let systemImage: String
+    let isSelected: Bool
+    var badge: String? = nil
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                Text(title)
+                    .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                
+                if let b = badge {
+                    Text(b)
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1.5)
+                        .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .foregroundColor(isSelected ? .white : .primary)
+                        .clipShape(Capsule())
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 38)
+            .background(isSelected ? Color.accentColor.opacity(0.14) : Color(UIColor.tertiarySystemFill).opacity(0.5))
+            .foregroundColor(isSelected ? .accentColor : .primary)
+            .cornerRadius(10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - 智能笔记生成推荐卡片
+
+struct NoteGenerationCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let accentColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(accentColor)
+                    .frame(width: 44, height: 44)
+                    .background(accentColor.opacity(0.12))
+                    .clipShape(Circle())
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundColor(.primary)
+                    Text(subtitle)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundColor(.secondary.opacity(0.6))
+            }
+            .padding(14)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
+            .cornerRadius(14)
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .stroke(accentColor.opacity(0.18), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
@@ -1365,50 +1458,86 @@ struct LessonDetailView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // 顶部 3-Tab 切换栏: 文字 / 笔记 / 问答
-                Picker("课堂模块", selection: $currentTab) {
-                    Text("文字").tag(0)
-                    Text("笔记").tag(1)
-                    Text("问答").tag(2)
+                // 自定义大触控 Tab 导航栏 (带未读/条目角标与动画)
+                HStack(spacing: 6) {
+                    DetailTabPill(
+                        title: "实录文字",
+                        systemImage: "waveform",
+                        isSelected: currentTab == 0,
+                        badge: activeSession.segments.count > 0 ? "\(activeSession.segments.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 0
+                        }
+                    }
+
+                    DetailTabPill(
+                        title: "课堂笔记",
+                        systemImage: "note.text",
+                        isSelected: currentTab == 1,
+                        badge: activeSession.notes.count > 0 ? "\(activeSession.notes.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 1
+                        }
+                    }
+
+                    DetailTabPill(
+                        title: "AI 问答",
+                        systemImage: "sparkles",
+                        isSelected: currentTab == 2,
+                        badge: activeSession.qaPairs.count > 0 ? "\(activeSession.qaPairs.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 2
+                        }
+                    }
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 12)
                 .padding(.vertical, 8)
                 .background(Color(UIColor.secondarySystemGroupedBackground))
 
                 Divider()
 
-                // 主体内容区
-                Group {
-                    if currentTab == 0 {
-                        TranscriptTabView(
-                            session: activeSession,
-                            isLive: isLiveActive,
-                            followBottom: $followBottom,
-                            unreadCount: $unreadSegmentCount,
-                            onAskAboutSegment: { seg, q in
-                                manager.askQuestion(for: activeSession, query: q, segment: seg)
-                                currentTab = 2
-                            }
-                        )
-                    } else if currentTab == 1 {
-                        NotesTabView(
-                            session: activeSession,
-                            selectedStyle: $selectedNoteStyle
-                        )
-                    } else {
-                        QATabView(
-                            session: activeSession,
-                            inputText: $qaInput,
-                            onCitationTapped: { sec in
-                                currentTab = 0
-                                manager.playAudio(session: activeSession, seekTo: sec)
-                            }
-                        )
-                    }
-                }
+                // 主体内容区：支持全屏横向自然滑动切换
+                TabView(selection: $currentTab) {
+                    TranscriptTabView(
+                        session: activeSession,
+                        isLive: isLiveActive,
+                        followBottom: $followBottom,
+                        unreadCount: $unreadSegmentCount,
+                        onAskAboutSegment: { seg, q in
+                            manager.askQuestion(for: activeSession, query: q, segment: seg)
+                            withAnimation { currentTab = 2 }
+                        },
+                        onSwitchToTab: { tab in
+                            withAnimation { currentTab = tab }
+                        }
+                    )
+                    .tag(0)
 
-                // 底部控制条：若正在录音，展示暂停/继续/标重点/结束；若已结束且在文字页，展示音频播放条
+                    NotesTabView(
+                        session: activeSession,
+                        selectedStyle: $selectedNoteStyle,
+                        onSwitchToQA: {
+                            withAnimation { currentTab = 2 }
+                        }
+                    )
+                    .tag(1)
+
+                    QATabView(
+                        session: activeSession,
+                        inputText: $qaInput,
+                        onCitationTapped: { sec in
+                            withAnimation { currentTab = 0 }
+                            manager.playAudio(session: activeSession, seekTo: sec)
+                        }
+                    )
+                    .tag(2)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+
+                // 底部录音控制栏或播放条
                 if isLiveActive {
                     LiveRecordingControlBar(session: activeSession)
                 } else if currentTab == 0 {
@@ -1437,7 +1566,7 @@ struct LessonDetailView: View {
         .navigationViewStyle(StackNavigationViewStyle())
     }
 
-    private func formatDuration(_ sec: TimeInterval) -> String {
+    private func formatDuration    private func formatDuration(_ sec: TimeInterval) -> String {
         let whole = Int(sec)
         return String(format: "%02d:%02d", whole / 60, whole % 60)
     }
@@ -1452,6 +1581,7 @@ struct TranscriptTabView: View {
     @Binding var followBottom: Bool
     @Binding var unreadCount: Int
     var onAskAboutSegment: ((TranscriptSegment, String) -> Void)? = nil
+    var onSwitchToTab: ((Int) -> Void)? = nil
 
     @State private var selectedSegmentForQA: TranscriptSegment?
     @State private var isSelectMode: Bool = false
@@ -1510,23 +1640,40 @@ struct TranscriptTabView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(alignment: .leading, spacing: 14) {
-                        // 顶部大计时
+                        // 顶部大计时与实时模式指示
                         if isLive {
-                            VStack(spacing: 6) {
+                            VStack(spacing: 8) {
                                 Text(formatDuration(manager.recordingElapsed))
                                     .font(.system(size: 42, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.primary)
-                                HStack(spacing: 6) {
+                                HStack(spacing: 8) {
                                     Circle()
-                                        .fill(manager.isPaused ? Color.orange : Color.green)
+                                        .fill(manager.isPaused ? Color.orange : (manager.transcriptionEngine == .apple ? Color.green : Color.blue))
                                         .frame(width: 8, height: 8)
-                                    Text(manager.isPaused ? "已暂停录音" : "麦克风正在持续写入")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
+                                    
+                                    if manager.isPaused {
+                                        Text("已暂停录音")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    } else if manager.transcriptionEngine == .apple {
+                                        Text("苹果原生实时转录中 (免Key·边说边出字)")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                    } else {
+                                        HStack(spacing: 4) {
+                                            Text("阶跃星辰 ASR (\(manager.stepfunChunkInterval.shortTitle)) 转写中")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            if manager.isChunkTranscribing {
+                                                ProgressView()
+                                                    .scaleEffect(0.6)
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
+                            .padding(.vertical, 14)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
                             .cornerRadius(16)
                         }
@@ -1881,6 +2028,7 @@ struct NotesTabView: View {
     @EnvironmentObject var manager: ClassroomManager
     let session: LessonSession
     @Binding var selectedStyle: NoteStyle
+    var onSwitchToQA: (() -> Void)? = nil
     @State private var copiedNotice = false
 
     var currentNote: LessonNote? {
@@ -1889,20 +2037,50 @@ struct NotesTabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // 样式选择胶囊
-            Picker("笔记样式", selection: $selectedStyle) {
+            // 样式选择胶囊 (大按钮，更易触控)
+            HStack(spacing: 8) {
                 ForEach(NoteStyle.allCases, id: \.self) { style in
-                    Text(style.title).tag(style)
+                    let isSel = selectedStyle == style
+                    Button {
+                        withAnimation { selectedStyle = style }
+                    } label: {
+                        Text(style.title)
+                            .font(.system(size: 13, weight: isSel ? .bold : .medium))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(isSel ? Color.accentColor : Color(UIColor.tertiarySystemFill))
+                            .foregroundColor(isSel ? .white : .primary)
+                            .cornerRadius(12)
+                    }
                 }
             }
-            .pickerStyle(SegmentedPickerStyle())
             .padding(.horizontal, 16)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
 
             Divider()
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    // 生成中动画指示器
+                    if manager.isGeneratingNotes {
+                        HStack(spacing: 12) {
+                            ProgressView()
+                                .scaleEffect(1.1)
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text("DeepSeek 正在精读课堂实录...")
+                                    .font(.system(size: 15, weight: .bold))
+                                    .foregroundColor(.primary)
+                                Text("正在生成【\(selectedStyle.title)】，约需数秒...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color.accentColor.opacity(0.1))
+                        .cornerRadius(14)
+                    }
+
                     if let note = currentNote {
                         MarkdownContentView(content: note.content)
                             .padding(16)
@@ -1910,7 +2088,7 @@ struct NotesTabView: View {
                             .background(Color(UIColor.secondarySystemGroupedBackground))
                             .cornerRadius(16)
 
-                        HStack {
+                        HStack(spacing: 12) {
                             Button {
                                 UIPasteboard.general.string = note.content
                                 copiedNotice = true
@@ -1918,53 +2096,87 @@ struct NotesTabView: View {
                                     copiedNotice = false
                                 }
                             } label: {
-                                Label(copiedNotice ? "已复制到剪贴板！" : "复制全部笔记", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
-                                    .font(.system(size: 15, weight: .semibold))
+                                Label(copiedNotice ? "已复制！" : "复制全部笔记", systemImage: copiedNotice ? "checkmark" : "doc.on.doc")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .foregroundColor(.primary)
+                                    .cornerRadius(10)
                             }
+
+                            Button {
+                                manager.generateNotes(for: session, style: selectedStyle)
+                            } label: {
+                                Label("重新生成", systemImage: "arrow.clockwise")
+                                    .font(.system(size: 14))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
+                                    .background(Color(UIColor.tertiarySystemFill))
+                                    .foregroundColor(.secondary)
+                                    .cornerRadius(10)
+                            }
+                            .disabled(manager.isGeneratingNotes)
 
                             Spacer()
 
                             Button {
-                                manager.generateNotes(for: session, style: selectedStyle)
+                                onSwitchToQA?()
                             } label: {
-                                Label("重新整理", systemImage: "arrow.clockwise")
-                                    .font(.subheadline)
+                                Label("针对笔记提问", systemImage: "sparkles")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.accentColor)
                             }
-                            .disabled(manager.isGeneratingNotes)
                         }
                         .padding(.horizontal, 4)
-                    } else {
+                    } else if !manager.isGeneratingNotes {
+                        // 空白状态：提供 3 大专业提炼卡片，一键触控生成
                         VStack(spacing: 16) {
-                            Image(systemName: "doc.text.below.ecg")
-                                .font(.system(size: 44))
-                                .foregroundColor(.secondary.opacity(0.5))
-                            Text("尚未生成\(selectedStyle.title)笔记")
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                            Text("智能提炼整节课堂脉络、重要公式与考点复习大纲")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            VStack(spacing: 6) {
+                                Image(systemName: "sparkles")
+                                    .font(.system(size: 36))
+                                    .foregroundColor(.accentColor)
+                                Text("智能课堂笔记")
+                                    .font(.title3.bold())
+                                Text("由 DeepSeek 深度理解整堂课语音实录，生成专业结构化笔记")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 10)
 
-                            Button {
-                                manager.generateNotes(for: session, style: selectedStyle)
-                            } label: {
-                                if manager.isGeneratingNotes {
-                                    ProgressView()
-                                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                } else {
-                                    Label("提炼课堂笔记", systemImage: "sparkles")
+                            VStack(spacing: 10) {
+                                NoteGenerationCard(
+                                    title: "系统详细提纲",
+                                    subtitle: "定理推导过程、板书架构与知识层级全面梳理",
+                                    icon: "list.bullet.rectangle",
+                                    accentColor: .blue
+                                ) {
+                                    selectedStyle = .detailedOutline
+                                    manager.generateNotes(for: session, style: .detailedOutline)
+                                }
+
+                                NoteGenerationCard(
+                                    title: "核心公式与要点速记",
+                                    subtitle: "提炼核心定理、公式符号、适用条件与易混淆考点",
+                                    icon: "function",
+                                    accentColor: .green
+                                ) {
+                                    selectedStyle = .keyPoints
+                                    manager.generateNotes(for: session, style: .keyPoints)
+                                }
+
+                                NoteGenerationCard(
+                                    title: "期末重点与作业要求",
+                                    subtitle: "聚焦老师反复强调的作业/实验重点与考查核心",
+                                    icon: "checkmark.seal",
+                                    accentColor: .orange
+                                ) {
+                                    selectedStyle = .examReview
+                                    manager.generateNotes(for: session, style: .examReview)
                                 }
                             }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.accentColor)
-                            .cornerRadius(14)
-                            .disabled(manager.isGeneratingNotes)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 60)
+                        .padding(.horizontal, 16)
                     }
                 }
                 .padding(16)
@@ -1973,7 +2185,7 @@ struct NotesTabView: View {
     }
 }
 
-// MARK: - Tab 3: 问答页面
+// MARK: - Tab 3// MARK: - Tab 3: 问答页面
 
 struct QATabView: View {
     @EnvironmentObject var manager: ClassroomManager
@@ -1984,14 +2196,14 @@ struct QATabView: View {
     let quickQuestions = [
         "这节课讲了哪些核心公式？",
         "老师强调了哪些考试或作业要求？",
-        "总结本节课的核心结论"
+        "总结本节课的核心结论与考点"
     ]
 
     var body: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    // 快捷提问气泡
+                    // 快捷问题推荐滑动胶囊
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(quickQuestions, id: \.self) { q in
@@ -2012,80 +2224,127 @@ struct QATabView: View {
                         .padding(.vertical, 8)
                     }
 
-                    if session.qaPairs.isEmpty {
-                        VStack(spacing: 12) {
-                            Image(systemName: "bubble.left.and.bubble.right")
-                                .font(.system(size: 40))
-                                .foregroundColor(.secondary.opacity(0.5))
-                            Text("针对课堂内容的专属答疑助手")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            Text("输入提问或点击上方快捷词，答案将精确关联课堂时间戳")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                    if session.qaPairs.isEmpty && !manager.isAskingQA {
+                        VStack(spacing: 16) {
+                            VStack(spacing: 6) {
+                                Image(systemName: "bubble.left.and.bubble.right")
+                                    .font(.system(size: 38))
+                                    .foregroundColor(.accentColor)
+                                Text("课堂 AI 助教")
+                                    .font(.title3.bold())
+                                Text("随时针对课堂讲解中的疑难点、定理推导与考点提问")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 16)
+
+                            VStack(spacing: 10) {
+                                ForEach(quickQuestions, id: \.self) { q in
+                                    Button {
+                                        manager.askQuestion(for: session, query: q)
+                                    } label: {
+                                        HStack {
+                                            Image(systemName: "questionmark.circle.fill")
+                                                .foregroundColor(.accentColor)
+                                            Text(q)
+                                                .font(.system(size: 14, weight: .medium))
+                                                .foregroundColor(.primary)
+                                            Spacer()
+                                            Image(systemName: "arrow.up.circle.fill")
+                                                .foregroundColor(.accentColor)
+                                        }
+                                        .padding(14)
+                                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                                        .cornerRadius(12)
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
+                            }
+                            .padding(.horizontal, 16)
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
+                        .padding(.vertical, 10)
                     } else {
                         ForEach(session.qaPairs) { pair in
                             VStack(alignment: .leading, spacing: 8) {
-                                // 问
+                                // 用户提问
                                 HStack {
                                     Spacer()
                                     Text(pair.question)
                                         .font(.subheadline)
                                         .foregroundColor(.white)
-                                        .padding(12)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 10)
                                         .background(Color.accentColor)
-                                        .cornerRadius(14)
+                                        .cornerRadius(16)
                                 }
 
-                                // 答
-                                VStack(alignment: .leading, spacing: 6) {
-                                    MarkdownContentView(content: pair.answer)
-                                        .padding(.vertical, 2)
+                                // AI 回答
+                                HStack(alignment: .top, spacing: 10) {
+                                    Image(systemName: "sparkles")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.white)
+                                        .padding(6)
+                                        .background(Color(red: 0.0, green: 0.42, blue: 0.40))
+                                        .clipShape(Circle())
 
-                                    if let cit = pair.citationSeconds {
-                                        Button {
-                                            onCitationTapped(cit)
-                                        } label: {
-                                            Label("跳转到课堂录音 \(formatTime(cit))", systemImage: "play.circle.fill")
-                                                .font(.system(size: 11, weight: .bold))
-                                                .foregroundColor(.accentColor)
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        MarkdownContentView(content: pair.answer)
+
+                                        if let sec = pair.citationSeconds {
+                                            Button {
+                                                onCitationTapped(sec)
+                                            } label: {
+                                                Label("定位到实录：\(formatTime(sec))", systemImage: "clock.arrow.circlepath")
+                                                    .font(.caption2)
+                                                    .padding(.horizontal, 8)
+                                                    .padding(.vertical, 4)
+                                                    .background(Color.accentColor.opacity(0.12))
+                                                    .cornerRadius(6)
+                                            }
                                         }
-                                        .padding(.top, 4)
                                     }
+                                    .padding(14)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                                    .cornerRadius(16)
                                 }
-                                .padding(12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(Color(UIColor.secondarySystemGroupedBackground))
-                                .cornerRadius(14)
                             }
+                            .padding(.horizontal, 16)
                         }
                     }
-                }
-                .padding(16)
-            }
 
-            if manager.isAskingQA {
-                HStack(spacing: 8) {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .accentColor))
-                    Text("AI 助教正在结合课堂实录思考解答中...")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
+                    // AI 正在思考回答动态卡片
+                    if manager.isAskingQA {
+                        HStack(alignment: .top, spacing: 10) {
+                            ProgressView()
+                                .scaleEffect(0.9)
+                                .padding(6)
+                            Text("DeepSeek v4.1 Flash 正在精读课堂实录并生成解答...")
+                                .font(.system(size: 13, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(14)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                        .cornerRadius(14)
+                        .padding(.horizontal, 16)
+                    }
                 }
-                .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(Color(UIColor.secondarySystemGroupedBackground))
             }
 
-            // 底部输入框
+            // 底部提问输入栏 (支持回车一键发送)
             Divider()
             HStack(spacing: 8) {
-                TextField("向课堂 AI 提问...", text: $inputText)
+                TextField("向课堂 AI 提问任何公式或知识点...", text: $inputText)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .onSubmit {
+                        let q = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !q.isEmpty {
+                            manager.askQuestion(for: session, query: q)
+                            inputText = ""
+                        }
+                    }
 
                 Button {
                     let q = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2095,12 +2354,13 @@ struct QATabView: View {
                     }
                 } label: {
                     Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 28))
+                        .font(.system(size: 32))
                         .foregroundColor(.accentColor)
                 }
                 .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || manager.isAskingQA)
             }
-            .padding(12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
             .background(Color(UIColor.secondarySystemGroupedBackground))
         }
     }
@@ -2110,6 +2370,7 @@ struct QATabView: View {
         return String(format: "%02d:%02d", whole / 60, whole % 60)
     }
 }
+
 
 // MARK: - 底部录音控制栏
 

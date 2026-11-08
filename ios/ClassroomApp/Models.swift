@@ -39,6 +39,31 @@ public enum TranscriptionEngine: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum StepfunChunkInterval: Int, Codable, CaseIterable, Sendable {
+    case tenSeconds = 10
+    case twentySeconds = 20
+    case thirtySeconds = 30
+    case fullLesson = 0
+    
+    public var title: String {
+        switch self {
+        case .tenSeconds: return "10 秒切片转写 (极速出字)"
+        case .twentySeconds: return "20 秒切片转写 (推荐·语义完整)"
+        case .thirtySeconds: return "30 秒切片转写 (段落更长)"
+        case .fullLesson: return "课后统一转写"
+        }
+    }
+    
+    public var shortTitle: String {
+        switch self {
+        case .tenSeconds: return "10秒切片"
+        case .twentySeconds: return "20秒切片"
+        case .thirtySeconds: return "30秒切片"
+        case .fullLesson: return "课后转写"
+        }
+    }
+}
+
 public enum LessonStatus: String, Codable, Sendable {
     case recording = "recording"
     case paused = "paused"
