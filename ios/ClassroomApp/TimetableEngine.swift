@@ -327,6 +327,40 @@ public struct TimetableEngine {
         return (timetable: TimetableData(currentWeek: curWeek, slots: draft.slots, updatedAt: Date()), courses: courses)
     }
 
+    public static func coursesFrom(slots: [TimetableSlot]) -> [Course] {
+        var uniqueCourses: [String: (teacher: String, room: String, semester: String)] = [:]
+        let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
+        
+        for slot in slots {
+            if uniqueCourses[slot.courseName] == nil {
+                uniqueCourses[slot.courseName] = (teacher: slot.teacher, room: slot.room, semester: slot.semester)
+            } else {
+                if uniqueCourses[slot.courseName]?.teacher.isEmpty == true && !slot.teacher.isEmpty {
+                    uniqueCourses[slot.courseName]?.teacher = slot.teacher
+                }
+                if uniqueCourses[slot.courseName]?.room.isEmpty == true && !slot.room.isEmpty {
+                    uniqueCourses[slot.courseName]?.room = slot.room
+                }
+            }
+        }
+        
+        var result: [Course] = []
+        var idx = 0
+        for (name, info) in uniqueCourses.sorted(by: { $0.key < $1.key }) {
+            result.append(Course(
+                name: name,
+                teacher: info.teacher,
+                room: info.room,
+                colorHex: colors[idx % colors.count],
+                semester: info.semester,
+                source: .timetable,
+                status: .active
+            ))
+            idx += 1
+        }
+        return result
+    }
+
 public static func defaultSlots() -> [TimetableSlot] {
         return [
             TimetableSlot(courseName: "线性代数A", teacher: "栗雪娟", room: "草堂9-210", day: 1, fromPeriod: 1, toPeriod: 2, weekFrom: 1, weekTo: 5, parity: "all"),
