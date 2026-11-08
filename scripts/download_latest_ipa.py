@@ -8,7 +8,7 @@ import os
 import sys
 
 def main():
-    print("=== 开始构建并下载最新 IPA 交付包 (v1.3.3) ===")
+    print("=== 开始构建并下载最新 IPA 交付包 (v1.4.0) ===")
     
     # 1. Get token from git credential manager
     p = subprocess.Popen(['git', 'credential', 'fill'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
@@ -86,7 +86,7 @@ def main():
 
     dest_files = [
         os.path.join(target_ios_dir, '建大课堂录音.ipa'),
-        os.path.join(target_ios_dir, '建大课堂录音-v1.3.3-课表64节精析与课程库清理版.ipa')
+        os.path.join(target_ios_dir, '建大课堂录音-v1.4.0-课表草稿预览与分层安全管理版.ipa')
     ]
 
     with zipfile.ZipFile(io.BytesIO(zip_bytes)) as z:
