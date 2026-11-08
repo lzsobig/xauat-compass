@@ -1324,31 +1324,22 @@ struct SettingsScreen: View {
 
                 Section(
                     header: Text("录音存储与 Cloudflare R2 云端同步"),
-                    footer: Text(R2UploadManager.shared.storageMode.detailDescription)
+                    footer: Text(manager.r2StorageMode.detailDescription)
                 ) {
-                    Picker("存储策略", selection: Binding(
-                        get: { R2UploadManager.shared.storageMode },
-                        set: { R2UploadManager.shared.storageMode = $0 }
-                    )) {
+                    Picker("存储策略", selection: $manager.r2StorageMode) {
                         ForEach(AudioStorageMode.allCases, id: \.self) { mode in
                             Text(mode.title).tag(mode)
                         }
                     }
                     
-                    Toggle("允许使用蜂窝网络上传", isOn: Binding(
-                        get: { R2UploadManager.shared.allowCellularUpload },
-                        set: { R2UploadManager.shared.allowCellularUpload = $0 }
-                    ))
+                    Toggle("允许使用蜂窝网络上传", isOn: $manager.r2AllowCellular)
                     
                     HStack {
                         Text("云端同步 Worker")
                         Spacer()
-                        TextField("https://compass.lzso.top", text: Binding(
-                            get: { R2UploadManager.shared.workerBaseURL },
-                            set: { R2UploadManager.shared.workerBaseURL = $0 }
-                        ))
-                        .multilineTextAlignment(.trailing)
-                        .font(.system(size: 13, design: .monospaced))
+                        TextField("https://compass.lzso.top", text: $manager.r2WorkerBaseURL)
+                            .multilineTextAlignment(.trailing)
+                            .font(.system(size: 13, design: .monospaced))
                     }
                 }
 
@@ -1602,7 +1593,7 @@ struct LessonDetailView: View {
                         if activeSession.storageStatus == .cloudOnly {
                             Button {
                                 Task {
-                                    try? await R2UploadManager.shared.downloadAudioToLocal(session: activeSession, destinationURL: manager.audioURL(for: activeSession))
+                                    await manager.downloadCloudAudio(for: activeSession)
                                 }
                             } label: {
                                 Label("下载音频到本地", systemImage: "arrow.down.circle")
@@ -2685,7 +2676,7 @@ struct AudioPlayerControlBar: View {
                     if !manager.hasLocalAudio(for: session) {
                         Button {
                             Task {
-                                try? await R2UploadManager.shared.downloadAudioToLocal(session: session, destinationURL: manager.audioURL(for: session))
+                                await manager.downloadCloudAudio(for: session)
                             }
                         } label: {
                             Text("下载到本地")

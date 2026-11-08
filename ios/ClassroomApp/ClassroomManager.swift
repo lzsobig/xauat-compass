@@ -258,6 +258,34 @@ public final class ClassroomManager: ObservableObject {
     }
     @Published public var isChunkTranscribing: Bool = false
 
+    // 云端存储配置绑定
+    public var r2StorageMode: AudioStorageMode {
+        get { R2UploadManager.shared.storageMode }
+        set {
+            R2UploadManager.shared.storageMode = newValue
+            objectWillChange.send()
+        }
+    }
+    public var r2AllowCellular: Bool {
+        get { R2UploadManager.shared.allowCellularUpload }
+        set {
+            R2UploadManager.shared.allowCellularUpload = newValue
+            objectWillChange.send()
+        }
+    }
+    public var r2WorkerBaseURL: String {
+        get { R2UploadManager.shared.workerBaseURL }
+        set {
+            R2UploadManager.shared.workerBaseURL = newValue
+            objectWillChange.send()
+        }
+    }
+    
+    public func downloadCloudAudio(for session: LessonSession) async {
+        let dest = audioURL(for: session)
+        try? await R2UploadManager.shared.downloadAudioToLocal(session: session, destinationURL: dest)
+    }
+
     // 播放器状态 (支持本地 AVAudioPlayer 与云端 AVPlayer 流式播放)
     @Published public var isPlayingAudio: Bool = false
     @Published public var playbackTime: TimeInterval = 0

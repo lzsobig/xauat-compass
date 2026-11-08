@@ -42,7 +42,7 @@ public enum AudioCompressor {
         }
         
         exportSession.outputURL = destinationURL
-        exportSession.outputFileType = .m4a
+        exportSession.outputFileType = AVFileType(rawValue: "com.apple.m4a-audio")
         exportSession.shouldOptimizeForNetworkUse = true
         
         await withCheckedContinuation { continuation in
