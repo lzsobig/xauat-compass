@@ -791,7 +791,7 @@ public final class ClassroomManager: ObservableObject {
     }
     
     public func toggleSegmentMark(session: LessonSession, segmentId: UUID) {
-        guard let idx = sessions.firstIndex(where: { $0.id == session.id }) { return }
+        guard let idx = sessions.firstIndex(where: { $0.id == session.id }) else { return }
         var sess = sessions[idx]
         if let segIdx = sess.segments.firstIndex(where: { $0.id == segmentId }) {
             sess.segments[segIdx].isMarked.toggle()
