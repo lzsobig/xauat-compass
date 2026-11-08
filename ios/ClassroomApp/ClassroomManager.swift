@@ -48,33 +48,42 @@ import SwiftUI
 
 // MARK: - 语音切片文字平滑拼接与去重 (解决 20 秒切片重叠区域漏字与叠字问题)
 public func stitchTranscripts(previous: String, current: String) -> String {
-    let cleanPrev = previous.trimmingCharacters(in: .whitespacesAndNewlines)
-    let cleanCur = current.trimmingCharacters(in: .whitespacesAndNewlines)
+    let punctChars = "，。！？、；： \t\n"
+    var pCore = previous.trimmingCharacters(in: .whitespacesAndNewlines)
+    while let last = pCore.last, punctChars.contains(last) {
+        pCore.removeLast()
+    }
+    var cCore = current.trimmingCharacters(in: .whitespacesAndNewlines)
+    while let first = cCore.first, punctChars.contains(first) {
+        cCore.removeFirst()
+    }
     
-    guard !cleanPrev.isEmpty else { return cleanCur }
-    guard !cleanCur.isEmpty else { return "" }
+    guard !pCore.isEmpty else { return current }
+    guard !cCore.isEmpty else { return "" }
     
-    let prevChars = Array(cleanPrev)
-    let curChars = Array(cleanCur)
+    let pChars = Array(pCore)
+    let cChars = Array(cCore)
     
     // 在 2 到 14 个字符范围内寻找前一句尾部与后一句头部的重叠匹配
-    let maxMatchLen = min(14, min(prevChars.count, curChars.count))
+    let maxMatchLen = min(14, min(pChars.count, cChars.count))
     if maxMatchLen >= 2 {
         for len in stride(from: maxMatchLen, through: 2, by: -1) {
-            let prevTail = String(prevChars.suffix(len))
-            let curHead = String(curChars.prefix(len))
+            let tail = String(pChars.suffix(len))
+            let head = String(cChars.prefix(len))
             
-            let normTail = prevTail.filter { !"，。！？、；： \t\n".contains($0) }
-            let normHead = curHead.filter { !"，。！？、；： \t\n".contains($0) }
-            
-            if !normTail.isEmpty && normTail == normHead {
-                // 剔除后一句重叠的前缀
-                let remaining = String(curChars.dropFirst(len)).trimmingCharacters(in: CharacterSet(charactersIn: "，。！？、；： \t\n"))
-                return remaining
+            if tail == head {
+                // 在当前句中找到重叠头部并切除，仅修剪开头的标点符号，完整保留句尾符号
+                if let range = current.range(of: head) {
+                    var remaining = String(current[range.upperBound...])
+                    while let first = remaining.first, punctChars.contains(first) {
+                        remaining.removeFirst()
+                    }
+                    return remaining
+                }
             }
         }
     }
-    return cleanCur
+    return current
 }
 
 private final class AudioCapture {
