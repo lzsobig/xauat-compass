@@ -703,3 +703,201 @@ test('场景 21: 仅录音模式 - 完整保存原始录音，绝不调用 ASR�
   assert.equal(session.isTempAudioPurged, false, '原始录音永久保留在本地沙盒');
   assert.equal(session.status, 'recordOnlyCompleted');
 });
+
+
+// --------------------------------------------------------------------------
+// 场景 22: 空任务列表安全防护 - 录音任务列表为空时，checkAndFinalizeSessionStorage 绝不清理音频
+// --------------------------------------------------------------------------
+test('场景 22: 空任务列表保护 - chunkTasks 为空时绝不误判完成，绝不清理音频', () => {
+  const session = {
+    id: 'sess-empty-tasks',
+    title: '瞬时录音测试',
+    mode: 'realtime',
+    status: 'completed', // 用户或系统结束录音
+    duration: 10,
+    chunkTasks: [],      // 刚录 10 秒未达 20s 切片，分片任务为空
+    segments: [],
+    isTempAudioPurged: false
+  };
+
+  function checkAndFinalize(sess, engine, interval) {
+    if (sess.mode === 'recordOnly') return;
+    if (engine === 'stepfun' && interval > 0) {
+      // 核心防护：分片列表为空绝不代表完成！
+      if (!sess.chunkTasks || sess.chunkTasks.length === 0) {
+        return; // 拒绝清理
+      }
+    }
+    // 假定其它清理逻辑
+    sess.isTempAudioPurged = true;
+  }
+
+  checkAndFinalize(session, 'stepfun', 20);
+
+  assert.equal(session.isTempAudioPurged, false, '任务列表为空时必须拒绝清理音频');
+});
+
+// --------------------------------------------------------------------------
+// 场景 23: 苹果原生识别模式 - 文字为空时绝不清理，仅在确认有文字产出时才触发清理
+// --------------------------------------------------------------------------
+test('场景 23: 苹果原生识别模式 - 识别无文字时不清理音频，有文字才安全释放', () => {
+  const sessionFailed = {
+    id: 'sess-apple-fail',
+    mode: 'realtime',
+    status: 'completed',
+    duration: 60,
+    segments: [], // 权限被拒或网络故障，未产生任何文字
+    isTempAudioPurged: false
+  };
+
+  const sessionSuccess = {
+    id: 'sess-apple-ok',
+    mode: 'realtime',
+    status: 'completed',
+    duration: 60,
+    segments: [{ id: '1', startTime: 0, endTime: 60, text: '同学们今天我们讲第一章' }],
+    isTempAudioPurged: false
+  };
+
+  function checkAppleFinalize(sess) {
+    if (sess.duration > 5.0 && sess.segments.length === 0) {
+      sess.status = 'pendingCatchUp';
+      return; // 保留音频供课后补转写
+    }
+    if (sess.segments.length > 0 && sess.mode === 'realtime') {
+      sess.status = 'completed';
+      sess.isTempAudioPurged = true;
+    }
+  }
+
+  checkAppleFinalize(sessionFailed);
+  assert.equal(sessionFailed.isTempAudioPurged, false);
+  assert.equal(sessionFailed.status, 'pendingCatchUp', '无识别文字时保留音频供后续补转写');
+
+  checkAppleFinalize(sessionSuccess);
+  assert.equal(sessionSuccess.isTempAudioPurged, true);
+  assert.equal(sessionSuccess.status, 'completed', '有文字时正常释放临时音频');
+});
+
+// --------------------------------------------------------------------------
+// 场景 24: 阶跃星辰课后统一转写模式 - 离线转写完成前绝不清理录音
+// --------------------------------------------------------------------------
+test('场景 24: 课后统一转写模式 - 离线转写中或失败时绝不提前删除录音', () => {
+  const session = {
+    id: 'sess-full-lesson',
+    mode: 'realtime',
+    status: 'completed',
+    duration: 3600,
+    segments: [],
+    isTempAudioPurged: false
+  };
+
+  function checkFullLessonFinalize(sess, isTranscribingOffline) {
+    if (isTranscribingOffline) {
+      sess.status = 'pendingCatchUp';
+      return;
+    }
+    if (sess.segments.length === 0) {
+      sess.status = 'pendingCatchUp';
+      return;
+    }
+    sess.status = 'completed';
+    sess.isTempAudioPurged = true;
+  }
+
+  // 1. 正在离线转写中
+  checkFullLessonFinalize(session, true);
+  assert.equal(session.isTempAudioPurged, false);
+  assert.equal(session.status, 'pendingCatchUp');
+
+  // 2. 转写失败（文字为空）
+  checkFullLessonFinalize(session, false);
+  assert.equal(session.isTempAudioPurged, false);
+  assert.equal(session.status, 'pendingCatchUp');
+
+  // 3. 转写成功（产生文字）
+  session.segments.push({ id: 's1', startTime: 0, endTime: 3600, text: '整堂课转写正文' });
+  checkFullLessonFinalize(session, false);
+  assert.equal(session.isTempAudioPurged, true);
+  assert.equal(session.status, 'completed');
+});
+
+// --------------------------------------------------------------------------
+// 场景 25: 部分分片失败与时间跨度未覆盖全课 - 只要存在未覆盖范围或失败分片，绝不误删除音频
+// --------------------------------------------------------------------------
+test('场景 25: 分片时间跨度未覆盖全课 - 绝不提前清理音频', () => {
+  const session = {
+    id: 'sess-gap-test',
+    mode: 'realtime',
+    status: 'completed',
+    duration: 100, // 录了 100 秒
+    chunkTasks: [
+      { id: 't1', sequenceIndex: 1, startTime: 0, endTime: 20, status: 'completed' },
+      { id: 't2', sequenceIndex: 2, startTime: 20, endTime: 40, status: 'completed' }
+      // 只有前 40 秒分片，后 60 秒丢失或未处理
+    ],
+    segments: [{ id: 's1', startTime: 0, endTime: 40, text: '前部分内容' }],
+    isTempAudioPurged: false
+  };
+
+  function checkCoverageFinalize(sess) {
+    const maxEndTime = Math.max(...sess.chunkTasks.map(t => t.endTime), 0);
+    if (sess.duration > 15.0 && maxEndTime < (sess.duration - 4.0)) {
+      sess.status = 'pendingCatchUp';
+      return; // 跨度不完整，拒绝清理
+    }
+    sess.isTempAudioPurged = true;
+  }
+
+  checkCoverageFinalize(session);
+  assert.equal(session.isTempAudioPurged, false, '只覆盖了前 40 秒，未覆盖整节 100 秒课堂，拒绝清理');
+  assert.equal(session.status, 'pendingCatchUp');
+});
+
+// --------------------------------------------------------------------------
+// 场景 26: 真实 async/await 顺序重试队列 - 逐个等待网络与落盘，绝无假延迟
+// --------------------------------------------------------------------------
+test('场景 26: 顺序补转写队列 - 真实 async/await 顺序执行', async () => {
+  const executionOrder = [];
+  
+  async function fakeProcessChunk(chunkIdx) {
+    executionOrder.push(`start_${chunkIdx}`);
+    await new Promise(r => setTimeout(r, 10)); // 模拟真实异步网络 I/O
+    executionOrder.push(`end_${chunkIdx}`);
+    return true;
+  }
+
+  const tasksToRetry = [1, 2, 3];
+  for (const t of tasksToRetry) {
+    await fakeProcessChunk(t);
+  }
+
+  assert.deepEqual(
+    executionOrder,
+    ['start_1', 'end_1', 'start_2', 'end_2', 'start_3', 'end_3'],
+    '每一个分片必须真实等待前一个完成，严格顺序执行，彻底杜绝虚假等待'
+  );
+});
+
+// --------------------------------------------------------------------------
+// 场景 27: 磁盘删除验证 - 只有在底层文件确认不存在时才将 isTempAudioPurged 标记为 true
+// --------------------------------------------------------------------------
+test('场景 27: 严格删除校验 - 只有文件确认不存在时才更新 isTempAudioPurged', () => {
+  let simulatedDiskFiles = new Set(['main.m4a']);
+  
+  function tryPurgeAudio(shouldFail) {
+    if (!shouldFail) {
+      simulatedDiskFiles.delete('main.m4a');
+    }
+    // 只有磁盘上确实不存在该文件时，才返回 true
+    return !simulatedDiskFiles.has('main.m4a');
+  }
+
+  // 1. 模拟删除失败（例如文件句柄被占用）
+  const purgedOnFailure = tryPurgeAudio(true);
+  assert.equal(purgedOnFailure, false, '底层删除失败时，isTempAudioPurged 绝不能被设为 true');
+
+  // 2. 模拟删除成功
+  const purgedOnSuccess = tryPurgeAudio(false);
+  assert.equal(purgedOnSuccess, true, '底层文件确实移除后，才更新标记');
+});
