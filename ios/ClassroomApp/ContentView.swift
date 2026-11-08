@@ -524,76 +524,100 @@ struct CourseArchiveView: View {
         manager.sessions.filter { $0.courseId == nil }
     }
 
+    private var searchHeaderSection: some View {
+        Section {
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.secondary)
+                TextField("搜索课程、教师、转写内容...", text: $searchText)
+                if !searchText.isEmpty {
+                    Button { searchText = "" } label: {
+                        Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding(8)
+            .background(Color(UIColor.tertiarySystemGroupedBackground))
+            .cornerRadius(10)
+        }
+    }
+
+    @ViewBuilder
+    private var activeSection: some View {
+        if !activeTimetableCourses.isEmpty {
+            Section(
+                header: Text("当前课表课程 (\(activeTimetableCourses.count))"),
+                footer: Text("由当前学期课表自动关联")
+            ) {
+                ForEach(activeTimetableCourses) { c in
+                    courseRow(c)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var manualSection: some View {
+        if !manualCourses.isEmpty {
+            Section(
+                header: Text("自建与拓展课程 (\(manualCourses.count))"),
+                footer: Text("手动创建的课程，不受课表变动影响")
+            ) {
+                ForEach(manualCourses) { c in
+                    courseRow(c)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var historicalSection: some View {
+        if !historicalCourses.isEmpty {
+            Section(
+                header: Text("历史课程 (\(historicalCourses.count))"),
+                footer: Text("不在当前课表中，但保留全部课堂录音与资料")
+            ) {
+                ForEach(historicalCourses) { c in
+                    courseRow(c)
+                }
+            }
+        }
+    }
+
+    private var unassignedSection: some View {
+        Section(header: Text("未归档资料")) {
+            NavigationLink {
+                UnassignedDetailScreen(onOpenSession: onOpenSession)
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "tray.fill")
+                        .foregroundColor(.secondary)
+                        .frame(width: 20)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("未归档课堂记录")
+                            .font(.headline)
+                        Text("未关联到具体课程或已解绑文件夹的录音")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Text("\(unassignedSessions.count) 节课")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
     var body: some View {
         NavigationView {
             List {
-                Section {
-                    HStack {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(.secondary)
-                        TextField("搜索课程、教师、转写内容...", text: $searchText)
-                        if !searchText.isEmpty {
-                            Button { searchText = "" } label: {
-                                Image(systemName: "xmark.circle.fill").foregroundColor(.secondary)
-                            }
-                        }
-                    }
-                    .padding(8)
-                    .background(Color(UIColor.tertiarySystemGroupedBackground))
-                    .cornerRadius(10)
-                }
-
-                // 1. 当前课表课程
-                if !activeTimetableCourses.isEmpty {
-                    Section(header: Text("当前课表课程 (\(activeTimetableCourses.count))"), footer: Text("由当前学期课表自动关联")) {
-                        ForEach(activeTimetableCourses) { c in
-                            courseRow(c)
-                        }
-                    }
-                }
-
-                // 2. 自建与拓展课程
-                if !manualCourses.isEmpty {
-                    Section(header: Text("自建与拓展课程 (\(manualCourses.count))"), footer: Text("手动创建的课程，不受课表变动影响")) {
-                        ForEach(manualCourses) { c in
-                            courseRow(c)
-                        }
-                    }
-                }
-
-                // 3. 历史学期课程
-                if !historicalCourses.isEmpty {
-                    Section(header: Text("历史课程 (\(historicalCourses.count))"), footer: Text("不在当前课表中，但保留全部课堂录音与资料")) {
-                        ForEach(historicalCourses) { c in
-                            courseRow(c)
-                        }
-                    }
-                }
-
-                // 4. 未归档课堂记录
-                Section(header: Text("未归档资料")) {
-                    NavigationLink {
-                        UnassignedDetailScreen(onOpenSession: onOpenSession)
-                    } label: {
-                        HStack(spacing: 12) {
-                            Image(systemName: "tray.fill")
-                                .foregroundColor(.secondary)
-                                .frame(width: 20)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("未归档课堂记录")
-                                    .font(.headline)
-                                Text("未关联到具体课程或已解绑文件夹的录音")
-                                    .font(.caption2)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                            Text("\(unassignedSessions.count) 节课")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
+                searchHeaderSection
+                activeSection
+                manualSection
+                historicalSection
+                unassignedSection
             }
             .navigationTitle("课程资料库")
             .toolbar {

@@ -2010,6 +2010,30 @@ public final class ClassroomManager: ObservableObject {
         updateCourseSuggestion()
     }
     
+    public func syncCoursesFromTimetable() {
+        let timetableCourses = TimetableEngine.coursesFrom(slots: timetable.slots)
+        for pc in timetableCourses {
+            if let existingIdx = courses.firstIndex(where: { $0.name == pc.name }) {
+                if !pc.teacher.isEmpty { courses[existingIdx].teacher = pc.teacher }
+                if !pc.room.isEmpty { courses[existingIdx].room = pc.room }
+            } else {
+                courses.append(pc)
+            }
+        }
+        saveCourses()
+        updateCourseSuggestion()
+    }
+
+    public func cleanupUnusedCourses() {
+        let activeCourseIdsWithSessions = Set(sessions.compactMap { $0.courseId })
+        let timetableCourseNames = Set(timetable.slots.map { $0.courseName })
+        courses.removeAll { c in
+            c.source == .timetable && !activeCourseIdsWithSessions.contains(c.id) && !timetableCourseNames.contains(c.name)
+        }
+        saveCourses()
+        updateCourseSuggestion()
+    }
+
     public func rollbackTimetableImport() {
         if let prev = lastCommittedTimetable {
             self.timetable = prev
