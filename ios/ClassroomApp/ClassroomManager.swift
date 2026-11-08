@@ -1132,7 +1132,7 @@ public final class ClassroomManager: ObservableObject {
                 do {
                     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
                     let chunkPath = folder.appendingPathComponent(chunkFileName)
-                    try wavData.write(to: chunkPath, options: .atomic)
+                    try wav.write(to: chunkPath, options: .atomic)
                     
                     let task = ChunkTranscriptionTask(
                         sequenceIndex: chunkIdx,
