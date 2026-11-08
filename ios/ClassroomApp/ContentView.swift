@@ -1387,7 +1387,7 @@ struct SettingsScreen: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.2.0 (原生原生构建)")
+                        Text("1.3.0 (2026.11.08 修复版)")
                             .foregroundColor(.secondary)
                     }
                 }
@@ -2873,3 +2873,4 @@ extension Color {
         )
     }
 }
+
