@@ -19,12 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Compile and package for iPhone
-        run: |
-          python3 tools/package-ios-app.py output/ClassroomApp.ipa || {
-            echo "::error::Build failed, running verbose swiftc to report error annotations:"
-            xcrun --sdk iphoneos swiftc -sdk $(xcrun --sdk iphoneos --show-sdk-path) -target arm64-apple-ios15.0 -O -parse-as-library -module-name ClassroomApp ios/ClassroomApp/*.swift -o /tmp/test_build
-            exit 1
-          }
+        run: python3 tools/package-ios-app.py output/ClassroomApp.ipa
       - uses: actions/upload-artifact@v4
         with:
           name: ClassroomApp-ipa

@@ -32,16 +32,24 @@ def main():
         bundle.mkdir(parents=True)
         executable = bundle / "ClassroomApp"
         swift_sources = [str(p) for p in sorted(SOURCE.glob("*.swift"))]
-        subprocess.run(
-            [
-                "xcrun", "--sdk", "iphoneos", "swiftc", "-sdk", sdk,
-                "-target", f"arm64-apple-ios{MINIMUM_IOS}", "-O", "-parse-as-library",
-                "-module-name", "ClassroomApp",
-                *swift_sources,
-                "-o", str(executable),
-            ],
-            check=True,
-        )
+        try:
+            subprocess.run(
+                [
+                    "xcrun", "--sdk", "iphoneos", "swiftc", "-sdk", sdk,
+                    "-target", f"arm64-apple-ios{MINIMUM_IOS}", "-O", "-parse-as-library",
+                    "-module-name", "ClassroomApp",
+                    *swift_sources,
+                    "-o", str(executable),
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+        except subprocess.CalledProcessError as err:
+            if err.stderr:
+                for line in err.stderr.splitlines():
+                    print(f"::error::{line}", file=sys.stderr)
+            raise
         with (SOURCE / "Info.plist").open("rb") as file:
             info = plistlib.load(file)
         info.update(MinimumOSVersion=MINIMUM_IOS, CFBundleSupportedPlatforms=["iPhoneOS"])
