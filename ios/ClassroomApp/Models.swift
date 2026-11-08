@@ -1,5 +1,7 @@
 import Foundation
 
+// MARK: - 录音模式与转写引擎
+
 public enum RecordingMode: String, Codable, CaseIterable, Sendable {
     case realtime = "realtime"
     case recordOnly = "recordOnly"
@@ -7,11 +9,10 @@ public enum RecordingMode: String, Codable, CaseIterable, Sendable {
     public var title: String {
         switch self {
         case .realtime: return "实时转写"
-        case .recordOnly: return "仅录音"
+        case .recordOnly: return "仅录音 (不转写·纯保真)"
         }
     }
 }
-
 
 public enum TranscriptionEngine: String, Codable, CaseIterable, Sendable {
     case apple = "apple"
@@ -19,8 +20,8 @@ public enum TranscriptionEngine: String, Codable, CaseIterable, Sendable {
     
     public var title: String {
         switch self {
-        case .apple: return "苹果原生语音识别"
-        case .stepfun: return "阶跃星辰 ASR (云端高精)"
+        case .apple: return "苹果原生语音识别 (免Key·系统输入法)"
+        case .stepfun: return "阶跃星辰 ASR (云端高精·按Key)"
         }
     }
     
@@ -33,7 +34,7 @@ public enum TranscriptionEngine: String, Codable, CaseIterable, Sendable {
     
     public var badge: String {
         switch self {
-        case .apple: return "免Key/本地"
+        case .apple: return "免Key/系统"
         case .stepfun: return "stepaudio-2.5-asr"
         }
     }
@@ -50,7 +51,7 @@ public enum StepfunChunkInterval: Int, Codable, CaseIterable, Sendable {
         case .tenSeconds: return "10 秒切片转写 (极速出字)"
         case .twentySeconds: return "20 秒切片转写 (推荐·语义完整)"
         case .thirtySeconds: return "30 秒切片转写 (段落更长)"
-        case .fullLesson: return "课后统一转写"
+        case .fullLesson: return "课后统一转写 (录中静默)"
         }
     }
     
@@ -60,6 +61,51 @@ public enum StepfunChunkInterval: Int, Codable, CaseIterable, Sendable {
         case .twentySeconds: return "20秒切片"
         case .thirtySeconds: return "30秒切片"
         case .fullLesson: return "课后转写"
+        }
+    }
+}
+
+// MARK: - 云端存储配置与状态
+
+public enum AudioStorageMode: String, Codable, CaseIterable, Sendable {
+    case cloudFirst = "cloudFirst"
+    case cloudAndLocal = "cloudAndLocal"
+    case localOnly = "localOnly"
+    
+    public var title: String {
+        switch self {
+        case .cloudFirst: return "云端优先 (省手机空间)"
+        case .cloudAndLocal: return "云端 + 本地 (双重备份·推荐)"
+        case .localOnly: return "仅本地存储 (离线可用·不上传)"
+        }
+    }
+    
+    public var detailDescription: String {
+        switch self {
+        case .cloudFirst:
+            return "录音先存本地临时缓存，上传至 Cloudflare R2 并校验成功后自动释放本地空间；回放时按需云端秒级流式播放。"
+        case .cloudAndLocal:
+            return "本地保留完整音频供随时离线回放，同时后台自动压缩备份至云端，换设备或防误删两全其美。"
+        case .localOnly:
+            return "完全不向云端发送任何音频数据，仅在手机沙盒中保留，保护私密性，无网络开销。"
+        }
+    }
+}
+
+public enum StorageStatus: String, Codable, Sendable {
+    case localOnly = "localOnly"
+    case uploading = "uploading"
+    case uploadFailed = "uploadFailed"
+    case cloudVerified = "cloudVerified"
+    case cloudOnly = "cloudOnly"
+    
+    public var title: String {
+        switch self {
+        case .localOnly: return "仅本机"
+        case .uploading: return "正在备份至云端"
+        case .uploadFailed: return "云端上传失败 (待重试)"
+        case .cloudVerified: return "云端与本地已同步"
+        case .cloudOnly: return "云端存储 (已省本地空间)"
         }
     }
 }
@@ -80,19 +126,37 @@ public enum LessonStatus: String, Codable, Sendable {
     }
 }
 
+// MARK: - 转录段落
+
 public struct TranscriptSegment: Identifiable, Codable, Equatable, Sendable {
     public var id: UUID
+    public var sequenceIndex: Int
     public var startTime: TimeInterval
     public var endTime: TimeInterval
     public var text: String
     public var isMarked: Bool
     
-    public init(id: UUID = UUID(), startTime: TimeInterval, endTime: TimeInterval, text: String, isMarked: Bool = false) {
+    public init(id: UUID = UUID(), sequenceIndex: Int = 0, startTime: TimeInterval, endTime: TimeInterval, text: String, isMarked: Bool = false) {
         self.id = id
+        self.sequenceIndex = sequenceIndex
         self.startTime = startTime
         self.endTime = endTime
         self.text = text
         self.isMarked = isMarked
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, sequenceIndex, startTime, endTime, text, isMarked
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        self.sequenceIndex = try container.decodeIfPresent(Int.self, forKey: .sequenceIndex) ?? 0
+        self.startTime = try container.decode(TimeInterval.self, forKey: .startTime)
+        self.endTime = try container.decode(TimeInterval.self, forKey: .endTime)
+        self.text = try container.decode(String.self, forKey: .text)
+        self.isMarked = try container.decodeIfPresent(Bool.self, forKey: .isMarked) ?? false
     }
 }
 
@@ -212,6 +276,13 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     public var qaPairs: [QAPair]
     public var summaryTopic: String
     
+    // 云存储与同步状态
+    public var storageMode: AudioStorageMode
+    public var storageStatus: StorageStatus
+    public var remoteAudioKey: String?
+    public var audioSize: Int64
+    public var lastUploadError: String?
+    
     public init(
         id: UUID = UUID(),
         courseId: UUID? = nil,
@@ -226,7 +297,12 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         segments: [TranscriptSegment] = [],
         notes: [LessonNote] = [],
         qaPairs: [QAPair] = [],
-        summaryTopic: String = ""
+        summaryTopic: String = "",
+        storageMode: AudioStorageMode = .cloudAndLocal,
+        storageStatus: StorageStatus = .localOnly,
+        remoteAudioKey: String? = nil,
+        audioSize: Int64 = 0,
+        lastUploadError: String? = nil
     ) {
         self.id = id
         self.courseId = courseId
@@ -234,7 +310,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.startedAt = startedAt
         self.endedAt = endedAt
         self.duration = duration
-        self.audioFileName = audioFileName.isEmpty ? "\(id.uuidString).caf" : audioFileName
+        self.audioFileName = audioFileName.isEmpty ? "\(id.uuidString).m4a" : audioFileName
         self.mode = mode
         self.status = status
         self.marks = marks
@@ -242,9 +318,44 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.notes = notes
         self.qaPairs = qaPairs
         self.summaryTopic = summaryTopic
+        self.storageMode = storageMode
+        self.storageStatus = storageStatus
+        self.remoteAudioKey = remoteAudioKey
+        self.audioSize = audioSize
+        self.lastUploadError = lastUploadError
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, courseId, title, startedAt, endedAt, duration, audioFileName, mode, status
+        case marks, segments, notes, qaPairs, summaryTopic
+        case storageMode, storageStatus, remoteAudioKey, audioSize, lastUploadError
+    }
+    
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.id = try container.decode(UUID.self, forKey: .id)
+        self.courseId = try container.decodeIfPresent(UUID.self, forKey: .courseId)
+        self.title = try container.decode(String.self, forKey: .title)
+        self.startedAt = try container.decode(Date.self, forKey: .startedAt)
+        self.endedAt = try container.decodeIfPresent(Date.self, forKey: .endedAt)
+        self.duration = try container.decode(TimeInterval.self, forKey: .duration)
+        self.audioFileName = try container.decodeIfPresent(String.self, forKey: .audioFileName) ?? "\(self.id.uuidString).m4a"
+        self.mode = try container.decodeIfPresent(RecordingMode.self, forKey: .mode) ?? .realtime
+        self.status = try container.decodeIfPresent(LessonStatus.self, forKey: .status) ?? .completed
+        self.marks = try container.decodeIfPresent([TimeInterval].self, forKey: .marks) ?? []
+        self.segments = try container.decodeIfPresent([TranscriptSegment].self, forKey: .segments) ?? []
+        self.notes = try container.decodeIfPresent([LessonNote].self, forKey: .notes) ?? []
+        self.qaPairs = try container.decodeIfPresent([QAPair].self, forKey: .qaPairs) ?? []
+        self.summaryTopic = try container.decodeIfPresent(String.self, forKey: .summaryTopic) ?? ""
+        
+        self.storageMode = try container.decodeIfPresent(AudioStorageMode.self, forKey: .storageMode) ?? .cloudAndLocal
+        self.storageStatus = try container.decodeIfPresent(StorageStatus.self, forKey: .storageStatus) ?? .localOnly
+        self.remoteAudioKey = try container.decodeIfPresent(String.self, forKey: .remoteAudioKey)
+        self.audioSize = try container.decodeIfPresent(Int64.self, forKey: .audioSize) ?? 0
+        self.lastUploadError = try container.decodeIfPresent(String.self, forKey: .lastUploadError)
     }
     
     public var fullTranscript: String {
-        segments.map { $0.text }.joined(separator: "\n")
+        segments.sorted { $0.startTime < $1.startTime }.map { $0.text }.joined(separator: "\n")
     }
 }

@@ -52,5 +52,11 @@
   ],
   "build": {
     "command": "npm run build"
-  }
+  },
+  "r2_buckets": [
+    {
+      "binding": "RECORDINGS_BUCKET",
+      "bucket_name": "xauat-classroom-recordings"
+    }
+  ]
 }

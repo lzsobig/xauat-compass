@@ -1,6 +1,7 @@
 import {DurableObject} from 'cloudflare:workers';
 import schema from './schema.sql';
 import {handleApi} from './worker.mjs';
+import {handleClassroomApi} from './classroom.mjs';
 import {sqliteAdapter} from './sqlite-adapter.js';
 import {migrateAccountSchema} from '../shared/account-schema.js';
 import {bootstrapAdmin,recoverAdmin} from '../shared/accounts.js';
@@ -46,6 +47,7 @@ export class CompassStore extends DurableObject {
         }
         return response({error:'接口不存在'},404);
       }
+      if(path.startsWith('/api/classroom/'))return await handleClassroomApi(request,{...this.env,DB:this.db},this.ctx);
       return await handleApi(request,{...this.env,DB:this.db},this.ctx);
     }catch(error){return response({error:error.status?error.message:'输入内容无效，请检查后重试'},error.status||400);}
   }

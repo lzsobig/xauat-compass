@@ -1322,6 +1322,36 @@ struct SettingsScreen: View {
                     }
                 }
 
+                Section(
+                    header: Text("录音存储与 Cloudflare R2 云端同步"),
+                    footer: Text(R2UploadManager.shared.storageMode.detailDescription)
+                ) {
+                    Picker("存储策略", selection: Binding(
+                        get: { R2UploadManager.shared.storageMode },
+                        set: { R2UploadManager.shared.storageMode = $0 }
+                    )) {
+                        ForEach(AudioStorageMode.allCases, id: \.self) { mode in
+                            Text(mode.title).tag(mode)
+                        }
+                    }
+                    
+                    Toggle("允许使用蜂窝网络上传", isOn: Binding(
+                        get: { R2UploadManager.shared.allowCellularUpload },
+                        set: { R2UploadManager.shared.allowCellularUpload = $0 }
+                    ))
+                    
+                    HStack {
+                        Text("云端同步 Worker")
+                        Spacer()
+                        TextField("https://compass.lzso.top", text: Binding(
+                            get: { R2UploadManager.shared.workerBaseURL },
+                            set: { R2UploadManager.shared.workerBaseURL = $0 }
+                        ))
+                        .multilineTextAlignment(.trailing)
+                        .font(.system(size: 13, design: .monospaced))
+                    }
+                }
+
                 Section {
                     Button {
                         manager.resetAIDefaults()
@@ -1332,7 +1362,7 @@ struct SettingsScreen: View {
                     } label: {
                         HStack {
                             Spacer()
-                            Label(showResetSuccess ? "已成功恢复官方密钥配置！" : "恢复内置官方 API 密钥", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
+                            Label(showResetSuccess ? "已重置默认接口并清空本地密钥！" : "重置为默认配置 (清除敏感密钥)", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
                                 .foregroundColor(showResetSuccess ? .green : .accentColor)
                             Spacer()
                         }
@@ -1389,28 +1419,45 @@ struct DetailTabPill: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 6) {
+        Button {
+            let generator = UIImpactFeedbackGenerator(style: .light)
+            generator.impactOccurred()
+            action()
+        } label: {
+            HStack(spacing: 5) {
                 Image(systemName: systemImage)
-                    .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                    .font(.system(size: 14, weight: isSelected ? .bold : .medium))
                 Text(title)
-                    .font(.system(size: 13, weight: isSelected ? .bold : .medium))
+                    .font(.system(size: 14, weight: isSelected ? .bold : .medium))
                 
                 if let b = badge {
                     Text(b)
-                        .font(.system(size: 9, weight: .bold))
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1.5)
-                        .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.3))
+                        .font(.system(size: 10, weight: .bold))
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.25))
                         .foregroundColor(isSelected ? .white : .primary)
                         .clipShape(Capsule())
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 38)
-            .background(isSelected ? Color.accentColor.opacity(0.14) : Color(UIColor.tertiarySystemFill).opacity(0.5))
+            .frame(height: 42)
+            .background(
+                ZStack {
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(Color.accentColor.opacity(0.16))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11)
+                                    .stroke(Color.accentColor.opacity(0.35), lineWidth: 1)
+                            )
+                    } else {
+                        RoundedRectangle(cornerRadius: 11)
+                            .fill(Color(UIColor.tertiarySystemFill).opacity(0.45))
+                    }
+                }
+            )
             .foregroundColor(isSelected ? .accentColor : .primary)
-            .cornerRadius(10)
             .contentShape(Rectangle())
         }
         .buttonStyle(PlainButtonStyle())
@@ -1487,6 +1534,96 @@ struct LessonDetailView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                if isLiveActive {
+                    HStack {
+                        Menu {
+                            Section("切换当前转录引擎") {
+                                Button {
+                                    manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
+                                } label: {
+                                    Label("阶跃星辰 ASR (20秒·语义完整)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds ? "checkmark" : "")
+                                }
+                                Button {
+                                    manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
+                                } label: {
+                                    Label("阶跃星辰 ASR (10秒·极速出字)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds ? "checkmark" : "")
+                                }
+                                Button {
+                                    manager.switchTranscriptionEngine(.stepfun, interval: .fullLesson)
+                                } label: {
+                                    Label("课后统一转写 (录中静默)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .fullLesson ? "checkmark" : "")
+                                }
+                                Button {
+                                    manager.switchTranscriptionEngine(.apple)
+                                } label: {
+                                    Label("苹果原生识别 (免Key·系统输入法)", systemImage: manager.transcriptionEngine == .apple ? "checkmark" : "")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 5) {
+                                Circle()
+                                    .fill(manager.isPaused ? Color.orange : Color.green)
+                                    .frame(width: 8, height: 8)
+                                Text(manager.transcriptionEngine == .stepfun ? "阶跃 ASR (\(manager.stepfunChunkInterval.shortTitle))" : "苹果原生")
+                                    .font(.system(size: 12, weight: .bold))
+                                Image(systemName: "chevron.up.chevron.down")
+                                    .font(.system(size: 9))
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 5)
+                            .background(Color(UIColor.tertiarySystemFill))
+                            .foregroundColor(.primary)
+                            .cornerRadius(12)
+                        }
+
+                        Spacer()
+
+                        Text(manager.isPaused ? "已暂停录音" : "正在录音")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(manager.isPaused ? .orange : .green)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 4)
+                    .padding(.bottom, 2)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                } else {
+                    HStack {
+                        HStack(spacing: 5) {
+                            Image(systemName: activeSession.storageStatus == .cloudOnly || activeSession.storageStatus == .cloudVerified ? "icloud.fill" : (activeSession.storageStatus == .uploadFailed ? "exclamationmark.icloud.fill" : "internaldrive"))
+                                .font(.system(size: 12))
+                                .foregroundColor(activeSession.storageStatus == .uploadFailed ? .red : (activeSession.storageStatus == .cloudOnly || activeSession.storageStatus == .cloudVerified ? .blue : .secondary))
+                            Text(activeSession.storageStatus.title)
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        if activeSession.storageStatus == .cloudOnly {
+                            Button {
+                                Task {
+                                    try? await R2UploadManager.shared.downloadAudioToLocal(session: activeSession, destinationURL: manager.audioURL(for: activeSession))
+                                }
+                            } label: {
+                                Label("下载音频到本地", systemImage: "arrow.down.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(.accentColor)
+                            }
+                        } else if activeSession.storageStatus == .uploadFailed || activeSession.storageStatus == .localOnly {
+                            Button {
+                                manager.retryUpload(session: activeSession)
+                            } label: {
+                                Label("上传备份至云端", systemImage: "arrow.up.circle")
+                                    .font(.caption2)
+                                    .foregroundColor(.accentColor)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 4)
+                    .background(Color(UIColor.secondarySystemGroupedBackground))
+                }
+
                 // 自定义大触控 Tab 导航栏 (带未读/条目角标与动画)
                 HStack(spacing: 6) {
                     DetailTabPill(
@@ -2535,7 +2672,30 @@ struct AudioPlayerControlBar: View {
     var body: some View {
         if manager.hasAudioFile(for: session) {
             VStack(spacing: 6) {
-            // 滑动进度条
+                HStack {
+                    Label(
+                        manager.hasLocalAudio(for: session) ? "本地离线音频" : "云端 R2 流式播放 (免占本地空间)",
+                        systemImage: manager.hasLocalAudio(for: session) ? "internaldrive" : "icloud"
+                    )
+                    .font(.system(size: 11))
+                    .foregroundColor(.secondary)
+
+                    Spacer()
+
+                    if !manager.hasLocalAudio(for: session) {
+                        Button {
+                            Task {
+                                try? await R2UploadManager.shared.downloadAudioToLocal(session: session, destinationURL: manager.audioURL(for: session))
+                            }
+                        } label: {
+                            Text("下载到本地")
+                                .font(.system(size: 11, weight: .semibold))
+                                .foregroundColor(.accentColor)
+                        }
+                    }
+                }
+
+                // 滑动进度条
             Slider(
                 value: Binding(
                     get: { manager.playbackTime },

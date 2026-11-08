@@ -128,12 +128,7 @@ public struct TimetableEngine {
         let rawPageString = page.string ?? ""
         let normalizedPage = normalizeText(rawPageString)
         
-        // 1. 如果检测到是建大智建专业或李振的课表，直接使用完整验证过的 64 节次课表库，保证 100% 成功率
-        if normalizedPage.contains("智建2501") || normalizedPage.contains("李振") || (normalizedPage.contains("西安建筑科技大学") && normalizedPage.contains("课表")) {
-            let slots = defaultSlots()
-            let courses = coursesFrom(slots: slots)
-            return (timetable: TimetableData(currentWeek: 10, slots: slots, updatedAt: Date()), courses: courses)
-        }
+
         
         struct TextItem {
             let text: String
@@ -259,9 +254,7 @@ public struct TimetableEngine {
         }
         
         if allSlots.isEmpty {
-            let slots = defaultSlots()
-            let courses = coursesFrom(slots: slots)
-            return (timetable: TimetableData(currentWeek: 10, slots: slots, updatedAt: Date()), courses: courses)
+            throw NSError(domain: "TimetableError", code: 3, userInfo: [NSLocalizedDescriptionKey: "未能从该 PDF 识别到有效课表数据，请确认文件是否为教务系统导出的课表 PDF"])
         }
         
         let timetable = TimetableData(currentWeek: 10, slots: allSlots, updatedAt: Date())
