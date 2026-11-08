@@ -158,6 +158,16 @@ public struct TranscriptSegment: Identifiable, Codable, Equatable, Sendable {
         self.text = try container.decode(String.self, forKey: .text)
         self.isMarked = try container.decodeIfPresent(Bool.self, forKey: .isMarked) ?? false
     }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(sequenceIndex, forKey: .sequenceIndex)
+        try container.encode(startTime, forKey: .startTime)
+        try container.encode(endTime, forKey: .endTime)
+        try container.encode(text, forKey: .text)
+        try container.encode(isMarked, forKey: .isMarked)
+    }
 }
 
 public enum NoteStyle: String, Codable, CaseIterable, Sendable {
@@ -353,6 +363,29 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.remoteAudioKey = try container.decodeIfPresent(String.self, forKey: .remoteAudioKey)
         self.audioSize = try container.decodeIfPresent(Int64.self, forKey: .audioSize) ?? 0
         self.lastUploadError = try container.decodeIfPresent(String.self, forKey: .lastUploadError)
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encodeIfPresent(courseId, forKey: .courseId)
+        try container.encode(title, forKey: .title)
+        try container.encode(startedAt, forKey: .startedAt)
+        try container.encodeIfPresent(endedAt, forKey: .endedAt)
+        try container.encode(duration, forKey: .duration)
+        try container.encode(audioFileName, forKey: .audioFileName)
+        try container.encode(mode, forKey: .mode)
+        try container.encode(status, forKey: .status)
+        try container.encode(marks, forKey: .marks)
+        try container.encode(segments, forKey: .segments)
+        try container.encode(notes, forKey: .notes)
+        try container.encode(qaPairs, forKey: .qaPairs)
+        try container.encode(summaryTopic, forKey: .summaryTopic)
+        try container.encode(storageMode, forKey: .storageMode)
+        try container.encode(storageStatus, forKey: .storageStatus)
+        try container.encodeIfPresent(remoteAudioKey, forKey: .remoteAudioKey)
+        try container.encode(audioSize, forKey: .audioSize)
+        try container.encodeIfPresent(lastUploadError, forKey: .lastUploadError)
     }
     
     public var fullTranscript: String {
