@@ -46,6 +46,37 @@ import Foundation
 import Speech
 import SwiftUI
 
+// MARK: - 语音切片文字平滑拼接与去重 (解决 20 秒切片重叠区域漏字与叠字问题)
+public func stitchTranscripts(previous: String, current: String) -> String {
+    let cleanPrev = previous.trimmingCharacters(in: .whitespacesAndNewlines)
+    let cleanCur = current.trimmingCharacters(in: .whitespacesAndNewlines)
+    
+    guard !cleanPrev.isEmpty else { return cleanCur }
+    guard !cleanCur.isEmpty else { return "" }
+    
+    let prevChars = Array(cleanPrev)
+    let curChars = Array(cleanCur)
+    
+    // 在 2 到 14 个字符范围内寻找前一句尾部与后一句头部的重叠匹配
+    let maxMatchLen = min(14, min(prevChars.count, curChars.count))
+    if maxMatchLen >= 2 {
+        for len in stride(from: maxMatchLen, through: 2, by: -1) {
+            let prevTail = String(prevChars.suffix(len))
+            let curHead = String(curChars.prefix(len))
+            
+            let normTail = prevTail.filter { !"，。！？、；： \t\n".contains($0) }
+            let normHead = curHead.filter { !"，。！？、；： \t\n".contains($0) }
+            
+            if !normTail.isEmpty && normTail == normHead {
+                // 剔除后一句重叠的前缀
+                let remaining = String(curChars.dropFirst(len)).trimmingCharacters(in: CharacterSet(charactersIn: "，。！？、；： \t\n"))
+                return remaining
+            }
+        }
+    }
+    return cleanCur
+}
+
 private final class AudioCapture {
     private let lock = NSLock()
     private var file: AVAudioFile?
@@ -57,6 +88,10 @@ private final class AudioCapture {
     // 阶跃 ASR 实时分段切片缓冲区 (重采样到 16kHz 16-bit 单声道)
     private var sliceSamples: [Int16] = []
     private var sliceStepAccumulator: Double = 0
+
+    // VAD 动态静音停顿检测（陈逸飞自主截断核心逻辑）
+    private var consecutiveSilenceFrames: Int = 0
+    private let silenceRmsThreshold: Float = 0.015 // 归一化静音振幅门限 (约 -36dB)
 
     init(file: AVAudioFile, sampleRate: Double) {
         self.file = file
@@ -76,8 +111,22 @@ private final class AudioCapture {
             if let floatChannelData = buffer.floatChannelData {
                 let channel0 = floatChannelData[0]
                 let frameCount = Int(buffer.frameLength)
-                let step = sampleRate / 16000.0
                 
+                // 实时计算当前音频帧的 RMS 能量
+                var sumSquares: Float = 0
+                for f in 0..<frameCount {
+                    let s = channel0[f]
+                    sumSquares += s * s
+                }
+                let rms = frameCount > 0 ? sqrt(sumSquares / Float(frameCount)) : 0
+                
+                if rms < silenceRmsThreshold {
+                    consecutiveSilenceFrames += frameCount
+                } else {
+                    consecutiveSilenceFrames = 0
+                }
+                
+                let step = sampleRate / 16000.0
                 var idx: Double = sliceStepAccumulator
                 while idx < Double(frameCount) {
                     let sampleIdx = Int(idx)
@@ -96,6 +145,13 @@ private final class AudioCapture {
         }
     }
 
+    var consecutiveSilenceSeconds: Double {
+        lock.lock()
+        defer { lock.unlock() }
+        guard sampleRate > 0 else { return 0 }
+        return Double(consecutiveSilenceFrames) / sampleRate
+    }
+
     func attachSpeechRequest(_ req: SFSpeechAudioBufferRecognitionRequest?) {
         lock.lock()
         defer { lock.unlock() }
@@ -103,12 +159,21 @@ private final class AudioCapture {
         speechRequest = req
     }
 
-    func takeCurrentSliceWavData() -> Data? {
+    // 提取当前切片 WAV 数据，同时保留 keepOverlapSeconds（默认 1.5 秒）音频作为下一段的开头，彻底防止切片边界漏字
+    func takeCurrentSliceWavData(keepOverlapSeconds: Double = 1.5) -> Data? {
         lock.lock()
         defer { lock.unlock() }
         guard !sliceSamples.isEmpty else { return nil }
         let samples = sliceSamples
-        sliceSamples.removeAll(keepingCapacity: true)
+        
+        let overlapCount = Int(keepOverlapSeconds * 16000)
+        if keepOverlapSeconds > 0 && samples.count > overlapCount + 8000 {
+            let overlapSamples = Array(samples.suffix(overlapCount))
+            sliceSamples = overlapSamples
+        } else {
+            sliceSamples.removeAll(keepingCapacity: true)
+        }
+        consecutiveSilenceFrames = 0
         return pcmToWav(samples: samples, sampleRate: 16000)
     }
 
@@ -126,6 +191,7 @@ private final class AudioCapture {
         speechRequest = nil
         file = nil
         sliceSamples.removeAll()
+        consecutiveSilenceFrames = 0
     }
 }
 
@@ -515,21 +581,38 @@ public final class ClassroomManager: ObservableObject {
                         self.currentSession?.duration = self.recordingElapsed
                     }
                     
-                    // 阶跃 ASR 周期切片实时转录 (10秒 / 20秒 / 30秒)
+                    // 阶跃 ASR 动态智能切片实时转录 (自主截断 + 5秒弹性窗口 + 1.5秒重叠回退)
                     if self.transcriptionEngine == .stepfun && self.stepfunChunkInterval.rawValue > 0 {
-                        let interval = Double(self.stepfunChunkInterval.rawValue)
-                        if self.recordingElapsed - self.lastChunkTime >= interval {
+                        let targetInterval = Double(self.stepfunChunkInterval.rawValue)
+                        let chunkElapsed = self.recordingElapsed - self.lastChunkTime
+                        
+                        // 弹性自主截断窗口：目标周期前 5 秒开始探测语音停顿（例如 20s 周期在 15s~23s 内探测）
+                        let minFlexTime = max(6.0, targetInterval - 5.0)
+                        let maxHardTimeout = targetInterval + 3.0
+                        
+                        let silenceSecs = self.capture?.consecutiveSilenceSeconds ?? 0
+                        let isSentenceEnded = silenceSecs >= 0.35 // 停顿 350ms 判定为一句话讲完
+                        let canAutonomousCut = (chunkElapsed >= minFlexTime && isSentenceEnded)
+                        let isForceTimeout = (chunkElapsed >= maxHardTimeout)
+                        
+                        if canAutonomousCut || isForceTimeout {
                             let chunkStart = self.lastChunkTime
                             let chunkEnd = self.recordingElapsed
                             self.lastChunkTime = self.recordingElapsed
                             
-                            if let wavData = self.capture?.takeCurrentSliceWavData(), wavData.count > 44 + 8000 {
+                            // 保留 1.5 秒重叠音频供下一个切片，确保字词发音绝不被硬切断
+                            if let wavData = self.capture?.takeCurrentSliceWavData(keepOverlapSeconds: 1.5), wavData.count > 44 + 8000 {
                                 let curSessionId = self.currentSession?.id
+                                let lastText = self.currentSession?.segments.last?.text ?? ""
+                                let promptSnippet = String(lastText.suffix(40))
+                                
                                 self.isChunkTranscribing = true
                                 Task {
                                     do {
-                                        let transcribed = try await self.callStepFunASR(audioData: wavData)
-                                        let clean = transcribed.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        let transcribed = try await self.callStepFunASR(audioData: wavData, prompt: promptSnippet)
+                                        let stitched = stitchTranscripts(previous: lastText, current: transcribed)
+                                        let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        
                                         DispatchQueue.main.async {
                                             self.isChunkTranscribing = false
                                             if !clean.isEmpty, let targetId = curSessionId {
@@ -659,7 +742,7 @@ public final class ClassroomManager: ObservableObject {
         speechTask?.cancel()
         speechTask = nil
         
-        let remainingWav = (transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0) ? capture?.takeCurrentSliceWavData() : nil
+        let remainingWav = (transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0) ? capture?.takeCurrentSliceWavData(keepOverlapSeconds: 0) : nil
         let finalDuration = capture?.recordedDuration ?? recordingElapsed
         capture?.close()
         capture = nil
@@ -686,10 +769,13 @@ public final class ClassroomManager: ObservableObject {
                 let chunkStart = self.lastChunkTime
                 let chunkEnd = finalDuration
                 let targetId = cur.id
+                let lastText = cur.segments.last?.text ?? ""
+                let promptSnippet = String(lastText.suffix(40))
                 Task {
                     do {
-                        let transcribed = try await self.callStepFunASR(audioData: wav)
-                        let clean = transcribed.trimmingCharacters(in: .whitespacesAndNewlines)
+                        let transcribed = try await self.callStepFunASR(audioData: wav, prompt: promptSnippet)
+                        let stitched = stitchTranscripts(previous: lastText, current: transcribed)
+                        let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !clean.isEmpty {
                             DispatchQueue.main.async {
                                 if let idx = self.sessions.firstIndex(where: { $0.id == targetId }) {
@@ -898,7 +984,7 @@ public final class ClassroomManager: ObservableObject {
         }
     }
     
-    private func callStepFunASR(audioData: Data, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
+    private func callStepFunASR(audioData: Data, prompt: String? = nil, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
         let cleanBase = stepfunBaseURL.hasSuffix("/") ? String(stepfunBaseURL.dropLast()) : stepfunBaseURL
         guard let url = URL(string: "\(cleanBase)/audio/transcriptions") else { throw URLError(.badURL) }
         
@@ -914,6 +1000,12 @@ public final class ClassroomManager: ObservableObject {
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n".data(using: .utf8)!)
         body.append("\(stepfunAsrModel)\r\n".data(using: .utf8)!)
+        
+        if let pr = prompt, !pr.isEmpty {
+            body.append("--\(boundary)\r\n".data(using: .utf8)!)
+            body.append("Content-Disposition: form-data; name=\"prompt\"\r\n\r\n".data(using: .utf8)!)
+            body.append("\(pr)\r\n".data(using: .utf8)!)
+        }
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
@@ -947,7 +1039,7 @@ public final class ClassroomManager: ObservableObject {
         let rawData = try Data(contentsOf: audioURL)
         let filename = audioURL.lastPathComponent.lowercased()
         let mime = filename.hasSuffix(".wav") ? "audio/wav" : (filename.hasSuffix(".mp3") ? "audio/mpeg" : "audio/x-caf")
-        return try await callStepFunASR(audioData: rawData, filename: audioURL.lastPathComponent, mimeType: mime)
+        return try await callStepFunASR(audioData: rawData, prompt: nil, filename: audioURL.lastPathComponent, mimeType: mime)
     }
 
     // MARK: - 大模型 HTTP 调用 (DeepSeek 专属大模型问答与笔记生成)
