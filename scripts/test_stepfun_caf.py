@@ -1,7 +1,9 @@
 import urllib.request
 import json
 
-key = '1j59BjlpvcB0QdaiN3LrsZu3SVVNOexDPBNwxSs9MB51HjBhzhZGAtTLZ3yXUs6QM'
+import os
+
+key = os.environ.get('STEPFUN_API_KEY', '')
 boundary = 'BoundaryCAFTest'
 
 parts = []

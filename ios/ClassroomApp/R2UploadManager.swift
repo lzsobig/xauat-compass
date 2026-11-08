@@ -25,7 +25,7 @@ public final class R2UploadManager: ObservableObject {
     public init() {
         self.workerBaseURL = UserDefaults.standard.string(forKey: "classroom_worker_base_url") ?? "https://compass.lzso.top"
         let savedMode = UserDefaults.standard.string(forKey: "classroom_storage_mode") ?? "cloudAndLocal"
-        self.storageMode = AudioStorageMode(rawValue: savedMode) ?? .cloudAndLocal
+        self.storageMode = AudioStorageMode(rawValue: savedMode) ?? .localOnly
         self.allowCellularUpload = UserDefaults.standard.bool(forKey: "classroom_allow_cellular_upload")
     }
     

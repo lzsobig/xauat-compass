@@ -11,7 +11,9 @@ with wave.open(buf, 'wb') as wf:
     wf.writeframes(b'\x00\x00' * 16000)
 wav_data = buf.getvalue()
 
-key = '1j59BjlpvcB0QdaiN3LrsZu3SVVNOexDPBNwxSs9MB51HjBhzhZGAtTLZ3yXUs6QM'
+import os
+
+key = os.environ.get('STEPFUN_API_KEY', '')
 boundary = 'Boundary1234567890'
 
 parts = []

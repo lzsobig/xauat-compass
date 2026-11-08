@@ -110,18 +110,76 @@ public enum StorageStatus: String, Codable, Sendable {
     }
 }
 
-public enum LessonStatus: String, Codable, Sendable {
-    case recording = "recording"
-    case paused = "paused"
-    case interrupted = "interrupted"
-    case completed = "completed"
+// MARK: - 分片转写任务状态与模型
+
+public enum ChunkTaskStatus: String, Codable, Sendable {
+    case pending = "pending"           // 等待转写（录制完成或待重试）
+    case transcribing = "transcribing" // 正在调用 ASR
+    case completed = "completed"       // 转写成功，文字已落盘
+    case failed = "failed"             // 转写失败（断网/超时/服务端错误）
     
     public var title: String {
         switch self {
-        case .recording: return "录制中"
+        case .pending: return "排队中"
+        case .transcribing: return "转写中"
+        case .completed: return "成功"
+        case .failed: return "失败"
+        }
+    }
+}
+
+public struct ChunkTranscriptionTask: Identifiable, Codable, Sendable, Equatable {
+    public var id: UUID
+    public var sequenceIndex: Int
+    public var startTime: TimeInterval
+    public var endTime: TimeInterval
+    public var chunkFileName: String
+    public var status: ChunkTaskStatus
+    public var retryCount: Int
+    public var lastError: String?
+    public var recognizedText: String?
+    
+    public init(
+        id: UUID = UUID(),
+        sequenceIndex: Int,
+        startTime: TimeInterval,
+        endTime: TimeInterval,
+        chunkFileName: String,
+        status: ChunkTaskStatus = .pending,
+        retryCount: Int = 0,
+        lastError: String? = nil,
+        recognizedText: String? = nil
+    ) {
+        self.id = id
+        self.sequenceIndex = sequenceIndex
+        self.startTime = startTime
+        self.endTime = endTime
+        self.chunkFileName = chunkFileName
+        self.status = status
+        self.retryCount = retryCount
+        self.lastError = lastError
+        self.recognizedText = recognizedText
+    }
+}
+
+public enum LessonStatus: String, Codable, Sendable {
+    case recording = "recording"                     // 实时转写中
+    case paused = "paused"                           // 已暂停
+    case pendingCatchUp = "pendingCatchUp"           // 待补转写
+    case transcriptionFailed = "transcriptionFailed" // 转写失败
+    case completed = "completed"                     // 转写完成
+    case recordOnlyCompleted = "recordOnlyCompleted" // 录音已保存
+    case interrupted = "interrupted"                 // 录音中断
+    
+    public var title: String {
+        switch self {
+        case .recording: return "实时转写中"
         case .paused: return "已暂停"
-        case .interrupted: return "录音中断"
-        case .completed: return "已完成"
+        case .pendingCatchUp: return "待补转写"
+        case .transcriptionFailed: return "转写失败"
+        case .completed: return "转写完成"
+        case .recordOnlyCompleted: return "录音已保存"
+        case .interrupted: return "录音中断(待补转)"
         }
     }
 }
@@ -286,6 +344,10 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     public var qaPairs: [QAPair]
     public var summaryTopic: String
     
+    // 分片转写任务与临时音频清理状态
+    public var chunkTasks: [ChunkTranscriptionTask]
+    public var isTempAudioPurged: Bool
+    
     // 云存储与同步状态
     public var storageMode: AudioStorageMode
     public var storageStatus: StorageStatus
@@ -308,6 +370,8 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         notes: [LessonNote] = [],
         qaPairs: [QAPair] = [],
         summaryTopic: String = "",
+        chunkTasks: [ChunkTranscriptionTask] = [],
+        isTempAudioPurged: Bool = false,
         storageMode: AudioStorageMode = .cloudAndLocal,
         storageStatus: StorageStatus = .localOnly,
         remoteAudioKey: String? = nil,
@@ -328,6 +392,8 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.notes = notes
         self.qaPairs = qaPairs
         self.summaryTopic = summaryTopic
+        self.chunkTasks = chunkTasks
+        self.isTempAudioPurged = isTempAudioPurged
         self.storageMode = storageMode
         self.storageStatus = storageStatus
         self.remoteAudioKey = remoteAudioKey
@@ -338,6 +404,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     enum CodingKeys: String, CodingKey {
         case id, courseId, title, startedAt, endedAt, duration, audioFileName, mode, status
         case marks, segments, notes, qaPairs, summaryTopic
+        case chunkTasks, isTempAudioPurged
         case storageMode, storageStatus, remoteAudioKey, audioSize, lastUploadError
     }
     
@@ -357,6 +424,8 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.notes = try container.decodeIfPresent([LessonNote].self, forKey: .notes) ?? []
         self.qaPairs = try container.decodeIfPresent([QAPair].self, forKey: .qaPairs) ?? []
         self.summaryTopic = try container.decodeIfPresent(String.self, forKey: .summaryTopic) ?? ""
+        self.chunkTasks = try container.decodeIfPresent([ChunkTranscriptionTask].self, forKey: .chunkTasks) ?? []
+        self.isTempAudioPurged = try container.decodeIfPresent(Bool.self, forKey: .isTempAudioPurged) ?? false
         
         self.storageMode = try container.decodeIfPresent(AudioStorageMode.self, forKey: .storageMode) ?? .cloudAndLocal
         self.storageStatus = try container.decodeIfPresent(StorageStatus.self, forKey: .storageStatus) ?? .localOnly
@@ -381,6 +450,8 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         try container.encode(notes, forKey: .notes)
         try container.encode(qaPairs, forKey: .qaPairs)
         try container.encode(summaryTopic, forKey: .summaryTopic)
+        try container.encode(chunkTasks, forKey: .chunkTasks)
+        try container.encode(isTempAudioPurged, forKey: .isTempAudioPurged)
         try container.encode(storageMode, forKey: .storageMode)
         try container.encode(storageStatus, forKey: .storageStatus)
         try container.encodeIfPresent(remoteAudioKey, forKey: .remoteAudioKey)

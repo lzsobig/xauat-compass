@@ -27,7 +27,9 @@ header = struct.pack(
 raw_samples = struct.pack(f'<{len(samples)}h', *samples)
 wav_data = header + raw_samples
 
-key = '1j59BjlpvcB0QdaiN3LrsZu3SVVNOexDPBNwxSs9MB51HjBhzhZGAtTLZ3yXUs6QM'
+import os
+
+key = os.environ.get('STEPFUN_API_KEY', '')
 boundary = 'BoundaryWAVHeaderTest'
 
 parts = []

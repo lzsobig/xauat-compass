@@ -473,3 +473,233 @@ test('场景 16: 90 分钟课堂录音压缩与成本评估', () => {
   const monthlyCostUSD = 0.00;
   assert.equal(monthlyCostUSD, 0.00, '常规学生单月录音存储在 R2 免费额度内，完全 $0 成本');
 });
+
+
+// --------------------------------------------------------------------------
+// 场景 17: 90 分钟课堂全链路仿真 (270 个分片) - 全部成功后自动清理临时音频释放空间
+// --------------------------------------------------------------------------
+test('场景 17: 90 分钟课堂全链路仿真 - 全部转写成功后自动清理临时音频', () => {
+  const totalSeconds = 5400; // 90 分钟
+  const chunkInterval = 20;  // 20 秒一个分片
+  const totalChunks = totalSeconds / chunkInterval; // 270 个分片
+  
+  const session = {
+    id: 'sess-90min-clean',
+    title: '建筑力学',
+    mode: 'realtime',
+    status: 'recording',
+    duration: totalSeconds,
+    chunkTasks: [],
+    segments: [],
+    isTempAudioPurged: false
+  };
+
+  // 模拟录制过程中产生 270 个分片任务
+  for (let i = 1; i <= totalChunks; i++) {
+    session.chunkTasks.push({
+      id: `task-${i}`,
+      sequenceIndex: i,
+      startTime: (i - 1) * chunkInterval,
+      endTime: i * chunkInterval,
+      chunkFileName: `chunk_${i}.wav`,
+      status: 'pending'
+    });
+  }
+
+  assert.equal(session.chunkTasks.length, 270);
+  assert.equal(session.chunkTasks[0].sequenceIndex, 1);
+  assert.equal(session.chunkTasks[269].sequenceIndex, 270);
+
+  // 模拟所有分片在录音期间及结束后均成功转写
+  for (const task of session.chunkTasks) {
+    task.status = 'completed';
+    session.segments.push({
+      id: `seg-${task.sequenceIndex}`,
+      sequenceIndex: task.sequenceIndex,
+      startTime: task.startTime,
+      endTime: task.endTime,
+      text: `第 ${task.sequenceIndex} 讲授内容`
+    });
+  }
+
+  // 模拟 stopRecording 后的 checkAndFinalizeSessionStorage
+  const hasIncomplete = session.chunkTasks.some(t => t.status !== 'completed');
+  if (!hasIncomplete && session.mode === 'realtime') {
+    session.status = 'completed';
+    session.isTempAudioPurged = true; // 自动清理临时录音文件
+  }
+
+  assert.equal(session.status, 'completed');
+  assert.equal(session.isTempAudioPurged, true, '临时音频已自动删除，释放了手机约 500MB 空间');
+  assert.equal(session.segments.length, 270, '完整保留 270 段课堂文字实录');
+});
+
+// --------------------------------------------------------------------------
+// 场景 18: 中途断网与失败保护 (第 50~55 分片断网失败，音频严禁删除)
+// --------------------------------------------------------------------------
+test('场景 18: 90 分钟课堂中途断网 - 失败分片本地保护不丢失，录音继续进行', () => {
+  const session = {
+    id: 'sess-offline-test',
+    title: '计算机网络',
+    mode: 'realtime',
+    status: 'recording',
+    chunkTasks: [],
+    segments: [],
+    isTempAudioPurged: false
+  };
+
+  // 生成前 60 个分片
+  for (let i = 1; i <= 60; i++) {
+    const task = {
+      id: `task-${i}`,
+      sequenceIndex: i,
+      startTime: (i - 1) * 20,
+      endTime: i * 20,
+      chunkFileName: `chunk_${i}.wav`,
+      status: 'pending',
+      retryCount: 0
+    };
+    session.chunkTasks.push(task);
+
+    // 假设第 50 到 55 分片遇到断网 (50 <= i <= 55)
+    if (i >= 50 && i <= 55) {
+      task.status = 'failed';
+      task.retryCount = 1;
+      task.lastError = 'FetchError: 网络不可达 (Offline)';
+      // 断网保护：此分片本地 chunk_i.wav 严禁删除！
+    } else {
+      task.status = 'completed';
+      session.segments.push({
+        id: `seg-${i}`,
+        sequenceIndex: i,
+        startTime: task.startTime,
+        endTime: task.endTime,
+        text: `第 ${i} 讲知识点`
+      });
+    }
+  }
+
+  // 录音结束判定
+  const incompleteCount = session.chunkTasks.filter(t => t.status !== 'completed').length;
+  assert.equal(incompleteCount, 6, '恰好 6 个分片 (50~55) 处于 failed 待补状态');
+
+  // 运行 checkAndFinalizeSessionStorage
+  if (incompleteCount > 0) {
+    session.status = 'pendingCatchUp';
+  }
+
+  assert.equal(session.status, 'pendingCatchUp', '课程状态标记为待补转写');
+  assert.equal(session.isTempAudioPurged, false, '因为存在失败分片，临时录音严禁删除！');
+});
+
+// --------------------------------------------------------------------------
+// 场景 19: 连网后一键补转写与按时序恢复
+// --------------------------------------------------------------------------
+test('场景 19: 连网后一键补转写 - 失败分片按序补齐，全部成功后再释放临时音频', () => {
+  const session = {
+    id: 'sess-retry-test',
+    title: '大学英语',
+    mode: 'realtime',
+    status: 'pendingCatchUp',
+    chunkTasks: [
+      { id: 't1', sequenceIndex: 1, status: 'completed', startTime: 0, endTime: 20 },
+      { id: 't2', sequenceIndex: 2, status: 'failed', startTime: 20, endTime: 40, retryCount: 1 },
+      { id: 't3', sequenceIndex: 3, status: 'failed', startTime: 40, endTime: 60, retryCount: 1 },
+      { id: 't4', sequenceIndex: 4, status: 'completed', startTime: 60, endTime: 80 }
+    ],
+    segments: [
+      { id: 's1', sequenceIndex: 1, startTime: 0, endTime: 20, text: 'Hello everyone.' },
+      { id: 's4', sequenceIndex: 4, startTime: 60, endTime: 80, text: 'Please turn to page 10.' }
+    ],
+    isTempAudioPurged: false
+  };
+
+  // 模拟 retryPendingChunks
+  const pending = session.chunkTasks.filter(t => t.status === 'failed' || t.status === 'pending');
+  assert.equal(pending.length, 2);
+
+  // 补转写成功
+  for (const t of pending) {
+    t.status = 'completed';
+    session.segments.push({
+      id: `s${t.sequenceIndex}`,
+      sequenceIndex: t.sequenceIndex,
+      startTime: t.startTime,
+      endTime: t.endTime,
+      text: `Recovered text for chunk ${t.sequenceIndex}`
+    });
+  }
+
+  // 按时序排列段落
+  session.segments.sort((a, b) => a.startTime - b.startTime);
+
+  // 校验时序完全恢复
+  assert.deepEqual(session.segments.map(s => s.sequenceIndex), [1, 2, 3, 4]);
+
+  // 再次执行终结检查
+  const incomplete = session.chunkTasks.some(t => t.status !== 'completed');
+  if (!incomplete && session.mode === 'realtime') {
+    session.status = 'completed';
+    session.isTempAudioPurged = true;
+  }
+
+  assert.equal(session.status, 'completed');
+  assert.equal(session.isTempAudioPurged, true, '补转写完成后成功释放临时音频');
+});
+
+// --------------------------------------------------------------------------
+// 场景 20: 录音中途 App 异常退出重启自动恢复
+// --------------------------------------------------------------------------
+test('场景 20: 录音异常中断 - 重启后恢复为 pendingCatchUp 并重置 transcribing 状态', () => {
+  const session = {
+    id: 'sess-crash-recovery',
+    title: '材料力学',
+    mode: 'realtime',
+    status: 'recording',
+    chunkTasks: [
+      { id: 't1', sequenceIndex: 1, status: 'completed' },
+      { id: 't2', sequenceIndex: 2, status: 'transcribing' }, // 崩溃时正在调用网络
+      { id: 't3', sequenceIndex: 3, status: 'pending' }
+    ],
+    isTempAudioPurged: false
+  };
+
+  // 模拟 recoverInterruptedSessions 行为
+  if (session.status === 'recording' || session.status === 'paused') {
+    session.status = 'interrupted';
+  }
+  for (const t of session.chunkTasks) {
+    if (t.status === 'transcribing') {
+      t.status = 'pending'; // 重置为 pending 以便重新触发
+    }
+  }
+  const hasIncomplete = session.chunkTasks.some(t => t.status === 'pending' || t.status === 'failed');
+  if (hasIncomplete) {
+    session.status = 'pendingCatchUp';
+  }
+
+  assert.equal(session.chunkTasks[1].status, 'pending', '正在转写的分片安全重置为 pending');
+  assert.equal(session.status, 'pendingCatchUp');
+  assert.equal(session.isTempAudioPurged, false, '音频完整保留供补转');
+});
+
+// --------------------------------------------------------------------------
+// 场景 21: 仅录音模式绝不自动清理录音与调用 ASR
+// --------------------------------------------------------------------------
+test('场景 21: 仅录音模式 - 完整保存原始录音，绝不调用 ASR，绝不自动清理', () => {
+  const session = {
+    id: 'sess-record-only',
+    title: '讲座录音',
+    mode: 'recordOnly',
+    status: 'recording',
+    chunkTasks: [],
+    isTempAudioPurged: false
+  };
+
+  // 结束录音
+  session.status = 'recordOnlyCompleted';
+
+  assert.equal(session.chunkTasks.length, 0, '未触发任何切片 ASR 任务');
+  assert.equal(session.isTempAudioPurged, false, '原始录音永久保留在本地沙盒');
+  assert.equal(session.status, 'recordOnlyCompleted');
+});

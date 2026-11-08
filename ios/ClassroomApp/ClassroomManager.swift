@@ -379,6 +379,37 @@ public final class ClassroomManager: ObservableObject {
         storageRoot.appendingPathComponent(session.audioFileName)
     }
 
+    public func chunksFolder(for sessionId: UUID) -> URL {
+        storageRoot.appendingPathComponent("chunks").appendingPathComponent(sessionId.uuidString)
+    }
+
+    public func chunkFileURL(sessionId: UUID, fileName: String) -> URL {
+        chunksFolder(for: sessionId).appendingPathComponent(fileName)
+    }
+
+    public func appendChunkTask(_ task: ChunkTranscriptionTask, to sessionId: UUID) {
+        if let idx = sessions.firstIndex(where: { $0.id == sessionId }) {
+            if !sessions[idx].chunkTasks.contains(where: { $0.id == task.id || $0.sequenceIndex == task.sequenceIndex }) {
+                sessions[idx].chunkTasks.append(task)
+                if currentSession?.id == sessionId {
+                    currentSession?.chunkTasks = sessions[idx].chunkTasks
+                }
+                saveSessions()
+            }
+        }
+    }
+
+    public func updateChunkTask(sessionId: UUID, taskId: UUID, mutate: (inout ChunkTranscriptionTask) -> Void) {
+        if let sIdx = sessions.firstIndex(where: { $0.id == sessionId }),
+           let tIdx = sessions[sIdx].chunkTasks.firstIndex(where: { $0.id == taskId }) {
+            mutate(&sessions[sIdx].chunkTasks[tIdx])
+            if currentSession?.id == sessionId {
+                currentSession?.chunkTasks = sessions[sIdx].chunkTasks
+            }
+            saveSessions()
+        }
+    }
+
     private func loadData() {
         let decoder = JSONDecoder()
         
@@ -463,6 +494,37 @@ public final class ClassroomManager: ObservableObject {
                         sessions[i].duration = dur
                     }
                 }
+                modified = true
+            }
+            
+            // 恢复崩溃或被切后台时处于 transcribing 的分片任务为 pending
+            var sessionHasIncomplete = false
+            for cIdx in 0..<sessions[i].chunkTasks.count {
+                if sessions[i].chunkTasks[cIdx].status == .transcribing {
+                    sessions[i].chunkTasks[cIdx].status = .pending
+                    modified = true
+                }
+                if sessions[i].chunkTasks[cIdx].status == .pending || sessions[i].chunkTasks[cIdx].status == .failed {
+                    sessionHasIncomplete = true
+                }
+            }
+            
+            if sessionHasIncomplete && sessions[i].status != .recording && sessions[i].status != .paused {
+                sessions[i].status = .pendingCatchUp
+                modified = true
+            } else if !sessionHasIncomplete && sessions[i].mode == .realtime && !sessions[i].chunkTasks.isEmpty && !sessions[i].isTempAudioPurged && sessions[i].status != .recording {
+                // 如果重启时发现该课堂所有分片皆已成功转写，自动清理残留临时音频
+                let mainAudioURL = audioURL(for: sessions[i])
+                try? FileManager.default.removeItem(at: mainAudioURL)
+                let folder = chunksFolder(for: sessions[i].id)
+                try? FileManager.default.removeItem(at: folder)
+                sessions[i].isTempAudioPurged = true
+                sessions[i].status = .completed
+                modified = true
+            }
+            
+            if sessions[i].storageStatus == .uploading {
+                sessions[i].storageStatus = .uploadFailed
                 modified = true
             }
         }
@@ -666,30 +728,23 @@ public final class ClassroomManager: ObservableObject {
                             
                             // 保留 1.5 秒重叠音频供下一个切片，确保字词发音绝不被硬切断
                             if let wavData = self.capture?.takeCurrentSliceWavData(keepOverlapSeconds: 1.5), wavData.count > 44 + 8000 {
-                                let curSessionId = self.currentSession?.id
-                                let lastText = self.currentSession?.segments.last?.text ?? ""
-                                let promptSnippet = String(lastText.suffix(40))
+                                guard let targetId = self.currentSession?.id else { return }
                                 
-                                self.isChunkTranscribing = true
-                                Task {
-                                    do {
-                                        let transcribed = try await self.callStepFunASR(audioData: wavData, prompt: promptSnippet)
-                                        let stitched = stitchTranscripts(previous: lastText, current: transcribed)
-                                        let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
-                                        
-                                        DispatchQueue.main.async {
-                                            self.isChunkTranscribing = false
-                                            if !clean.isEmpty, let targetId = curSessionId {
-                                                let seg = TranscriptSegment(sequenceIndex: chunkIdx, startTime: chunkStart, endTime: chunkEnd, text: clean)
-                                                self.insertAndSortSegment(segment: seg, targetSessionId: targetId)
-                                            }
-                                        }
-                                    } catch {
-                                        DispatchQueue.main.async {
-                                            self.isChunkTranscribing = false
-                                        }
-                                    }
-                                }
+                                let chunkFileName = "chunk_\(chunkIdx).wav"
+                                let folder = self.chunksFolder(for: targetId)
+                                try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                                let chunkPath = folder.appendingPathComponent(chunkFileName)
+                                try? wavData.write(to: chunkPath, options: .atomic)
+                                
+                                let task = ChunkTranscriptionTask(
+                                    sequenceIndex: chunkIdx,
+                                    startTime: chunkStart,
+                                    endTime: chunkEnd,
+                                    chunkFileName: chunkFileName,
+                                    status: .pending
+                                )
+                                self.appendChunkTask(task, to: targetId)
+                                self.processChunkTask(sessionId: targetId, task: task)
                             }
                         }
                     }
@@ -704,6 +759,133 @@ public final class ClassroomManager: ObservableObject {
         }
     }
     
+
+    // MARK: - 分片转写任务执行与本地存储自动清理
+
+    public func processChunkTask(sessionId: UUID, task: ChunkTranscriptionTask) {
+        guard let sess = self.sessions.first(where: { $0.id == sessionId }) else { return }
+        guard let currentTask = sess.chunkTasks.first(where: { $0.id == task.id }), currentTask.status != .completed else { return }
+        
+        self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
+            $0.status = .transcribing
+        }
+        self.isChunkTranscribing = true
+        
+        let chunkURL = self.chunkFileURL(sessionId: sessionId, fileName: task.chunkFileName)
+        guard let audioData = try? Data(contentsOf: chunkURL), audioData.count > 44 + 8000 else {
+            self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
+                $0.status = .failed
+                $0.lastError = "分片音频数据缺失"
+            }
+            self.isChunkTranscribing = false
+            return
+        }
+        
+        let lastText = sess.segments.last?.text ?? ""
+        let promptSnippet = String(lastText.suffix(40))
+        
+        Task {
+            do {
+                let transcribed = try await self.callStepFunASR(audioData: audioData, prompt: promptSnippet)
+                let stitched = stitchTranscripts(previous: lastText, current: transcribed)
+                let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
+                
+                await MainActor.run {
+                    self.isChunkTranscribing = false
+                    self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
+                        $0.status = .completed
+                        $0.recognizedText = clean
+                    }
+                    
+                    if !clean.isEmpty {
+                        let seg = TranscriptSegment(
+                            sequenceIndex: task.sequenceIndex,
+                            startTime: task.startTime,
+                            endTime: task.endTime,
+                            text: clean
+                        )
+                        self.insertAndSortSegment(segment: seg, targetSessionId: sessionId)
+                    }
+                    
+                    // 存储优化最高准则：该分片已成功落盘为文字，立即删除本分片临时音频文件
+                    try? FileManager.default.removeItem(at: chunkURL)
+                    
+                    // 核验整堂课是否所有分片全部完成
+                    self.checkAndFinalizeSessionStorage(sessionId: sessionId)
+                }
+            } catch {
+                await MainActor.run {
+                    self.isChunkTranscribing = false
+                    self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
+                        $0.status = .failed
+                        $0.retryCount += 1
+                        $0.lastError = error.localizedDescription
+                    }
+                    // 断网或异常：chunkURL 音频严禁删除！保留在本地供后续自动或手动补转写
+                    if let sIdx = self.sessions.firstIndex(where: { $0.id == sessionId }) {
+                        if self.sessions[sIdx].status != .recording && self.sessions[sIdx].status != .paused {
+                            let failedCount = self.sessions[sIdx].chunkTasks.filter { $0.status == .failed }.count
+                            self.sessions[sIdx].status = (failedCount >= 3) ? .transcriptionFailed : .pendingCatchUp
+                            self.saveSessions()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// 核心存储终结判断：若所有分片均已转写完成，在实时模式下安全自动清理临时录音，彻底释放手机存储空间
+    public func checkAndFinalizeSessionStorage(sessionId: UUID) {
+        guard let idx = sessions.firstIndex(where: { $0.id == sessionId }) else { return }
+        let sess = sessions[idx]
+        
+        // 录音或暂停中不执行终结清理
+        if sess.status == .recording || sess.status == .paused { return }
+        
+        // 检查是否存在未完成的任务
+        let hasIncomplete = sess.chunkTasks.contains { $0.status == .pending || $0.status == .transcribing || $0.status == .failed }
+        
+        if !hasIncomplete {
+            sessions[idx].status = (sess.mode == .recordOnly) ? .recordOnlyCompleted : .completed
+            
+            // 实时转写模式下，所有分片已落盘，自动删除临时音频，释放学生手机空间
+            if sess.mode == .realtime && !sessions[idx].isTempAudioPurged {
+                let mainAudioURL = audioURL(for: sess)
+                try? FileManager.default.removeItem(at: mainAudioURL)
+                let folder = chunksFolder(for: sessionId)
+                try? FileManager.default.removeItem(at: folder)
+                sessions[idx].isTempAudioPurged = true
+                print("[Storage] 课堂「\(sess.title)」所有分片转写已确认成功，已自动清理临时音频文件。")
+            }
+            saveSessions()
+        } else {
+            let failedCount = sess.chunkTasks.filter { $0.status == .failed }.count
+            sessions[idx].status = (failedCount >= 3) ? .transcriptionFailed : .pendingCatchUp
+            saveSessions()
+        }
+    }
+
+    /// 手动或网络恢复后一键补转写
+    public func retryPendingChunks(for session: LessonSession) {
+        guard let idx = sessions.firstIndex(where: { $0.id == session.id }) else { return }
+        let pendingTasks = sessions[idx].chunkTasks.filter { $0.status == .pending || $0.status == .failed }
+        guard !pendingTasks.isEmpty else { return }
+        
+        sessions[idx].status = .pendingCatchUp
+        saveSessions()
+        
+        Task {
+            for task in pendingTasks.sorted(by: { $0.sequenceIndex < $1.sequenceIndex }) {
+                await withCheckedContinuation { cont in
+                    self.processChunkTask(sessionId: session.id, task: task)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                        cont.resume()
+                    }
+                }
+            }
+        }
+    }
+
     /// 按顺序插入段落并按时间戳升序排序，杜绝网络并发乱序
     private func insertAndSortSegment(segment: TranscriptSegment, targetSessionId: UUID) {
         if let idx = self.sessions.firstIndex(where: { $0.id == targetSessionId }) {
@@ -847,7 +1029,7 @@ public final class ClassroomManager: ObservableObject {
         }
         saveSessions()
         
-        // 1. 阶跃 ASR 实时切片模式：上传最后残留的音频切片
+        // 1. 阶跃 ASR 实时切片模式：持久化最后残留的分片任务并触发转写
         if cur.mode == .realtime && transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0 && !stepfunApiKey.isEmpty {
             if let wav = remainingWav, wav.count > 44 + 8000 {
                 self.currentChunkIndex += 1
@@ -855,23 +1037,22 @@ public final class ClassroomManager: ObservableObject {
                 let chunkStart = self.lastChunkTime
                 let chunkEnd = finalDuration
                 let targetId = cur.id
-                let lastText = cur.segments.last?.text ?? ""
-                let promptSnippet = String(lastText.suffix(40))
-                Task {
-                    do {
-                        let transcribed = try await self.callStepFunASR(audioData: wav, prompt: promptSnippet)
-                        let stitched = stitchTranscripts(previous: lastText, current: transcribed)
-                        let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !clean.isEmpty {
-                            DispatchQueue.main.async {
-                                let seg = TranscriptSegment(sequenceIndex: chunkIdx, startTime: chunkStart, endTime: chunkEnd, text: clean)
-                                self.insertAndSortSegment(segment: seg, targetSessionId: targetId)
-                            }
-                        }
-                    } catch {
-                        print("Final chunk ASR error:", error)
-                    }
-                }
+                
+                let chunkFileName = "chunk_\(chunkIdx).wav"
+                let folder = self.chunksFolder(for: targetId)
+                try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+                let chunkPath = folder.appendingPathComponent(chunkFileName)
+                try? wav.write(to: chunkPath, options: .atomic)
+                
+                let task = ChunkTranscriptionTask(
+                    sequenceIndex: chunkIdx,
+                    startTime: chunkStart,
+                    endTime: chunkEnd,
+                    chunkFileName: chunkFileName,
+                    status: .pending
+                )
+                self.appendChunkTask(task, to: targetId)
+                self.processChunkTask(sessionId: targetId, task: task)
             }
         }
         
@@ -883,10 +1064,23 @@ public final class ClassroomManager: ObservableObject {
             }
         }
         
-        // 3. 核心原则：绝不删除本地音频！根据存储模式启动云端上传后台队列
-        let sessionToSync = cur
-        Task {
-            await self.triggerCloudSync(for: sessionToSync)
+        // 3. 状态判定与临时音频自动清理
+        if cur.mode == .recordOnly {
+            cur.status = .recordOnlyCompleted
+            if let idx = sessions.firstIndex(where: { $0.id == cur.id }) {
+                sessions[idx].status = .recordOnlyCompleted
+            }
+            saveSessions()
+        } else if cur.mode == .realtime {
+            self.checkAndFinalizeSessionStorage(sessionId: cur.id)
+        }
+        
+        // 4. Cloudflare R2 可选备份（非强制）：仅当用户显式选择云端模式时触发
+        if R2UploadManager.shared.storageMode != .localOnly {
+            let sessionToSync = cur
+            Task {
+                await self.triggerCloudSync(for: sessionToSync)
+            }
         }
         
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)

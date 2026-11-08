@@ -1748,6 +1748,60 @@ struct TranscriptTabView: View {
     var body: some View {
         ZStack {
             VStack(spacing: 0) {
+                // 1. 断网或分片待补转写横幅（支持一键断网重试补转）
+                if !isLive && (session.status == .pendingCatchUp || session.status == .transcriptionFailed || session.chunkTasks.contains { $0.status == .pending || $0.status == .failed }) {
+                    let pendingCount = session.chunkTasks.filter { $0.status == .pending || $0.status == .failed }.count
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("因网络波动，尚有 \(max(1, pendingCount)) 个分片待补转写")
+                                .font(.caption.bold())
+                                .foregroundColor(.primary)
+                            Text("原始音频已安全缓存在本地，连网后点击即可补转")
+                                .font(.system(size: 10))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        Button {
+                            manager.retryPendingChunks(for: session)
+                        } label: {
+                            HStack(spacing: 4) {
+                                if manager.isChunkTranscribing {
+                                    ProgressView()
+                                        .scaleEffect(0.7)
+                                } else {
+                                    Image(systemName: "arrow.clockwise")
+                                }
+                                Text("一键补转写")
+                                    .font(.caption.bold())
+                            }
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.accentColor)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
+                        .disabled(manager.isChunkTranscribing)
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.orange.opacity(0.12))
+                } else if !isLive && session.isTempAudioPurged {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.green)
+                            .font(.system(size: 12))
+                        Text("全部分片已完整转写，临时录音已自动清理（已释放手机存储）")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 6)
+                    .background(Color.green.opacity(0.08))
+                }
+
                 // 多选操作顶栏
                 if !session.segments.isEmpty && !isLive {
                     HStack {
@@ -2785,8 +2839,11 @@ struct StatusBadge: View {
         switch status {
         case .recording: return .green
         case .paused: return .orange
+        case .pendingCatchUp: return .blue
+        case .transcriptionFailed: return .red
         case .interrupted: return .red
         case .completed: return .secondary
+        case .recordOnlyCompleted: return .indigo
         }
     }
 }
