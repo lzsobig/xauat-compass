@@ -1868,7 +1868,7 @@ struct LessonDetailView: View {
             let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
             text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
         }
-        let name = "\(session.courseName)-\(session.title)-整节课记录"
+        let name = "\(session.title)-整节课记录"
         if let url = createTempTXT(filename: name, content: text) {
             shareItem = ShareItem(fileURL: url)
         }
@@ -1887,7 +1887,7 @@ struct LessonDetailView: View {
 """
         let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
         text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
-        let name = "\(session.courseName)-\(session.title)-实录文本"
+        let name = "\(session.title)-实录文本"
         if let url = createTempTXT(filename: name, content: text) {
             shareItem = ShareItem(fileURL: url)
         }
@@ -1905,7 +1905,7 @@ struct LessonDetailView: View {
         for n in session.notes {
             text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
         }
-        let name = "\(session.courseName)-\(session.title)-课堂笔记"
+        let name = "\(session.title)-课堂笔记"
         if let url = createTempTXT(filename: name, content: text) {
             shareItem = ShareItem(fileURL: url)
         }
@@ -2051,7 +2051,7 @@ struct TranscriptTabView: View {
                                     .sorted { $0.startTime < $1.startTime }
                                     .map { "[\(formatDuration($0.startTime))] \($0.text)" }
                                     .joined(separator: "\n\n")
-                                let name = "\(session.courseName)-\(session.title)-语音实录"
+                                let name = "\(session.title)-语音实录"
                                 if let url = createTempTXT(filename: name, content: header + body) {
                                     shareItem = ShareItem(fileURL: url)
                                 }
@@ -2632,7 +2632,7 @@ struct NotesTabView: View {
                             }
 
                             Button {
-                                let name = "\(session.courseName)-\(session.title)-\(selectedStyle.title)"
+                                let name = "\(session.title)-\(selectedStyle.title)"
                                 let header = """
 ========================================
 【智能课堂笔记 - \(selectedStyle.title)】

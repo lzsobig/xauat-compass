@@ -332,6 +332,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     public var id: UUID
     public var courseId: UUID?
     public var title: String
+    public var courseName: String { title }
     public var startedAt: Date
     public var endedAt: Date?
     public var duration: TimeInterval
