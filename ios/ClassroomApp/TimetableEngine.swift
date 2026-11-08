@@ -391,7 +391,6 @@ public struct TimetableEngine {
         }
         return Array(dict.values).sorted { $0.name < $1.name }
     }
-}
 
 
 
@@ -463,7 +462,7 @@ public struct TimetableEngine {
             TimetableSlot(courseName: "时事英语阅读（非英语专业拓展）", teacher: "解佩", room: "草堂8-305(机房)", day: 7, fromPeriod: 9, toPeriod: 9, weekFrom: 16, weekTo: 16, parity: "all"),
         ]
     }
-
+}
 
 public struct CourseSuggester {
     public static let PERIOD_TIMES: [(start: Int, end: Int)] = [

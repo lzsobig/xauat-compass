@@ -36,27 +36,32 @@
   ],
   "vars": {
     "APP_ORIGIN": "https://compass.lzso.top",
-    "LLM_BASE_URL": "https://wb2api.lzso.top/v1",
-    "LLM_MODEL": "global:deepseek-v4.1-flash",
+    "LLM_BASE_URL": "https://sharellm.net/v1",
+    "LLM_MODEL": "deepseek-v4.1-flash-1017",
     "TRIAL_DAILY_LIMIT": "3",
     "GLOBAL_DAILY_LIMIT": "100",
     "MAX_CONCURRENT": "2",
     "LLM_TIMEOUT_MS": "90000",
-    "ACCOUNTS_REQUIRED": "1"
+    "ACCOUNTS_REQUIRED": "1",
+    "ACCOUNT_REGISTRATION_ENABLED": "1",
+    "TURNSTILE_REQUIRED": "1",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAF3U2kCHLpuiA2TV",
+    "TURNSTILE_HOSTNAMES": "compass.lzso.top,compass-mini.lzso.top",
+    "CARD_PURCHASE_URL": "https://m.tb.cn/h.j8fI4Eo?tk=Yvbb61uLQ0X",
+    "WECHAT_APP_ID": "wxb7f3e0580f5195df",
+    "CLASSROOM_STATUS_WEBHOOK": "https://classroom.lzso.top/api/classroom/v1/internal/user-status"
   },
   "routes": [
     {
       "pattern": "compass.lzso.top",
       "custom_domain": true
+    },
+    {
+      "pattern": "compass-mini.lzso.top",
+      "custom_domain": true
     }
   ],
   "build": {
     "command": "npm run build"
-  },
-  "r2_buckets": [
-    {
-      "binding": "RECORDINGS_BUCKET",
-      "bucket_name": "xauat-classroom-recordings"
-    }
-  ]
+  }
 }
