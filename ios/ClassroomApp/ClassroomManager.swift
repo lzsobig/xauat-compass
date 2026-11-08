@@ -898,7 +898,7 @@ public final class ClassroomManager: ObservableObject {
         }
     }
     
-    private func callStepFunASR(audioURL: URL) async throws -> String {
+    private func callStepFunASR(audioData: Data, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
         let cleanBase = stepfunBaseURL.hasSuffix("/") ? String(stepfunBaseURL.dropLast()) : stepfunBaseURL
         guard let url = URL(string: "\(cleanBase)/audio/transcriptions") else { throw URLError(.badURL) }
         
@@ -909,7 +909,6 @@ public final class ClassroomManager: ObservableObject {
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 120
         
-        let audioData = try Data(contentsOf: audioURL)
         var body = Data()
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
@@ -917,24 +916,38 @@ public final class ClassroomManager: ObservableObject {
         body.append("\(stepfunAsrModel)\r\n".data(using: .utf8)!)
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"audio.caf\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: audio/x-caf\r\n\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
         body.append(audioData)
         body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
         
         request.httpBody = body
         
         let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) else {
-            let errStr = String(data: data, encoding: .utf8) ?? "ASR HTTP Error"
-            throw NSError(domain: "StepFunASR", code: (response as? HTTPURLResponse)?.statusCode ?? 500, userInfo: [NSLocalizedDescriptionKey: errStr])
+        if let http = response as? HTTPURLResponse {
+            if (200...299).contains(http.statusCode) {
+                struct ASRResult: Codable {
+                    let text: String?
+                }
+                let res = try JSONDecoder().decode(ASRResult.self, from: data)
+                return res.text ?? ""
+            } else {
+                let errStr = String(data: data, encoding: .utf8) ?? "ASR HTTP Error"
+                // 忽略无有效语音输入的 400 静音错误
+                if http.statusCode == 400 && (errStr.contains("no speech") || errStr.contains("silence")) {
+                    return ""
+                }
+                throw NSError(domain: "StepFunASR", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: errStr])
+            }
         }
-        
-        struct ASRResult: Codable {
-            let text: String?
-        }
-        let res = try JSONDecoder().decode(ASRResult.self, from: data)
-        return res.text ?? ""
+        return ""
+    }
+
+    private func callStepFunASR(audioURL: URL) async throws -> String {
+        let rawData = try Data(contentsOf: audioURL)
+        let filename = audioURL.lastPathComponent.lowercased()
+        let mime = filename.hasSuffix(".wav") ? "audio/wav" : (filename.hasSuffix(".mp3") ? "audio/mpeg" : "audio/x-caf")
+        return try await callStepFunASR(audioData: rawData, filename: audioURL.lastPathComponent, mimeType: mime)
     }
 
     // MARK: - 大模型 HTTP 调用 (DeepSeek 专属大模型问答与笔记生成)
