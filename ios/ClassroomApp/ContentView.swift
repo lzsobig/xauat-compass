@@ -2476,6 +2476,7 @@ struct StatusBadge: View {
         case .paused: return .orange
         case .interrupted: return .red
         case .completed: return .secondary
+        default: return .secondary
         }
     }
 }
