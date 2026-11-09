@@ -1552,7 +1552,7 @@ struct SettingsScreen: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text("1.4.0 (2026.11.08 课表草稿预览与分层安全管理版)")
+                        Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
                             .foregroundColor(.secondary)
                     }
                 }
