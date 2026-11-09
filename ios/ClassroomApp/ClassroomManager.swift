@@ -1428,7 +1428,7 @@ public final class ClassroomManager: ObservableObject {
                     
                     if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                         let qDisplay = segment != nil ? "[\(formatDuration(segment!.startTime))选段] \(questionLabel)" : questionLabel
-                        let pair = QAPair(question: qDisplay, answer: answer, citationSeconds: bestTime)
+                        let pair = QAPair(question: qDisplay, answer: answer, citationSeconds: bestTime, imageJPEG: imageJPEG)
                         self.sessions[idx].qaPairs.append(pair)
                         self.saveSessions()
                     }
@@ -1459,7 +1459,7 @@ public final class ClassroomManager: ObservableObject {
             }
             
             if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                let pair = QAPair(question: questionLabel, answer: fallbackAnswer, citationSeconds: imageJPEG == nil ? bestCitation : nil)
+                let pair = QAPair(question: questionLabel, answer: fallbackAnswer, citationSeconds: imageJPEG == nil ? bestCitation : nil, imageJPEG: imageJPEG)
                 self.sessions[idx].qaPairs.append(pair)
                 self.saveSessions()
             }

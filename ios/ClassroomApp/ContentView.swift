@@ -2780,6 +2780,10 @@ struct QATabView: View {
     @FocusState private var composing: Bool
     @State private var showNotes = false
     @State private var showPhotos = false
+    @State private var showCamera = false
+    @State private var cameraError = false
+    @State private var pendingQuestion: String?
+    @State private var pendingImage: Data?
     @State private var photo: UIImage?
     @State private var photoError = false
     @State private var showMinutesError = false
@@ -2841,15 +2845,22 @@ struct QATabView: View {
                         }
                         ForEach(session.qaPairs) { pair in
                             VStack(alignment: .leading, spacing: 12) {
-                                Text(pair.question)
-                                    .font(.subheadline)
-                                    .textSelection(.enabled)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 10)
-                                    .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
-                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                questionBubble(pair.question, imageJPEG: pair.imageJPEG)
+                                Label("课堂助教", systemImage: "sparkles")
+                                    .font(.caption.weight(.semibold))
+                                    .foregroundStyle(.secondary)
+                                    .padding(.top, 7)
                                 MarkdownContentView(content: pair.answer)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                Button {
+                                    UIPasteboard.general.string = pair.answer
+                                } label: {
+                                    Image(systemName: "doc.on.doc")
+                                        .frame(width: 44, height: 36)
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(.secondary)
+                                .accessibilityLabel("复制回答")
                                 if let seconds = pair.citationSeconds {
                                     Button {
                                         composing = false
@@ -2862,6 +2873,7 @@ struct QATabView: View {
                             }
                         }
                         if manager.isAskingQA {
+                            if let pendingQuestion { questionBubble(pendingQuestion, imageJPEG: pendingImage) }
                             ProgressView("正在整理回答")
                                 .font(.caption)
                         }
@@ -2870,6 +2882,10 @@ struct QATabView: View {
                     .padding(16)
                 }
                 .modifier(AnswerKeyboardDismiss(focused: $composing))
+                .onChange(of: manager.isAskingQA) { active in
+                    if !active { pendingQuestion = nil; pendingImage = nil }
+                    withAnimation(.easeOut(duration: 0.22)) { proxy.scrollTo("answer-bottom", anchor: .bottom) }
+                }
                 .onChange(of: session.qaPairs.count) { _ in
                     withAnimation(.easeOut(duration: 0.22)) { proxy.scrollTo("answer-bottom", anchor: .bottom) }
                 }
@@ -2891,11 +2907,21 @@ struct QATabView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .leading)))
                 }
                 HStack(spacing: 10) {
-                    Button {
-                        composing = false
-                        showPhotos = true
+                    Menu {
+                        Button {
+                            composing = false
+                            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                                showCamera = true
+                            } else {
+                                cameraError = true
+                            }
+                        } label: { Label("拍照", systemImage: "camera") }
+                        Button {
+                            composing = false
+                            showPhotos = true
+                        } label: { Label("从相册选取", systemImage: "photo.on.rectangle") }
                     } label: {
-                        Image(systemName: "paperclip").frame(width: 38, height: 42)
+                        Image(systemName: "paperclip").frame(width: 44, height: 44)
                     }
                     .accessibilityLabel("添加图片")
                     TextField("问这节课", text: $inputText)
@@ -2953,6 +2979,18 @@ struct QATabView: View {
                     }
             }
         }
+        .fullScreenCover(isPresented: $showCamera) {
+            ClassroomCamera { image in
+                showCamera = false
+                if let image { withAnimation { photo = image } }
+            }
+            .ignoresSafeArea()
+        }
+        .alert("相机不可用", isPresented: $cameraError) {
+            Button("好", role: .cancel) {}
+        } message: {
+            Text("请检查系统相机权限，也可以从相册选取图片。")
+        }
         .sheet(isPresented: $showPhotos) {
             ClassroomPhotoPicker { result in
                 showPhotos = false
@@ -2977,6 +3015,25 @@ struct QATabView: View {
         }
     }
 
+    private func questionBubble(_ question: String, imageJPEG: Data?) -> some View {
+        VStack(alignment: .trailing, spacing: 8) {
+            if let imageJPEG, let image = UIImage(data: imageJPEG) {
+                Image(uiImage: image).resizable().scaledToFit()
+                    .frame(maxWidth: 180, maxHeight: 160)
+                    .clipShape(RoundedRectangle(cornerRadius: 13))
+                    .accessibilityLabel("提问附件图片")
+            }
+            Text(question)
+                .font(.subheadline)
+                .textSelection(.enabled)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16))
+        }
+        .padding(.leading, 40)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
     private func send() {
         let query = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !manager.isAskingQA, !query.isEmpty || photo != nil else { return }
@@ -2995,9 +3052,42 @@ struct QATabView: View {
             }
             jpeg = data
         }
-        manager.askQuestion(for: session, query: query.isEmpty ? "请解释这张图片里的内容。" : query, imageJPEG: jpeg)
+        let message = query.isEmpty ? "请解释这张图片里的内容。" : query
+        pendingQuestion = message
+        pendingImage = jpeg
+        manager.askQuestion(for: session, query: message, imageJPEG: jpeg)
         composing = false
         withAnimation { photo = nil; inputText = "" }
+    }
+}
+
+private struct ClassroomCamera: UIViewControllerRepresentable {
+    var onResult: (UIImage?) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onResult: onResult) }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onResult: (UIImage?) -> Void
+
+        init(onResult: @escaping (UIImage?) -> Void) { self.onResult = onResult }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            onResult(nil)
+        }
+
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            onResult(info[.originalImage] as? UIImage)
+        }
     }
 }
 
