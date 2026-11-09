@@ -1252,6 +1252,7 @@ public final class ClassroomManager: ObservableObject {
     
     public func generateNotes(for session: LessonSession, style: NoteStyle) {
         guard !isGeneratingNotes else { return }
+        errorMessage = ""
         let fullText = session.fullTranscript
         guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             errorMessage = "课堂还没有转写文字，暂时无法生成笔记"

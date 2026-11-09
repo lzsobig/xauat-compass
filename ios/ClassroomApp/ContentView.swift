@@ -2765,6 +2765,7 @@ struct QATabView: View {
     @State private var showPhotos = false
     @State private var photo: UIImage?
     @State private var photoError = false
+    @State private var showMinutesError = false
 
     private let prompts = [
         ("整理提纲", "按课堂顺序整理这节课的提纲，列出关键概念和推导。"),
@@ -2784,6 +2785,7 @@ struct QATabView: View {
                                 manager.generateNotes(for: session, style: .minutes)
                             }
                             showNotes = manager.isGeneratingNotes || session.notes.contains(where: { $0.style == .minutes })
+                            showMinutesError = !showNotes
                         }
                         .buttonStyle(.borderedProminent)
                         .controlSize(.small)
@@ -2900,7 +2902,16 @@ struct QATabView: View {
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 19))
+            .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 19))
+            .overlay {
+                RoundedRectangle(cornerRadius: 19)
+                    .strokeBorder(
+                        composing ? Color.accentColor : Color(UIColor.opaqueSeparator),
+                        lineWidth: composing ? 1.6 : 1
+                    )
+                    .allowsHitTesting(false)
+            }
+            .animation(.easeInOut(duration: 0.16), value: composing)
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
         }
@@ -2908,6 +2919,14 @@ struct QATabView: View {
             NavigationView {
                 NotesTabView(session: manager.sessions.first(where: { $0.id == session.id }) ?? session,
                              selectedStyle: $selectedNoteStyle, onSwitchToQA: { showNotes = false })
+                    .safeAreaInset(edge: .bottom) {
+                        if selectedNoteStyle == .minutes && !manager.isGeneratingNotes && !manager.errorMessage.isEmpty {
+                            Text(manager.errorMessage)
+                                .font(.caption)
+                                .foregroundStyle(.red)
+                                .padding(10)
+                        }
+                    }
                     .navigationTitle("课堂笔记")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -2927,6 +2946,11 @@ struct QATabView: View {
             } onCancel: {
                 showPhotos = false
             }
+        }
+        .alert("无法生成纪要", isPresented: $showMinutesError) {
+            Button("好", role: .cancel) {}
+        } message: {
+            Text(manager.errorMessage)
         }
         .alert("无法读取这张图片", isPresented: $photoError) {
             Button("好", role: .cancel) {}
