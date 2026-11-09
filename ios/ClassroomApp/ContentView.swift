@@ -154,9 +154,26 @@ struct RecordHomeView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        Label(manager.asrProvider.title, systemImage: "waveform")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        Menu {
+                            Picker("转写引擎", selection: $manager.asrProvider) {
+                                ForEach(CloudTranscriptionProvider.allCases) { provider in
+                                    Text(provider.title).tag(provider)
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 7) {
+                                Label(manager.asrProvider.title, systemImage: "waveform")
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2.weight(.semibold))
+                            }
+                            .font(.caption.weight(.medium))
+                            .padding(.horizontal, 11)
+                            .frame(minHeight: 44)
+                            .background(Color(UIColor.tertiarySystemFill), in: Capsule())
+                        }
+                        .accessibilityLabel("转写引擎")
+                        .accessibilityValue(manager.asrProvider.title)
+                        .disabled(manager.isRecording)
 
                         HStack(spacing: 12) {
                             Button {
