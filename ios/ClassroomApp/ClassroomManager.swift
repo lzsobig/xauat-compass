@@ -319,8 +319,9 @@ public final class ClassroomManager: ObservableObject {
             ?? UserDefaults.standard.string(forKey: "stepfunApiKey")
         let migratedSiliconFlow = previousHost == "api.siliconflow.cn" ? legacyKey : nil
         let migratedStepFun = previousHost == nil || previousHost == "api.stepfun.com" ? legacyKey : nil
-        let siliconKey = KeychainHelper.get(key: "siliconFlowApiKey") ?? migratedSiliconFlow ?? ""
-        let stepKey = KeychainHelper.get(key: "stepFunCloudApiKey") ?? migratedStepFun ?? ""
+        let bundledKeys = Self.importPersonalASRKeys()
+        let siliconKey = KeychainHelper.get(key: "siliconFlowApiKey") ?? bundledKeys["siliconFlowApiKey"] ?? migratedSiliconFlow ?? ""
+        let stepKey = KeychainHelper.get(key: "stepFunCloudApiKey") ?? bundledKeys["stepFunCloudApiKey"] ?? migratedStepFun ?? ""
         self.siliconFlowApiKey = siliconKey
         self.stepFunApiKey = stepKey
         self.asrProvider = UserDefaults.standard.string(forKey: "cloudASRProvider")
@@ -341,6 +342,25 @@ public final class ClassroomManager: ObservableObject {
         setupInterruptionObserver()
     }
     
+    private static func importPersonalASRKeys() -> [String: String] {
+        let marker = "personalASRKeysImported"
+        guard !UserDefaults.standard.bool(forKey: marker),
+              let url = Bundle.main.url(forResource: "PersonalASR", withExtension: "plist"),
+              let data = try? Data(contentsOf: url),
+              let keys = try? PropertyListDecoder().decode([String: String].self, from: data) else {
+            return [:]
+        }
+        var saved = true
+        for account in ["siliconFlowApiKey", "stepFunCloudApiKey"] {
+            guard let value = keys[account], !value.isEmpty else { continue }
+            if KeychainHelper.get(key: account)?.isEmpty != false {
+                saved = KeychainHelper.save(key: account, value: value) && saved
+            }
+        }
+        if saved { UserDefaults.standard.set(true, forKey: marker) }
+        return keys
+    }
+
     public func resetAIDefaults() {
         self.llmBaseURL = "https://tokenrhythm.studio/v1"
         self.llmModel = "deepseek-v4.1-flash-1017"
