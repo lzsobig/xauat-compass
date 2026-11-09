@@ -12,76 +12,44 @@ public struct ContentView: View {
     public init() {}
 
     public var body: some View {
-        ZStack {
-            TabView(selection: $selectedTab) {
-                RecordHomeView(
-                    selectedCourse: $selectedCourseForRecord,
-                    showingCoursePicker: $showingCoursePicker,
-                    onOpenSession: { session in selectedSession = session }
-                )
-                .tabItem {
-                    Label("录音", systemImage: "mic.fill")
-                }
-                .tag(0)
-
-                CourseArchiveView(
-                    onOpenSession: { session in selectedSession = session }
-                )
-                .tabItem {
-                    Label("课程", systemImage: "folder.fill")
-                }
-                .tag(1)
-
-                TimetableScreen(onSelectCourseForRecord: { course in
-                    selectedCourseForRecord = course
-                    selectedTab = 0
-                })
-                .tabItem {
-                    Label("课表", systemImage: "calendar")
-                }
-                .tag(2)
-
-                SettingsScreen()
-                .tabItem {
-                    Label("设置", systemImage: "gearshape.fill")
-                }
-                .tag(3)
+        TabView(selection: $selectedTab) {
+            RecordHomeView(
+                selectedCourse: $selectedCourseForRecord,
+                showingCoursePicker: $showingCoursePicker,
+                onOpenSession: { session in selectedSession = session }
+            )
+            .safeAreaInset(edge: .bottom, spacing: 0) { recordingShortcut }
+            .tabItem {
+                Label("录音", systemImage: "mic.fill")
             }
+            .tag(0)
 
-            // 若当前正在录音且不在详情页中，显示悬浮底栏快捷回到课堂
-            if let cur = manager.currentSession, selectedSession?.id != cur.id {
-                VStack {
-                    Spacer()
-                    Button {
-                        selectedSession = cur
-                    } label: {
-                        HStack(spacing: 12) {
-                            Circle()
-                                .fill(manager.isPaused ? Color.orange : Color.red)
-                                .frame(width: 10, height: 10)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(cur.title)
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .lineLimit(1)
-                                Text(manager.isPaused ? "已暂停 · 点击返回" : "正在录音 \(formatTime(manager.recordingElapsed))")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            Spacer()
-                            Image(systemName: "chevron.right")
-                                .font(.footnote)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
-                        .background(Color(UIColor.secondarySystemGroupedBackground))
-                        .cornerRadius(16)
-                        .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 3)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 58)
-                    }
-                }
+            CourseArchiveView(
+                onOpenSession: { session in selectedSession = session }
+            )
+            .safeAreaInset(edge: .bottom, spacing: 0) { recordingShortcut }
+            .tabItem {
+                Label("课程", systemImage: "folder.fill")
             }
+            .tag(1)
+
+            TimetableScreen(onSelectCourseForRecord: { course in
+                guard !manager.isRecording else { return }
+                selectedCourseForRecord = course
+                selectedTab = 0
+            })
+            .safeAreaInset(edge: .bottom, spacing: 0) { recordingShortcut }
+            .tabItem {
+                Label("课表", systemImage: "calendar")
+            }
+            .tag(2)
+
+            SettingsScreen()
+            .safeAreaInset(edge: .bottom, spacing: 0) { recordingShortcut }
+            .tabItem {
+                Label("设置", systemImage: "gearshape.fill")
+            }
+            .tag(3)
         }
         .sheet(item: $selectedSession) { session in
             LessonDetailView(session: session)
@@ -95,6 +63,35 @@ public struct ContentView: View {
             if selectedCourseForRecord == nil {
                 selectedCourseForRecord = manager.suggestedCourse
             }
+        }
+    }
+
+    @ViewBuilder
+    private var recordingShortcut: some View {
+        if manager.isRecording, let current = manager.currentSession, selectedSession == nil {
+            Button {
+                selectedSession = current
+            } label: {
+                HStack(spacing: 10) {
+                    Circle()
+                        .fill(manager.isPaused ? Color.orange : Color.red)
+                        .frame(width: 8, height: 8)
+                    Text(manager.isPaused ? "录音已暂停" : "正在录音")
+                    Text(formatTime(manager.recordingElapsed))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text("返回录音")
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.semibold))
+                }
+                .font(.caption.weight(.medium))
+                .padding(.horizontal, 16)
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .background(Color(UIColor.secondarySystemGroupedBackground))
         }
     }
 
