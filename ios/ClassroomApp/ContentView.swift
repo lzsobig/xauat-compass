@@ -2161,6 +2161,7 @@ struct TranscriptTabView: View {
                                     .foregroundColor(.primary)
                                 Label(manager.isPaused ? "已暂停" : "录音中", systemImage: "waveform")
                                     .font(.caption)
+                            }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
