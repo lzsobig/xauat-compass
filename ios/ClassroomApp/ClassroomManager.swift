@@ -1060,7 +1060,7 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         
-        errorMessage = nil
+        errorMessage = ""
         isTranscribingOffline = true
         
         Task {
@@ -1095,7 +1095,7 @@ public final class ClassroomManager: ObservableObject {
                 }
             }
             
-            if self.errorMessage == nil {
+            if self.errorMessage.isEmpty {
                 self.errorMessage = self.siliconFlowApiKey.isEmpty ? "请先填写硅基流动 API Key" : "未识别到文字"
             }
             self.isTranscribingOffline = false
