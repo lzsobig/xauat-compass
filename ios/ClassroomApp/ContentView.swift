@@ -1862,7 +1862,9 @@ struct LessonDetailView: View {
 
                 // 底部录音控制栏或播放条
                 if isLiveActive {
-                    LiveRecordingControlBar(session: activeSession)
+                    LiveRecordingControlBar(session: activeSession) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
                 } else if currentTab == 0 {
                     AudioPlayerControlBar(session: activeSession)
                 }
@@ -3171,6 +3173,7 @@ private struct ClassroomPhotoPicker: UIViewControllerRepresentable {
 struct LiveRecordingControlBar: View {
     @EnvironmentObject var manager: ClassroomManager
     let session: LessonSession
+    var onDiscard: () -> Void
     @State private var showingStopConfirm = false
 
     var body: some View {
@@ -3226,9 +3229,15 @@ struct LiveRecordingControlBar: View {
         .background(Color(UIColor.secondarySystemGroupedBackground))
         .alert("结束本节课堂录制？", isPresented: $showingStopConfirm) {
             Button("继续录音", role: .cancel) {}
-            Button("结束并保存", role: .destructive) {
+            Button("结束并保存") {
                 manager.stopRecording()
             }
+            Button("结束且不保存", role: .destructive) {
+                manager.stopRecording(discard: true)
+                onDiscard()
+            }
+        } message: {
+            Text("选择不保存会丢弃本次录音及其转写。")
         }
     }
 }

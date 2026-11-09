@@ -946,7 +946,7 @@ public final class ClassroomManager: ObservableObject {
         }
     }
     
-    public func stopRecording() {
+    public func stopRecording(discard: Bool = false) {
         guard isRecording, var cur = currentSession else { return }
         
         recordingTimer?.invalidate()
@@ -955,7 +955,7 @@ public final class ClassroomManager: ObservableObject {
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
         
-        let remainingSlice = capture?.takeSlice(final: true)
+        let remainingSlice = discard ? nil : capture?.takeSlice(final: true)
         let finalDuration = capture?.recordedDuration ?? recordingElapsed
         capture?.close()
         capture = nil
@@ -971,6 +971,12 @@ public final class ClassroomManager: ObservableObject {
         self.isPaused = false
         self.recordingElapsed = 0
         
+        if discard {
+            deleteSession(cur)
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+            return
+        }
+
         if let remainingSlice {
             enqueueSlice(remainingSlice, sessionId: cur.id)
             cur.chunkTasks = sessions.first(where: { $0.id == cur.id })?.chunkTasks ?? cur.chunkTasks
