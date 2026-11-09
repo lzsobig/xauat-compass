@@ -2784,6 +2784,7 @@ struct QATabView: View {
     @State private var cameraError = false
     @State private var pendingQuestion: String?
     @State private var pendingImage: Data?
+    @State private var waitingSince: Date?
     @State private var photo: UIImage?
     @State private var photoError = false
     @State private var showMinutesError = false
@@ -2874,16 +2875,42 @@ struct QATabView: View {
                         }
                         if manager.isAskingQA {
                             if let pendingQuestion { questionBubble(pendingQuestion, imageJPEG: pendingImage) }
-                            ProgressView("正在整理回答")
-                                .font(.caption)
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                    .tint(.accentColor)
+                                    .accessibilityHidden(true)
+                                VStack(alignment: .leading, spacing: 3) {
+                                    Text("正在整理回答")
+                                        .font(.subheadline.weight(.medium))
+                                    if let waitingSince {
+                                        TimelineView(.periodic(from: waitingSince, by: 1)) { context in
+                                            Text("已等待 \(max(0, Int(context.date.timeIntervalSince(waitingSince)))) 秒")
+                                                .font(.caption.monospacedDigit())
+                                                .foregroundStyle(.secondary)
+                                                .accessibilityHidden(true)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 13)
+                            .padding(.vertical, 9)
+                            .background(Color(UIColor.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 13))
+                            .transition(.opacity.combined(with: .offset(y: 4)))
                         }
                         Color.clear.frame(height: 1).id("answer-bottom")
                     }
                     .padding(16)
+                    .animation(.easeInOut(duration: 0.2), value: manager.isAskingQA)
                 }
                 .modifier(AnswerKeyboardDismiss(focused: $composing))
                 .onChange(of: manager.isAskingQA) { active in
-                    if !active { pendingQuestion = nil; pendingImage = nil }
+                    if active {
+                        waitingSince = Date()
+                    } else {
+                        pendingQuestion = nil
+                        pendingImage = nil
+                        waitingSince = nil
+                    }
                     withAnimation(.easeOut(duration: 0.22)) { proxy.scrollTo("answer-bottom", anchor: .bottom) }
                 }
                 .onChange(of: session.qaPairs.count) { _ in
@@ -3055,6 +3082,7 @@ struct QATabView: View {
         let message = query.isEmpty ? "请解释这张图片里的内容。" : query
         pendingQuestion = message
         pendingImage = jpeg
+        waitingSince = Date()
         manager.askQuestion(for: session, query: message, imageJPEG: jpeg)
         composing = false
         withAnimation { photo = nil; inputText = "" }
