@@ -1221,11 +1221,21 @@ public final class ClassroomManager: ObservableObject {
     // MARK: - 智能笔记生成
     
     public func generateNotes(for session: LessonSession, style: NoteStyle) {
-        isGeneratingNotes = true
+        guard !isGeneratingNotes else { return }
         let fullText = session.fullTranscript
+        guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            errorMessage = "课堂还没有转写文字，暂时无法生成笔记"
+            return
+        }
+        if style == .minutes && llmApiKey.isEmpty {
+            errorMessage = "请先配置 AI 模型和 API Key，再生成纪要"
+            return
+        }
+        isGeneratingNotes = true
         
         Task {
-            if !llmApiKey.isEmpty && !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            defer { self.isGeneratingNotes = false }
+            if !llmApiKey.isEmpty {
                 do {
                     let sysPrompt = """
                     你是一位西安建筑科技大学资深骨干名师。请根据以下课堂实录，撰写一份排版精美、结构清晰的【\(style.title)】笔记。
@@ -1238,7 +1248,17 @@ public final class ClassroomManager: ObservableObject {
                     let markStr = session.marks.map { formatDuration($0) }.joined(separator: ", ")
                     let userPrompt = "【课程标题】\(session.title)\n【老师标记重点时间】\(markStr.isEmpty ? "无" : markStr)\n\n【课堂文字实录】\n\(fullText)"
                     
-                    let aiResult = try await callLLMApi(systemPrompt: sysPrompt, userPrompt: userPrompt)
+                    let minutesFormat = """
+                    按「课堂主题」「主要内容」「关键结论」「作业与待办」组织纪要。
+                    对实录中明确提到的要求保留可核对的时间和条件。未提及的截止日期、负责人或任务写「未提及」。
+                    """
+                    let prompt = style == .minutes ? sysPrompt + "\n" + minutesFormat : sysPrompt
+                    let aiResult = try await callLLMApi(systemPrompt: prompt, userPrompt: userPrompt)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    guard !aiResult.isEmpty else {
+                        self.errorMessage = "AI 未返回内容，请重试"
+                        return
+                    }
                     
                     if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                         var notes = self.sessions[idx].notes.filter { $0.style != style }
@@ -1246,9 +1266,12 @@ public final class ClassroomManager: ObservableObject {
                         self.sessions[idx].notes = notes
                         self.saveSessions()
                     }
-                    self.isGeneratingNotes = false
                     return
                 } catch {
+                    if style == .minutes {
+                        self.errorMessage = "纪要生成失败，请检查 AI 设置或网络后重试"
+                        return
+                    }
                     print("AI 笔记生成失败，降级为本地规则整理：", error)
                 }
             }
@@ -1261,7 +1284,6 @@ public final class ClassroomManager: ObservableObject {
                 self.sessions[idx].notes = notes
                 self.saveSessions()
             }
-            self.isGeneratingNotes = false
         }
     }
     
@@ -1273,6 +1295,8 @@ public final class ClassroomManager: ObservableObject {
         let lines = fullText.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         
         switch style {
+        case .minutes:
+            return ""
         case .detailedOutline:
             var out = "# \(courseTitle) · 详细纲要 (本地规则提炼)\n\n"
             out += "## 课堂实录知识主干\n"

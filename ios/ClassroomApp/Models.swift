@@ -179,12 +179,14 @@ public enum NoteStyle: String, Codable, CaseIterable, Sendable {
     case detailedOutline = "detailedOutline"
     case keyPoints = "keyPoints"
     case examReview = "examReview"
+    case minutes = "minutes"
     
     public var title: String {
         switch self {
         case .detailedOutline: return "详细纲要"
         case .keyPoints: return "核心要点"
         case .examReview: return "考试复习"
+        case .minutes: return "课堂纪要"
         }
     }
 }

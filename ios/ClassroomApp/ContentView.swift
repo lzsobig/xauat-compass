@@ -1859,13 +1859,20 @@ struct LessonDetailView: View {
                             Button {
                                 exportAllToTXT(session: activeSession)
                             } label: {
-                                Label("导出整堂课 (实录+笔记) 为 TXT", systemImage: "doc.text.fill")
+                                Label("导出整堂课 · 实录、笔记和问答", systemImage: "doc.text.fill")
                             }
                             if !activeSession.segments.isEmpty {
                                 Button {
                                     exportTranscriptOnlyToTXT(session: activeSession)
                                 } label: {
                                     Label("仅导出语音实录为 TXT", systemImage: "waveform")
+                                }
+                            }
+                            if !activeSession.qaPairs.isEmpty {
+                                Button {
+                                    exportQAOnlyToTXT(session: activeSession)
+                                } label: {
+                                    Label("仅导出 AI 问答为 TXT", systemImage: "bubble.left.and.bubble.right")
                                 }
                             }
                             if !activeSession.notes.isEmpty {
@@ -1915,8 +1922,25 @@ struct LessonDetailView: View {
             let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
             text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
         }
+        if !session.qaPairs.isEmpty {
+            text += "\n\n【AI 问答】\n\n" + qaExportText(session: session)
+        }
         let name = "\(session.title)-整节课记录"
         if let url = createTempTXT(filename: name, content: text) {
+            shareItem = ShareItem(fileURL: url)
+        }
+    }
+
+    private func qaExportText(session: LessonSession) -> String {
+        session.qaPairs.enumerated().map { index, pair in
+            let citation = pair.citationSeconds.map { "\n实录定位 [\(formatDuration($0))]" } ?? ""
+            return "\(index + 1). \(pair.question)\n\n\(pair.answer)\(citation)"
+        }.joined(separator: "\n\n")
+    }
+
+    private func exportQAOnlyToTXT(session: LessonSession) {
+        let text = "【AI 问答】\n\(session.title)\n\n" + qaExportText(session: session)
+        if let url = createTempTXT(filename: "\(session.title)-AI问答", content: text) {
             shareItem = ShareItem(fileURL: url)
         }
     }
@@ -2733,6 +2757,17 @@ struct QATabView: View {
             HStack(spacing: 8) {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
+                        Button(session.notes.contains(where: { $0.style == .minutes }) ? "查看纪要" : "生成纪要") {
+                            composing = false
+                            selectedNoteStyle = .minutes
+                            if !session.notes.contains(where: { $0.style == .minutes }) {
+                                manager.generateNotes(for: session, style: .minutes)
+                            }
+                            showNotes = manager.isGeneratingNotes || session.notes.contains(where: { $0.style == .minutes })
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.small)
+                        .disabled(manager.isGeneratingNotes)
                         ForEach(prompts, id: \.0) { prompt in
                             Button(prompt.0) {
                                 inputText = prompt.1
