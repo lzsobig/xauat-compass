@@ -286,6 +286,8 @@ public final class ClassroomManager: ObservableObject {
     @Published public var isTranscribingOffline: Bool = false
     @Published public var isGeneratingNotes: Bool = false
     @Published public var isAskingQA: Bool = false
+    @Published public private(set) var answeringSessionID: UUID?
+    @Published public private(set) var streamingAnswer = ""
 
     private let storageRoot: URL
     private let engine = AVAudioEngine()
@@ -1210,14 +1212,14 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 大模型 HTTP 调用 (DeepSeek 专属问答与智能笔记生成)
     
-    public func callLLMApi(systemPrompt: String, userPrompt: String, imageJPEG: Data? = nil) async throws -> String {
+    public func callLLMApi(systemPrompt: String, userPrompt: String, imageJPEG: Data? = nil, onUpdate: ((String) -> Void)? = nil) async throws -> String {
         guard !llmApiKey.isEmpty else {
             throw NSError(domain: "LLMError", code: 401, userInfo: [NSLocalizedDescriptionKey: "尚未配置有效的 DeepSeek API Key"])
         }
-        return try await executeChatCompletion(baseURL: llmBaseURL, model: llmModel, apiKey: llmApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG)
+        return try await executeChatCompletion(baseURL: llmBaseURL, model: llmModel, apiKey: llmApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG, onUpdate: onUpdate)
     }
 
-    private func executeChatCompletion(baseURL: String, model: String, apiKey: String, systemPrompt: String, userPrompt: String, imageJPEG: Data? = nil) async throws -> String {
+    private func executeChatCompletion(baseURL: String, model: String, apiKey: String, systemPrompt: String, userPrompt: String, imageJPEG: Data? = nil, onUpdate: ((String) -> Void)? = nil) async throws -> String {
         let cleanBase = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         guard let url = URL(string: "\(cleanBase)/chat/completions") else { throw URLError(.badURL) }
         
@@ -1237,7 +1239,7 @@ public final class ClassroomManager: ObservableObject {
             userContent = userPrompt
         }
         let mathFormat = "请用标准 Markdown 排版。行内公式用单美元符号包裹，独立公式用双美元符号包裹。避免用裸花括号或代码块包裹公式。"
-        let payload: [String: Any] = [
+        var payload: [String: Any] = [
             "model": model,
             "messages": [
                 ["role": "system", "content": systemPrompt + "\n" + mathFormat],
@@ -1245,9 +1247,31 @@ public final class ClassroomManager: ObservableObject {
             ],
             "temperature": 0.3
         ]
+        if onUpdate != nil {
+            payload["stream"] = true
+            request.setValue("text/event-stream, application/json", forHTTPHeaderField: "Accept")
+        }
         request.httpBody = try JSONSerialization.data(withJSONObject: payload)
         
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let data: Data
+        let response: URLResponse
+        if let onUpdate {
+            let (bytes, streamResponse) = try await URLSession.shared.bytes(for: request)
+            response = streamResponse
+            if let http = streamResponse as? HTTPURLResponse,
+               (200...299).contains(http.statusCode),
+               http.mimeType?.lowercased() == "text/event-stream" {
+                return try await readAnswerStream(bytes, onUpdate: onUpdate)
+            }
+            var body = Data()
+            for try await byte in bytes {
+                guard body.count < 2_000_000 else { throw URLError(.dataLengthExceedsMaximum) }
+                body.append(byte)
+            }
+            data = body
+        } else {
+            (data, response) = try await URLSession.shared.data(for: request)
+        }
         guard let http = response as? HTTPURLResponse else {
             throw NSError(domain: "LLMError", code: -1, userInfo: [NSLocalizedDescriptionKey: "网络无响应"])
         }
@@ -1272,6 +1296,56 @@ public final class ClassroomManager: ObservableObject {
             throw NSError(domain: "LLMError", code: -1, userInfo: [NSLocalizedDescriptionKey: "AI 返回内容为空"])
         }
         return first
+    }
+
+    private func readAnswerStream(_ bytes: URLSession.AsyncBytes, onUpdate: (String) -> Void) async throws -> String {
+        struct Chunk: Decodable {
+            struct Choice: Decodable {
+                struct Delta: Decodable { let content: String? }
+                let delta: Delta?
+                let finish_reason: String?
+            }
+            let choices: [Choice]?
+            let error: ServiceError?
+            struct ServiceError: Decodable { let message: String? }
+        }
+
+        var answer = ""
+        var lastUpdate = Date.distantPast
+        var finishReason: String?
+        var ended = false
+        do {
+            for try await line in bytes.lines {
+                guard line.hasPrefix("data:") else { continue }
+                let payload = line.dropFirst(5).trimmingCharacters(in: .whitespaces)
+                if payload == "[DONE]" {
+                    ended = true
+                    break
+                }
+                guard !payload.isEmpty else { continue }
+                let chunk = try JSONDecoder().decode(Chunk.self, from: Data(payload.utf8))
+                if chunk.error != nil { throw URLError(.badServerResponse) }
+                guard let choice = chunk.choices?.first else { continue }
+                finishReason = choice.finish_reason ?? finishReason
+                if let part = choice.delta?.content, !part.isEmpty {
+                    answer += part
+                    let now = Date()
+                    if now.timeIntervalSince(lastUpdate) >= 0.2 {
+                        onUpdate(answer)
+                        lastUpdate = now
+                    }
+                }
+            }
+        } catch {
+            guard !answer.isEmpty else { throw error }
+            return answer + "\n\n> 连接中断，以上为已收到的内容。"
+        }
+        guard !answer.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw URLError(.cannotDecodeContentData)
+        }
+        if finishReason == "length" { return answer + "\n\n> 回答达到长度上限，可继续追问。" }
+        if !ended && finishReason == nil { return answer + "\n\n> 连接中断，以上为已收到的内容。" }
+        return answer
     }
 
     // MARK: - 智能笔记生成
@@ -1388,6 +1462,8 @@ public final class ClassroomManager: ObservableObject {
 
     public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil, imageJPEG: Data? = nil) {
         guard !isAskingQA, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        streamingAnswer = ""
+        answeringSessionID = session.id
         isAskingQA = true
         
         let citTime = segment?.startTime
@@ -1395,6 +1471,11 @@ public final class ClassroomManager: ObservableObject {
         let questionLabel = query + imageLabel
         
         Task {
+            defer {
+                self.streamingAnswer = ""
+                self.answeringSessionID = nil
+                self.isAskingQA = false
+            }
             if !llmApiKey.isEmpty {
                 do {
                     let sysPrompt = """
@@ -1427,7 +1508,9 @@ public final class ClassroomManager: ObservableObject {
                     if !recent.isEmpty {
                         userPrompt = "【最近问答，供理解追问】\n\(recent)\n\n" + userPrompt
                     }
-                    let answer = try await callLLMApi(systemPrompt: sysPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG)
+                    let answer = try await callLLMApi(systemPrompt: sysPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG) { partial in
+                        self.streamingAnswer = partial
+                    }
                     
                     // 提取最佳引用时间戳
                     let bestTime = citTime ?? self.findBestCitationTime(in: session.segments, for: query)
@@ -1438,7 +1521,6 @@ public final class ClassroomManager: ObservableObject {
                         self.sessions[idx].qaPairs.append(pair)
                         self.saveSessions()
                     }
-                    self.isAskingQA = false
                     return
                 } catch {
                     print("大模型问答失败，回退到本地检索：", error)
@@ -1469,7 +1551,6 @@ public final class ClassroomManager: ObservableObject {
                 self.sessions[idx].qaPairs.append(pair)
                 self.saveSessions()
             }
-            self.isAskingQA = false
         }
     }
     

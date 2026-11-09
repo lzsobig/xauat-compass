@@ -2872,16 +2872,20 @@ struct QATabView: View {
                                 }
                             }
                         }
-                        if manager.isAskingQA {
+                        if manager.answeringSessionID == session.id {
                             if let pendingQuestion { questionBubble(pendingQuestion, imageJPEG: pendingImage) }
+                            if !manager.streamingAnswer.isEmpty {
+                                MarkdownContentView(content: manager.streamingAnswer)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                             HStack(spacing: 10) {
                                 ProgressView()
                                     .tint(.accentColor)
                                     .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: 3) {
-                                    Text("正在整理回答")
+                                    Text(manager.streamingAnswer.isEmpty ? "正在整理回答" : "正在输出")
                                         .font(.subheadline.weight(.medium))
-                                    if let waitingSince {
+                                    if manager.streamingAnswer.isEmpty, let waitingSince {
                                         TimelineView(.periodic(from: waitingSince, by: 1)) { context in
                                             Text("已等待 \(max(0, Int(context.date.timeIntervalSince(waitingSince)))) 秒")
                                                 .font(.caption.monospacedDigit())
