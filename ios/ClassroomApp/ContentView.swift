@@ -151,88 +151,9 @@ struct RecordHomeView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        // 转录引擎快速选择 (苹果原生 vs 阶跃星辰 ASR 10秒/20秒/30秒切片)
-                        HStack {
-                            Text("转录方式")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Spacer()
-                            Menu {
-                                Button {
-                                    manager.switchTranscriptionEngine(.apple)
-                                } label: {
-                                    HStack {
-                                        Text("苹果原生输入法 (本地免Key·边说边出字)")
-                                        if manager.transcriptionEngine == .apple {
-                                            Image(systemName: "checkmark")
-                                        }
-                                    }
-                                }
-
-                                Divider()
-
-                                Section("阶跃星辰 ASR (使用您的 StepFun Key)") {
-                                    Button {
-                                        manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
-                                    } label: {
-                                        HStack {
-                                            Text("10 秒切片转录 (高频快速出字)")
-                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-
-                                    Button {
-                                        manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
-                                    } label: {
-                                        HStack {
-                                            Text("20 秒切片转录 (推荐·整句连贯准确)")
-                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-
-                                    Button {
-                                        manager.switchTranscriptionEngine(.stepfun, interval: .thirtySeconds)
-                                    } label: {
-                                        HStack {
-                                            Text("30 秒切片转录 (长段落)")
-                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .thirtySeconds {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-
-                                    Button {
-                                        manager.switchTranscriptionEngine(.stepfun, interval: .fullLesson)
-                                    } label: {
-                                        HStack {
-                                            Text("课后整节转写 (最完整)")
-                                            if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .fullLesson {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-                                }
-                            } label: {
-                                HStack(spacing: 5) {
-                                    Image(systemName: manager.transcriptionEngine == .apple ? "applelogo" : "waveform.badge.magnifyingglass")
-                                        .font(.caption2)
-                                    Text(manager.transcriptionEngine == .apple ? "苹果原生转录" : "阶跃 ASR (\(manager.stepfunChunkInterval.shortTitle))")
-                                        .font(.caption)
-                                    Image(systemName: "chevron.down")
-                                        .font(.system(size: 9))
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 5)
-                                .background(Color(UIColor.tertiarySystemFill))
-                                .foregroundColor(.primary)
-                                .cornerRadius(8)
-                            }
-                        }
-                        .padding(.horizontal, 4)
+                        Label("星辰 V3.2 · 停顿分段", systemImage: "waveform")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
 
                         HStack(spacing: 12) {
                             Button {
@@ -1499,43 +1420,6 @@ struct SettingsScreen: View {
     var body: some View {
         NavigationView {
             List {
-                                Section(
-                    header: Text("语音转录引擎与分段模式"),
-                    footer: Text(manager.transcriptionEngine == .apple ? "苹果原生：内置 iOS 本地模型，离线可用，不耗流量，边录音边实时出字。" : "阶跃星辰 ASR：基于 stepaudio-2.5-asr 云端学术模型，每 10~20 秒自动切片转录，公式与专业术语准确率极高。")
-                ) {
-                    Picker("转录引擎", selection: $manager.transcriptionEngine) {
-                        ForEach(TranscriptionEngine.allCases, id: \.self) { engine in
-                            Text(engine.title).tag(engine)
-                        }
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-
-                    if manager.transcriptionEngine == .stepfun {
-                        Picker("切片转录间隔", selection: $manager.stepfunChunkInterval) {
-                            ForEach(StepfunChunkInterval.allCases, id: \.self) { interval in
-                                Text(interval.title).tag(interval)
-                            }
-                        }
-                    }
-
-                    HStack {
-                        Label(
-                            manager.transcriptionEngine == .apple ? "苹果原生识别引擎 (已激活)" : "阶跃星辰 ASR - \(manager.stepfunChunkInterval.shortTitle) (已激活)",
-                            systemImage: manager.transcriptionEngine == .apple ? "applelogo" : "bolt.fill"
-                        )
-                        .font(.footnote)
-                        .foregroundColor(manager.transcriptionEngine == .apple ? .accentColor : .blue)
-
-                        Spacer()
-
-                        Text(manager.transcriptionEngine == .apple ? "本地免Key" : "stepaudio-2.5-asr")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color(UIColor.tertiarySystemFill))
-                            .cornerRadius(4)
-                    }
-                }
 
                 Section(
                     header: Text("AI 助教大模型 (DeepSeek 问答与笔记)"),
@@ -1586,35 +1470,17 @@ struct SettingsScreen: View {
                     }
                 }
 
-                Section(
-                    header: Text("阶跃星辰 ASR 语音识别"),
-                    footer: Text("使用 stepaudio-2.5-asr 处理离线音频的高精度转写，麦克风录音时采用原生实时识别。")
-                ) {
-                    HStack {
-                        Text("ASR 接口")
-                        Spacer()
-                        TextField("Base URL", text: $manager.stepfunBaseURL)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 13, design: .monospaced))
-                    }
+                Section("星辰 V3.2 语音转写") {
 
                     HStack {
-                        Text("ASR 模型")
-                        Spacer()
-                        TextField("Model", text: $manager.stepfunAsrModel)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 13, design: .monospaced))
-                    }
-
-                    HStack {
-                        Text("ASR Key")
+                        Text("硅基流动 API Key")
                         Spacer()
                         if showKey {
-                            TextField("Key", text: $manager.stepfunApiKey)
+                            TextField("Key", text: $manager.siliconFlowApiKey)
                                 .multilineTextAlignment(.trailing)
                                 .font(.system(size: 11, design: .monospaced))
                         } else {
-                            SecureField("Key", text: $manager.stepfunApiKey)
+                            SecureField("Key", text: $manager.siliconFlowApiKey)
                                 .multilineTextAlignment(.trailing)
                                 .font(.system(size: 11, design: .monospaced))
                         }
@@ -1856,45 +1722,8 @@ struct LessonDetailView: View {
             VStack(spacing: 0) {
                 if isLiveActive {
                     HStack {
-                        Menu {
-                            Section("切换当前转录引擎") {
-                                Button {
-                                    manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
-                                } label: {
-                                    Label("阶跃星辰 ASR (20秒·语义完整)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds ? "checkmark" : "")
-                                }
-                                Button {
-                                    manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
-                                } label: {
-                                    Label("阶跃星辰 ASR (10秒·极速出字)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds ? "checkmark" : "")
-                                }
-                                Button {
-                                    manager.switchTranscriptionEngine(.stepfun, interval: .fullLesson)
-                                } label: {
-                                    Label("课后统一转写 (录中静默)", systemImage: manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .fullLesson ? "checkmark" : "")
-                                }
-                                Button {
-                                    manager.switchTranscriptionEngine(.apple)
-                                } label: {
-                                    Label("苹果原生识别 (免Key·系统输入法)", systemImage: manager.transcriptionEngine == .apple ? "checkmark" : "")
-                                }
-                            }
-                        } label: {
-                            HStack(spacing: 5) {
-                                Circle()
-                                    .fill(manager.isPaused ? Color.orange : Color.green)
-                                    .frame(width: 8, height: 8)
-                                Text(manager.transcriptionEngine == .stepfun ? "阶跃 ASR (\(manager.stepfunChunkInterval.shortTitle))" : "苹果原生")
-                                    .font(.system(size: 12, weight: .bold))
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 9))
-                            }
-                            .padding(.horizontal, 10)
-                            .padding(.vertical, 5)
-                            .background(Color(UIColor.tertiarySystemFill))
-                            .foregroundColor(.primary)
-                            .cornerRadius(12)
-                        }
+                        Label(manager.isPaused ? "已暂停" : "星辰 V3.2", systemImage: "waveform")
+                            .font(.caption)
 
                         Spacer()
 
@@ -2330,88 +2159,8 @@ struct TranscriptTabView: View {
                                 Text(formatDuration(manager.recordingElapsed))
                                     .font(.system(size: 42, weight: .semibold, design: .monospaced))
                                     .foregroundColor(.primary)
-                                Menu {
-                                    Button {
-                                        manager.switchTranscriptionEngine(.apple)
-                                    } label: {
-                                        HStack {
-                                            Text("苹果原生输入法 (本地边说边出字)")
-                                            if manager.transcriptionEngine == .apple {
-                                                Image(systemName: "checkmark")
-                                            }
-                                        }
-                                    }
-
-                                    Section("阶跃星辰 ASR (使用您的 StepFun Key)") {
-                                        Button {
-                                            manager.switchTranscriptionEngine(.stepfun, interval: .tenSeconds)
-                                        } label: {
-                                            HStack {
-                                                Text("10 秒切片转录 (高频快速)")
-                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .tenSeconds {
-                                                    Image(systemName: "checkmark")
-                                                }
-                                            }
-                                        }
-
-                                        Button {
-                                            manager.switchTranscriptionEngine(.stepfun, interval: .twentySeconds)
-                                        } label: {
-                                            HStack {
-                                                Text("20 秒切片转录 (推荐·整句连贯)")
-                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .twentySeconds {
-                                                    Image(systemName: "checkmark")
-                                                }
-                                            }
-                                        }
-
-                                        Button {
-                                            manager.switchTranscriptionEngine(.stepfun, interval: .thirtySeconds)
-                                        } label: {
-                                            HStack {
-                                                Text("30 秒切片转录 (长段落)")
-                                                if manager.transcriptionEngine == .stepfun && manager.stepfunChunkInterval == .thirtySeconds {
-                                                    Image(systemName: "checkmark")
-                                                }
-                                            }
-                                        }
-                                    }
-                                } label: {
-                                    HStack(spacing: 8) {
-                                        Circle()
-                                            .fill(manager.isPaused ? Color.orange : (manager.transcriptionEngine == .apple ? Color.green : Color.blue))
-                                            .frame(width: 8, height: 8)
-                                        
-                                        if manager.isPaused {
-                                            Text("已暂停录音 (点击切换转录)")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        } else if manager.transcriptionEngine == .apple {
-                                            Text("苹果原生实时转录中 (点击可换阶跃ASR)")
-                                                .font(.caption)
-                                                .foregroundColor(.secondary)
-                                        } else {
-                                            HStack(spacing: 4) {
-                                                Text("阶跃星辰 ASR (\(manager.stepfunChunkInterval.shortTitle)) 转写中")
-                                                    .font(.caption)
-                                                    .foregroundColor(.secondary)
-                                                if manager.isChunkTranscribing {
-                                                    ProgressView()
-                                                        .scaleEffect(0.6)
-                                                }
-                                            }
-                                        }
-                                        
-                                        Image(systemName: "chevron.down")
-                                            .font(.system(size: 8))
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .padding(.horizontal, 10)
-                                    .padding(.vertical, 5)
-                                    .background(Color(UIColor.tertiarySystemFill).opacity(0.6))
-                                    .cornerRadius(12)
-                                }
-                            }
+                                Label(manager.isPaused ? "已暂停" : "录音中", systemImage: "waveform")
+                                    .font(.caption)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 14)
                             .background(Color(UIColor.secondarySystemGroupedBackground))

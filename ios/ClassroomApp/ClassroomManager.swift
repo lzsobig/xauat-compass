@@ -2,7 +2,6 @@ import AVFoundation
 import Combine
 import CoreMedia
 import Foundation
-import Speech
 import SwiftUI
 
 // MARK: - PCM 转 WAV 工具函数
@@ -90,20 +89,22 @@ public func stitchTranscripts(previous: String, current: String) -> String {
 private final class AudioCapture {
     private let lock = NSLock()
     private var file: AVAudioFile?
-    private var speechRequest: SFSpeechAudioBufferRecognitionRequest?
     private var totalFrames: AVAudioFramePosition = 0
     private var sampleRate: Double = 44100
     private var writeFailed = false
     
-    // 阶跃 ASR 实时分段切片缓冲区 (重采样到 16kHz 16-bit 单声道)
+    // 星辰 ASR 实时分段缓冲区 (重采样到 16kHz 16-bit 单声道)
     private var sliceSamples: [Int16] = []
     private var sliceStepAccumulator: Double = 0
 
-    // VAD 动态静音停顿检测（陈逸飞自主截断核心逻辑）
-    private var consecutiveSilenceFrames: Int = 0
-    private let silenceRmsThreshold: Float = 0.015 // 归一化静音振幅门限 (约 -36dB)
+    private var consecutiveSilenceFrames = 0
+    private var voicedFrames = 0
+    private var noiseFloor: Float = 0.003
 
-    init(file: AVAudioFile, sampleRate: Double) {
+    private let collectSlices: Bool
+
+    init(file: AVAudioFile, sampleRate: Double, collectSlices: Bool) {
+        self.collectSlices = collectSlices
         self.file = file
         self.sampleRate = sampleRate
     }
@@ -115,10 +116,9 @@ private final class AudioCapture {
         do {
             try file.write(from: buffer)
             totalFrames += AVAudioFramePosition(buffer.frameLength)
-            speechRequest?.append(buffer)
             
-            // 重采样至 16kHz 单声道 PCM 以供阶跃 ASR 分段切片
-            if let floatChannelData = buffer.floatChannelData {
+            // 重采样至 16kHz 单声道 PCM 供星辰 ASR 分段转写
+            if collectSlices, let floatChannelData = buffer.floatChannelData {
                 let channel0 = floatChannelData[0]
                 let frameCount = Int(buffer.frameLength)
                 
@@ -130,10 +130,13 @@ private final class AudioCapture {
                 }
                 let rms = frameCount > 0 ? sqrt(sumSquares / Float(frameCount)) : 0
                 
-                if rms < silenceRmsThreshold {
+                let threshold = max(0.006, min(0.04, noiseFloor * 2.8))
+                if rms < threshold {
                     consecutiveSilenceFrames += frameCount
+                    noiseFloor = noiseFloor * 0.98 + rms * 0.02
                 } else {
                     consecutiveSilenceFrames = 0
+                    voicedFrames += frameCount
                 }
                 
                 let step = sampleRate / 16000.0
@@ -147,6 +150,13 @@ private final class AudioCapture {
                     idx += step
                 }
                 sliceStepAccumulator = idx - Double(frameCount)
+                if consecutiveSilenceFrames >= Int(sampleRate * 0.8),
+                   voicedFrames < Int(sampleRate * 0.12) {
+                    voicedFrames = 0
+                }
+                if voicedFrames == 0 && sliceSamples.count > 4800 {
+                    sliceSamples.removeFirst(sliceSamples.count - 4800)
+                }
             }
             return nil
         } catch {
@@ -155,36 +165,26 @@ private final class AudioCapture {
         }
     }
 
-    var consecutiveSilenceSeconds: Double {
+    func takeSlice(final: Bool = false) -> (data: Data, start: Double, end: Double)? {
         lock.lock()
         defer { lock.unlock() }
-        guard sampleRate > 0 else { return 0 }
-        return Double(consecutiveSilenceFrames) / sampleRate
-    }
 
-    func attachSpeechRequest(_ req: SFSpeechAudioBufferRecognitionRequest?) {
-        lock.lock()
-        defer { lock.unlock() }
-        speechRequest?.endAudio()
-        speechRequest = req
-    }
+        let duration = Double(sliceSamples.count) / 16000
+        let silence = Double(consecutiveSilenceFrames) / sampleRate
+        let speechDuration = Double(voicedFrames) / sampleRate
+        let naturalBreak = duration >= 2.0 && silence >= 0.8
+        let forcedBreak = duration >= 12
+        guard (final && speechDuration >= 0.12) ||
+              (naturalBreak && speechDuration >= 0.35) ||
+              (forcedBreak && speechDuration >= 0.12) else { return nil }
 
-    // 提取当前切片 WAV 数据，同时保留 keepOverlapSeconds（默认 1.5 秒）音频作为下一段的开头，防止切片边界漏字
-    func takeCurrentSliceWavData(keepOverlapSeconds: Double = 1.5) -> Data? {
-        lock.lock()
-        defer { lock.unlock() }
-        guard !sliceSamples.isEmpty else { return nil }
+        let end = Double(totalFrames) / sampleRate
         let samples = sliceSamples
-        
-        let overlapCount = Int(keepOverlapSeconds * 16000)
-        if keepOverlapSeconds > 0 && samples.count > overlapCount + 8000 {
-            let overlapSamples = Array(samples.suffix(overlapCount))
-            sliceSamples = overlapSamples
-        } else {
-            sliceSamples.removeAll(keepingCapacity: true)
-        }
+        let overlap = !final && forcedBreak && silence < 0.8 ? 5600 : 0
+        sliceSamples = Array(samples.suffix(overlap))
         consecutiveSilenceFrames = 0
-        return pcmToWav(samples: samples, sampleRate: 16000)
+        voicedFrames = 0
+        return (pcmToWav(samples: samples, sampleRate: 16000), max(0, end - duration), end)
     }
 
     var recordedDuration: TimeInterval {
@@ -197,8 +197,6 @@ private final class AudioCapture {
     func close() {
         lock.lock()
         defer { lock.unlock() }
-        speechRequest?.endAudio()
-        speechRequest = nil
         file = nil
         sliceSamples.removeAll()
         consecutiveSilenceFrames = 0
@@ -232,29 +230,10 @@ public final class ClassroomManager: ObservableObject {
             KeychainHelper.save(key: "llmApiKey", value: llmApiKey)
         }
     }
-    @Published public var stepfunBaseURL: String {
-        didSet { UserDefaults.standard.set(stepfunBaseURL, forKey: "stepfunBaseURL") }
-    }
-    @Published public var stepfunAsrModel: String {
-        didSet { UserDefaults.standard.set(stepfunAsrModel, forKey: "stepfunAsrModel") }
-    }
-    @Published public var stepfunApiKey: String {
-        didSet {
-            KeychainHelper.save(key: "stepfunApiKey", value: stepfunApiKey)
-        }
-    }
-    
-    // 转录引擎选择 (苹果原生 / 阶跃星辰 ASR)
-    @Published public var transcriptionEngine: TranscriptionEngine {
-        didSet { UserDefaults.standard.set(transcriptionEngine.rawValue, forKey: "transcriptionEngine") }
-    }
-    
-    // 阶跃 ASR 切片转录周期 (10秒 / 20秒 / 30秒 / 课后)
-    @Published public var stepfunChunkInterval: StepfunChunkInterval {
-        didSet {
-            UserDefaults.standard.set(stepfunChunkInterval.rawValue, forKey: "stepfunChunkInterval")
-            UserDefaults.standard.set(true, forKey: "stepfunChunkInterval_set")
-        }
+    public static let asrBaseURL = "https://api.siliconflow.cn/v1"
+    public static let asrModel = "XingChenAGI/XingChenASR-V3.2"
+    @Published public var siliconFlowApiKey: String {
+        didSet { KeychainHelper.save(key: "siliconFlowApiKey", value: siliconFlowApiKey) }
     }
     @Published public var isChunkTranscribing: Bool = false
 
@@ -300,13 +279,8 @@ public final class ClassroomManager: ObservableObject {
 
     private let storageRoot: URL
     private let engine = AVAudioEngine()
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale(identifier: "zh-CN"))
     private var capture: AudioCapture?
-    private var speechTask: SFSpeechRecognitionTask?
-    private var lastChunkTime: TimeInterval = 0
     private var currentChunkIndex: Int = 0
-    private var speechEpoch = UUID()
-    private var speechStartedAt: Date?
     private var recordingTimer: Timer?
     private var playbackTimer: Timer?
     private var audioPlayer: AVAudioPlayer?
@@ -329,24 +303,13 @@ public final class ClassroomManager: ObservableObject {
         }
         self.llmApiKey = KeychainHelper.get(key: "llmApiKey") ?? ""
         
-        self.stepfunBaseURL = UserDefaults.standard.string(forKey: "stepfunBaseURL") ?? "https://api.stepfun.com/v1"
-        self.stepfunAsrModel = UserDefaults.standard.string(forKey: "stepfunAsrModel") ?? "stepaudio-2.5-asr"
-        
-        if let oldStepKey = UserDefaults.standard.string(forKey: "stepfunApiKey"), !oldStepKey.isEmpty {
-            KeychainHelper.save(key: "stepfunApiKey", value: oldStepKey)
-            UserDefaults.standard.removeObject(forKey: "stepfunApiKey")
-        }
-        self.stepfunApiKey = KeychainHelper.get(key: "stepfunApiKey") ?? ""
-        
-        let savedEngine = UserDefaults.standard.string(forKey: "transcriptionEngine") ?? "apple"
-        self.transcriptionEngine = TranscriptionEngine(rawValue: savedEngine) ?? .apple
-        
-        let isIntervalSet = UserDefaults.standard.bool(forKey: "stepfunChunkInterval_set")
-        if isIntervalSet {
-            let savedIntervalVal = UserDefaults.standard.integer(forKey: "stepfunChunkInterval")
-            self.stepfunChunkInterval = StepfunChunkInterval(rawValue: savedIntervalVal) ?? .twentySeconds
-        } else {
-            self.stepfunChunkInterval = .twentySeconds
+        let previousASR = UserDefaults.standard.string(forKey: "stepfunBaseURL")
+        let previousKey = previousASR.flatMap { URL(string: $0) }?.host == "api.siliconflow.cn"
+            ? (KeychainHelper.get(key: "stepfunApiKey") ?? UserDefaults.standard.string(forKey: "stepfunApiKey"))
+            : nil
+        self.siliconFlowApiKey = KeychainHelper.get(key: "siliconFlowApiKey") ?? previousKey ?? ""
+        if let previousKey, KeychainHelper.get(key: "siliconFlowApiKey") == nil {
+            KeychainHelper.save(key: "siliconFlowApiKey", value: previousKey)
         }
 
         try? FileManager.default.createDirectory(at: storageRoot, withIntermediateDirectories: true)
@@ -361,12 +324,11 @@ public final class ClassroomManager: ObservableObject {
     public func resetAIDefaults() {
         self.llmBaseURL = "https://tokenrhythm.studio/v1"
         self.llmModel = "deepseek-v4.1-flash-1017"
-        self.stepfunBaseURL = "https://api.stepfun.com/v1"
-        self.stepfunAsrModel = "stepaudio-2.5-asr"
         self.llmApiKey = ""
-        self.stepfunApiKey = ""
+        self.siliconFlowApiKey = ""
         KeychainHelper.delete(key: "llmApiKey")
-        KeychainHelper.delete(key: "stepfunApiKey")
+        KeychainHelper.delete(key: "siliconFlowApiKey")
+        UserDefaults.standard.removeObject(forKey: "stepfunBaseURL")
     }
     
     // MARK: - 持久化与文件管理
@@ -620,22 +582,10 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         
-        // 权限判定：仅当使用苹果原生语音识别且为实时模式时，才检查 Apple Speech 权限
-        var effectiveMode = mode
-        if mode == .realtime && transcriptionEngine == .apple {
-            let speechStatus = SFSpeechRecognizer.authorizationStatus()
-            if speechStatus == .notDetermined {
-                let speechGranted = await withCheckedContinuation { continuation in
-                    SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0 == .authorized) }
-                }
-                if !speechGranted {
-                    effectiveMode = .recordOnly
-                    errorMessage = "系统语音识别权限被拒绝，已自动切换为「仅录音模式」，确保音频完整保存"
-                }
-            } else if speechStatus != .authorized {
-                effectiveMode = .recordOnly
-                errorMessage = "系统语音识别权限未开启，已自动切换为「仅录音模式」，确保音频完整保存"
-            }
+        let hasASRKey = !siliconFlowApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let effectiveMode: RecordingMode = mode == .realtime && !hasASRKey ? .recordOnly : mode
+        if mode != effectiveMode {
+            errorMessage = "尚未填写硅基流动 API Key，本次将仅录音"
         }
         
         let formatter = DateFormatter()
@@ -677,7 +627,7 @@ public final class ClassroomManager: ObservableObject {
             }
             let file = try AVAudioFile(forWriting: rawURL, settings: format.settings, commonFormat: format.commonFormat, interleaved: format.isInterleaved)
             
-            let sink = AudioCapture(file: file, sampleRate: format.sampleRate)
+            let sink = AudioCapture(file: file, sampleRate: format.sampleRate, collectSlices: effectiveMode == .realtime)
             self.capture = sink
             self.currentChunkIndex = 0
             
@@ -697,14 +647,7 @@ public final class ClassroomManager: ObservableObject {
             self.isRecording = true
             self.isPaused = false
             self.recordingElapsed = 0
-            self.lastChunkTime = 0
-            
-            // 实时苹果原生引擎启动
-            if effectiveMode == .realtime && transcriptionEngine == .apple {
-                startSpeechRecognition()
-            }
-            
-            // 录音主计时器与阶跃 ASR 动态分片轮询
+            // 录音计时与停顿分段
             recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
                 Task { @MainActor in
                     guard let self = self, self.isRecording, !self.isPaused else { return }
@@ -713,55 +656,10 @@ public final class ClassroomManager: ObservableObject {
                         self.currentSession?.duration = self.recordingElapsed
                     }
                     
-                    // 只有在【实时模式】且【阶跃引擎】且【切片间隔 > 0】时才切片转录
-                    if self.currentSession?.mode == .realtime && self.transcriptionEngine == .stepfun && self.stepfunChunkInterval.rawValue > 0 {
-                        let targetInterval = Double(self.stepfunChunkInterval.rawValue)
-                        let chunkElapsed = self.recordingElapsed - self.lastChunkTime
-                        
-                        // 弹性自主截断窗口：目标周期前 5 秒开始探测语音停顿（例如 20s 周期在 15s~23s 内探测）
-                        let minFlexTime = max(6.0, targetInterval - 5.0)
-                        let maxHardTimeout = targetInterval + 3.0
-                        
-                        let silenceSecs = self.capture?.consecutiveSilenceSeconds ?? 0
-                        let isSentenceEnded = silenceSecs >= 0.35 // 停顿 350ms 判定为一句话讲完
-                        let canAutonomousCut = (chunkElapsed >= minFlexTime && isSentenceEnded)
-                        let isForceTimeout = (chunkElapsed >= maxHardTimeout)
-                        
-                        if canAutonomousCut || isForceTimeout {
-                            self.currentChunkIndex += 1
-                            let chunkIdx = self.currentChunkIndex
-                            let chunkStart = self.lastChunkTime
-                            let chunkEnd = self.recordingElapsed
-                            self.lastChunkTime = self.recordingElapsed
-                            
-                            // 保留 1.5 秒重叠音频供下一个切片，确保字词发音绝不被硬切断
-                            if let wavData = self.capture?.takeCurrentSliceWavData(keepOverlapSeconds: 1.5), wavData.count > 44 + 8000 {
-                                guard let targetId = self.currentSession?.id else { return }
-                                
-                                let chunkFileName = "chunk_\(chunkIdx).wav"
-                                let folder = self.chunksFolder(for: targetId)
-                                do {
-                                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                                    let chunkPath = folder.appendingPathComponent(chunkFileName)
-                                    try wavData.write(to: chunkPath, options: .atomic)
-                                    
-                                    let task = ChunkTranscriptionTask(
-                                        sequenceIndex: chunkIdx,
-                                        startTime: chunkStart,
-                                        endTime: chunkEnd,
-                                        chunkFileName: chunkFileName,
-                                        status: .pending
-                                    )
-                                    self.appendChunkTask(task, to: targetId)
-                                    Task {
-                                        await self.processChunkTask(sessionId: targetId, task: task)
-                                    }
-                                } catch {
-                                    self.errorMessage = "音频切片写入失败：\(error.localizedDescription)"
-                                    print("[AudioWriteError] 分片 \(chunkIdx) 写入沙盒失败: \(error)")
-                                }
-                            }
-                        }
+                    if self.currentSession?.mode == .realtime,
+                       let slice = self.capture?.takeSlice(),
+                       let sessionId = self.currentSession?.id {
+                        self.enqueueSlice(slice, sessionId: sessionId)
                     }
                 }
             }
@@ -783,6 +681,7 @@ public final class ClassroomManager: ObservableObject {
         guard let sess = self.sessions.first(where: { $0.id == sessionId }) else { return false }
         guard let currentTask = sess.chunkTasks.first(where: { $0.id == task.id }) else { return false }
         if currentTask.status == .completed { return true }
+        guard currentTask.status != .transcribing else { return false }
         
         self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
             $0.status = .transcribing
@@ -793,7 +692,7 @@ public final class ClassroomManager: ObservableObject {
         let chunkURL = self.chunkFileURL(sessionId: sessionId, fileName: task.chunkFileName)
         guard FileManager.default.fileExists(atPath: chunkURL.path),
               let audioData = try? Data(contentsOf: chunkURL),
-              audioData.count > 44 + 8000 else {
+              audioData.count > 44 else {
             self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
                 $0.status = .failed
                 $0.lastError = "分片音频数据文件不存在或损坏"
@@ -802,11 +701,11 @@ public final class ClassroomManager: ObservableObject {
             return false
         }
         
-        let lastText = sess.segments.last?.text ?? ""
-        let promptSnippet = String(lastText.suffix(40))
+        let predecessor = sess.segments.first { $0.sequenceIndex == task.sequenceIndex - 1 }
+        let lastText = predecessor.flatMap { $0.endTime > task.startTime ? $0.text : nil } ?? ""
         
         do {
-            let transcribed = try await self.callStepFunASR(audioData: audioData, prompt: promptSnippet)
+            let transcribed = try await self.callSiliconFlowASR(audioData: audioData)
             let stitched = stitchTranscripts(previous: lastText, current: transcribed)
             let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -852,7 +751,7 @@ public final class ClassroomManager: ObservableObject {
         }
     }
 
-    /// 核心存储终结判断：严格区分转录引擎与模式，只有确实覆盖整节录音、全部转写成功并可靠落盘后，才在实时模式下安全清理临时录音
+    /// 根据持久化分段任务更新课堂状态，完整录音可供回听和补转写。
     public func checkAndFinalizeSessionStorage(sessionId: UUID) {
         guard let idx = sessions.firstIndex(where: { $0.id == sessionId }) else { return }
         let sess = sessions[idx]
@@ -867,103 +766,19 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         
-        // 3. 严格引擎区分与完成度判定
-        var isFullyCompleted = false
-        
-        if transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0 {
-            // Case A: 阶跃星辰实时分片 ASR 模式
-            // 规则：任务列表绝不能为空！必须至少有一个分片任务！
-            guard !sess.chunkTasks.isEmpty else {
-                print("[StorageGuard] 分片任务列表为空，绝不代表转写完成，拒绝清理音频。")
-                return
-            }
-            
-            let hasPendingOrTranscribing = sess.chunkTasks.contains { $0.status == .pending || $0.status == .transcribing }
-            let failedTasks = sess.chunkTasks.filter { $0.status == .failed }
-            
-            if hasPendingOrTranscribing {
-                sessions[idx].status = .pendingCatchUp
-                saveSessions()
-                return
-            }
-            
-            if !failedTasks.isEmpty {
-                // 有失败分片，保留音频供补转写
-                sessions[idx].status = (failedTasks.count >= 3) ? .transcriptionFailed : .pendingCatchUp
-                saveSessions()
-                return
-            }
-            
-            // 全部分片均为 completed，进一步核查时间跨度覆盖度（杜绝只录了开头漏了结尾）
-            let maxEndTime = sess.chunkTasks.map { $0.endTime }.max() ?? 0
-            if sess.duration > 15.0 && maxEndTime < (sess.duration - 4.0) {
-                print("[StorageGuard] 分片时间跨度(\(maxEndTime)s) 未完整覆盖课堂时长(\(sess.duration)s)，拒绝清理。")
-                sessions[idx].status = .pendingCatchUp
-                saveSessions()
-                return
-            }
-            
-            isFullyCompleted = true
-            
-        } else if transcriptionEngine == .stepfun && stepfunChunkInterval == .fullLesson {
-            // Case B: 阶跃星辰课后统一转写模式
-            // 规则：离线转写不能正在运行中，且必须已有有效转写段落落盘
-            if isTranscribingOffline {
-                sessions[idx].status = .pendingCatchUp
-                saveSessions()
-                return
-            }
-            
-            if sess.segments.isEmpty {
-                // 尚未转写或离线转写失败，绝不清理音频
-                sessions[idx].status = .pendingCatchUp
-                saveSessions()
-                return
-            }
-            
-            isFullyCompleted = true
-            
-        } else if transcriptionEngine == .apple {
-            // Case C: 苹果原生识别模式
-            // 规则：课堂已结束，且转写文字不为空
-            if sess.duration > 5.0 && sess.segments.isEmpty {
-                // 苹果识别没有出字，保留音频供课后转写
-                sessions[idx].status = .pendingCatchUp
-                saveSessions()
-                return
-            }
-            
-            isFullyCompleted = !sess.segments.isEmpty
-        }
-        
-        // 4. 终结清理执行（必须满足确实全部完成且处于 realtime 模式）
-        if isFullyCompleted {
-            sessions[idx].status = .completed
-            
-            if sess.mode == .realtime && !sessions[idx].isTempAudioPurged {
-                let mainAudioURL = audioURL(for: sess)
-                let rawURL = rawAudioURL(for: sess)
-                let chunkFolder = chunksFolder(for: sessionId)
-                
-                // 真实删除文件并检验结果
-                if FileManager.default.fileExists(atPath: mainAudioURL.path) {
-                    try? FileManager.default.removeItem(at: mainAudioURL)
-                }
-                if FileManager.default.fileExists(atPath: rawURL.path) {
-                    try? FileManager.default.removeItem(at: rawURL)
-                }
-                if FileManager.default.fileExists(atPath: chunkFolder.path) {
-                    try? FileManager.default.removeItem(at: chunkFolder)
-                }
-                
-                // 严谨校验：只有在文件确实已从磁盘消失时，才标记 isTempAudioPurged = true
-                if !FileManager.default.fileExists(atPath: mainAudioURL.path) && !FileManager.default.fileExists(atPath: rawURL.path) {
-                    sessions[idx].isTempAudioPurged = true
-                    print("[Storage] 课堂「\(sess.title)」全覆盖转写成功落盘，已安全清理临时录音文件，释放存储。")
-                }
-            }
+        guard !sess.chunkTasks.isEmpty else {
+            sessions[idx].status = .pendingCatchUp
             saveSessions()
+            return
         }
+        if sess.chunkTasks.contains(where: { $0.status == .pending || $0.status == .transcribing }) {
+            sessions[idx].status = .pendingCatchUp
+        } else if sess.chunkTasks.contains(where: { $0.status == .failed }) {
+            sessions[idx].status = .transcriptionFailed
+        } else {
+            sessions[idx].status = .completed
+        }
+        saveSessions()
     }
 
     /// 真正的 async/await 顺序补转写队列
@@ -1010,11 +825,11 @@ public final class ClassroomManager: ObservableObject {
     public func pauseRecording() {
         guard isRecording && !isPaused else { return }
         engine.pause()
+        if let sessionId = currentSession?.id, let slice = capture?.takeSlice(final: true) {
+            enqueueSlice(slice, sessionId: sessionId)
+        }
         isPaused = true
         currentSession?.status = .paused
-        speechTask?.cancel()
-        speechTask = nil
-        capture?.attachSpeechRequest(nil)
         saveSessions()
     }
     
@@ -1025,9 +840,6 @@ public final class ClassroomManager: ObservableObject {
             try engine.start()
             isPaused = false
             currentSession?.status = .recording
-            if currentSession?.mode == .realtime && transcriptionEngine == .apple {
-                startSpeechRecognition()
-            }
             saveSessions()
         } catch {
             errorMessage = "恢复录音失败：\(error.localizedDescription)"
@@ -1099,10 +911,7 @@ public final class ClassroomManager: ObservableObject {
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
         
-        speechTask?.cancel()
-        speechTask = nil
-        
-        let remainingWav = (cur.mode == .realtime && transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0) ? capture?.takeCurrentSliceWavData(keepOverlapSeconds: 0) : nil
+        let remainingSlice = capture?.takeSlice(final: true)
         let finalDuration = capture?.recordedDuration ?? recordingElapsed
         capture?.close()
         capture = nil
@@ -1118,38 +927,9 @@ public final class ClassroomManager: ObservableObject {
         self.isPaused = false
         self.recordingElapsed = 0
         
-        // 1. 阶跃 ASR 实时切片模式：持久化最后残留的分片任务并触发转写
-        if cur.mode == .realtime && transcriptionEngine == .stepfun && stepfunChunkInterval.rawValue > 0 && !stepfunApiKey.isEmpty {
-            if let wav = remainingWav, wav.count > 44 + 8000 {
-                self.currentChunkIndex += 1
-                let chunkIdx = self.currentChunkIndex
-                let chunkStart = self.lastChunkTime
-                let chunkEnd = finalDuration
-                let targetId = cur.id
-                
-                let chunkFileName = "chunk_\(chunkIdx).wav"
-                let folder = self.chunksFolder(for: targetId)
-                do {
-                    try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-                    let chunkPath = folder.appendingPathComponent(chunkFileName)
-                    try wav.write(to: chunkPath, options: .atomic)
-                    
-                    let task = ChunkTranscriptionTask(
-                        sequenceIndex: chunkIdx,
-                        startTime: chunkStart,
-                        endTime: chunkEnd,
-                        chunkFileName: chunkFileName,
-                        status: .pending
-                    )
-                    self.appendChunkTask(task, to: targetId)
-                    Task {
-                        await self.processChunkTask(sessionId: targetId, task: task)
-                    }
-                } catch {
-                    self.errorMessage = "收尾音频切片写入失败：\(error.localizedDescription)"
-                    print("[AudioWriteError] 末尾分片 \(chunkIdx) 写入沙盒失败: \(error)")
-                }
-            }
+        if let remainingSlice {
+            enqueueSlice(remainingSlice, sessionId: cur.id)
+            cur.chunkTasks = sessions.first(where: { $0.id == cur.id })?.chunkTasks ?? cur.chunkTasks
         }
         
         // 2. 模式与音频压缩处理
@@ -1181,6 +961,7 @@ public final class ClassroomManager: ObservableObject {
                 }
             }
         } else if cur.mode == .realtime {
+            cur.status = .pendingCatchUp
             if let idx = sessions.firstIndex(where: { $0.id == cur.id }) {
                 sessions[idx] = cur
             }
@@ -1209,13 +990,6 @@ public final class ClassroomManager: ObservableObject {
             }
         }
         
-        // 3. 课后统一转写模式
-        if cur.mode == .realtime && transcriptionEngine == .stepfun && stepfunChunkInterval == .fullLesson && !stepfunApiKey.isEmpty {
-            let sessionToTranscribe = cur
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-                self?.transcribeOffline(for: sessionToTranscribe)
-            }
-        }
         
         // 4. Cloudflare R2 可选备份（非强制）：仅当用户显式选择云端模式时触发
         if R2UploadManager.shared.storageMode != .localOnly {
@@ -1257,92 +1031,22 @@ public final class ClassroomManager: ObservableObject {
         }
     }
 
-    public func switchTranscriptionEngine(_ engine: TranscriptionEngine, interval: StepfunChunkInterval? = nil) {
-        self.transcriptionEngine = engine
-        if let iv = interval {
-            self.stepfunChunkInterval = iv
-            UserDefaults.standard.set(iv.rawValue, forKey: "stepfunChunkInterval")
-            UserDefaults.standard.set(true, forKey: "stepfunChunkInterval_set")
-        }
-        UserDefaults.standard.set(engine.rawValue, forKey: "transcriptionEngine")
-        
-        if isRecording && !isPaused && currentSession?.mode == .realtime {
-            if engine == .apple {
-                startSpeechRecognition()
-            } else {
-                speechTask?.cancel()
-                speechTask = nil
-                capture?.attachSpeechRequest(nil)
-                self.lastChunkTime = self.recordingElapsed
-            }
-        }
-    }
-
-    // MARK: - 实时语音识别流 (苹果原生)
-    
-    private func startSpeechRecognition() {
-        guard let recognizer = speechRecognizer, recognizer.isAvailable else { return }
-        
-        let req = SFSpeechAudioBufferRecognitionRequest()
-        req.shouldReportPartialResults = true
-        let epoch = UUID()
-        self.speechEpoch = epoch
-        self.speechStartedAt = Date()
-        self.capture?.attachSpeechRequest(req)
-        
-        var lastText = ""
-        var segmentStartTime = recordingElapsed
-        
-        speechTask = recognizer.recognitionTask(with: req) { [weak self] result, error in
-            DispatchQueue.main.async {
-                guard let self = self, self.speechEpoch == epoch else { return }
-                
-                if let res = result {
-                    let transcribed = res.bestTranscription.formattedString.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !transcribed.isEmpty && transcribed != lastText {
-                        lastText = transcribed
-                        let endTime = self.recordingElapsed
-                        let isMarked = self.currentSession?.marks.contains { $0 >= segmentStartTime - 1 && $0 <= endTime + 1 } ?? false
-                        
-                        if var cur = self.currentSession {
-                            if let last = cur.segments.last, abs(last.startTime - segmentStartTime) < 2 {
-                                cur.segments[cur.segments.count - 1].text = transcribed
-                                cur.segments[cur.segments.count - 1].endTime = endTime
-                                cur.segments[cur.segments.count - 1].isMarked = isMarked || cur.segments[cur.segments.count - 1].isMarked
-                            } else {
-                                let newSeg = TranscriptSegment(sequenceIndex: cur.segments.count, startTime: segmentStartTime, endTime: endTime, text: transcribed, isMarked: isMarked)
-                                cur.segments.append(newSeg)
-                            }
-                            self.currentSession = cur
-                            if let idx = self.sessions.firstIndex(where: { $0.id == cur.id }) {
-                                self.sessions[idx] = cur
-                                self.saveSessions()
-                            }
-                        }
-                    }
-                    
-                    if res.isFinal {
-                        segmentStartTime = self.recordingElapsed
-                        self.rotateSpeechTask()
-                    }
-                }
-                
-                if error != nil {
-                    segmentStartTime = self.recordingElapsed
-                    self.rotateSpeechTask()
-                }
-            }
-        }
-    }
-    
-    private func rotateSpeechTask() {
-        guard isRecording && !isPaused else { return }
-        speechTask?.cancel()
-        speechTask = nil
-        capture?.attachSpeechRequest(nil)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            guard let self = self, self.isRecording, !self.isPaused else { return }
-            self.startSpeechRecognition()
+    private func enqueueSlice(_ slice: (data: Data, start: Double, end: Double), sessionId: UUID) {
+        currentChunkIndex += 1
+        let index = currentChunkIndex
+        let filename = "chunk_\(index).wav"
+        let folder = chunksFolder(for: sessionId)
+        do {
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            try slice.data.write(to: folder.appendingPathComponent(filename), options: .atomic)
+            let task = ChunkTranscriptionTask(
+                sequenceIndex: index, startTime: slice.start, endTime: slice.end,
+                chunkFileName: filename, status: .pending
+            )
+            appendChunkTask(task, to: sessionId)
+            Task { await self.processChunkTask(sessionId: sessionId, task: task) }
+        } catch {
+            errorMessage = "音频分段保存失败：\(error.localizedDescription)"
         }
     }
 
@@ -1356,13 +1060,14 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         
+        errorMessage = nil
         isTranscribingOffline = true
         
         Task {
-            // 优先尝试 StepFun 阶跃云端转写
-            if !stepfunApiKey.isEmpty {
+            // 星辰 V3.2 课后转写
+            if !siliconFlowApiKey.isEmpty {
                 do {
-                    let transcribedText = try await callStepFunASR(audioURL: url)
+                    let transcribedText = try await callSiliconFlowASR(audioURL: url)
                     if !transcribedText.isEmpty {
                         var segs: [TranscriptSegment] = []
                         let lines = transcribedText.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -1386,63 +1091,24 @@ public final class ClassroomManager: ObservableObject {
                         return
                     }
                 } catch {
-                    print("StepFun ASR 失败，回退到 Apple 本地离线转写：", error)
+                    self.errorMessage = "星辰转写失败：\(error.localizedDescription)"
                 }
             }
             
-            // 回退到 Apple 本地离线转写
-            guard let recognizer = speechRecognizer, recognizer.isAvailable else {
-                self.errorMessage = "系统语音识别暂不可用"
-                self.isTranscribingOffline = false
-                return
+            if self.errorMessage == nil {
+                self.errorMessage = self.siliconFlowApiKey.isEmpty ? "请先填写硅基流动 API Key" : "未识别到文字"
             }
-            
-            let req = SFSpeechURLRecognitionRequest(url: url)
-            req.shouldReportPartialResults = false
-            
-            recognizer.recognitionTask(with: req) { [weak self] result, error in
-                DispatchQueue.main.async {
-                    guard let self = self else { return }
-                    self.isTranscribingOffline = false
-                    
-                    if let res = result, res.isFinal {
-                        let trans = res.bestTranscription
-                        var newSegments: [TranscriptSegment] = []
-                        for (i, seg) in trans.segments.enumerated() {
-                            let isMarked = session.marks.contains { $0 >= seg.timestamp && $0 <= (seg.timestamp + seg.duration) }
-                            newSegments.append(TranscriptSegment(
-                                sequenceIndex: i,
-                                startTime: seg.timestamp,
-                                endTime: seg.timestamp + seg.duration,
-                                text: seg.substring,
-                                isMarked: isMarked
-                            ))
-                        }
-                        if newSegments.isEmpty {
-                            newSegments.append(TranscriptSegment(sequenceIndex: 0, startTime: 0, endTime: session.duration, text: trans.formattedString))
-                        }
-                        
-                        if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                            self.sessions[idx].segments = newSegments
-                            self.saveSessions()
-                            // 保持音频文件完整保留！严禁删除本地音频！
-                        }
-                    } else if let err = error {
-                        self.errorMessage = "离线识别失败：\(err.localizedDescription)"
-                    }
-                }
-            }
+            self.isTranscribingOffline = false
         }
     }
     
-    private func callStepFunASR(audioData: Data, prompt: String? = nil, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
-        let cleanBase = stepfunBaseURL.hasSuffix("/") ? String(stepfunBaseURL.dropLast()) : stepfunBaseURL
-        guard let url = URL(string: "\(cleanBase)/audio/transcriptions") else { throw URLError(.badURL) }
+    private func callSiliconFlowASR(audioData: Data, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
+        guard let url = URL(string: "\(Self.asrBaseURL)/audio/transcriptions") else { throw URLError(.badURL) }
         
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(stepfunApiKey)", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(siliconFlowApiKey.trimmingCharacters(in: .whitespacesAndNewlines))", forHTTPHeaderField: "Authorization")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 120
         
@@ -1450,13 +1116,7 @@ public final class ClassroomManager: ObservableObject {
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(stepfunAsrModel)\r\n".data(using: .utf8)!)
-        
-        if let pr = prompt, !pr.isEmpty {
-            body.append("--\(boundary)\r\n".data(using: .utf8)!)
-            body.append("Content-Disposition: form-data; name=\"prompt\"\r\n\r\n".data(using: .utf8)!)
-            body.append("\(pr)\r\n".data(using: .utf8)!)
-        }
+        body.append("\(Self.asrModel)\r\n".data(using: .utf8)!)
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
@@ -1479,17 +1139,17 @@ public final class ClassroomManager: ObservableObject {
                 if http.statusCode == 400 && (errStr.contains("no speech") || errStr.contains("silence")) {
                     return ""
                 }
-                throw NSError(domain: "StepFunASR", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: errStr])
+                throw NSError(domain: "SiliconFlowASR", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: errStr])
             }
         }
         return ""
     }
 
-    private func callStepFunASR(audioURL: URL) async throws -> String {
+    private func callSiliconFlowASR(audioURL: URL) async throws -> String {
         let rawData = try Data(contentsOf: audioURL)
         let filename = audioURL.lastPathComponent.lowercased()
         let mime = filename.hasSuffix(".wav") ? "audio/wav" : (filename.hasSuffix(".mp3") ? "audio/mpeg" : (filename.hasSuffix(".m4a") ? "audio/m4a" : "audio/x-caf"))
-        return try await callStepFunASR(audioData: rawData, prompt: nil, filename: audioURL.lastPathComponent, mimeType: mime)
+        return try await callSiliconFlowASR(audioData: rawData, filename: audioURL.lastPathComponent, mimeType: mime)
     }
 
     // MARK: - 大模型 HTTP 调用 (DeepSeek 专属问答与智能笔记生成)
