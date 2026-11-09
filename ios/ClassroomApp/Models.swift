@@ -14,6 +14,34 @@ public enum RecordingMode: String, Codable, CaseIterable, Sendable {
     }
 }
 
+public enum CloudTranscriptionProvider: String, CaseIterable, Identifiable {
+    case siliconFlow
+    case stepFun
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .siliconFlow: return "硅基流动 · 星辰 V3.2"
+        case .stepFun: return "阶跃星辰 · StepAudio 2.5"
+        }
+    }
+
+    var endpoint: String {
+        switch self {
+        case .siliconFlow: return "https://api.siliconflow.cn/v1/audio/transcriptions"
+        case .stepFun: return "https://api.stepfun.com/v1/audio/transcriptions"
+        }
+    }
+
+    var model: String {
+        switch self {
+        case .siliconFlow: return "XingChenAGI/XingChenASR-V3.2"
+        case .stepFun: return "stepaudio-2.5-asr"
+        }
+    }
+}
+
 public enum AudioStorageMode: String, Codable, CaseIterable, Sendable {
     case cloudFirst = "cloudFirst"
     case cloudAndLocal = "cloudAndLocal"

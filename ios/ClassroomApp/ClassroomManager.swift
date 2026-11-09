@@ -230,8 +230,16 @@ public final class ClassroomManager: ObservableObject {
             KeychainHelper.save(key: "llmApiKey", value: llmApiKey)
         }
     }
-    public static let asrBaseURL = "https://api.siliconflow.cn/v1"
-    public static let asrModel = "XingChenAGI/XingChenASR-V3.2"
+    @Published public var asrProvider: CloudTranscriptionProvider {
+        didSet { UserDefaults.standard.set(asrProvider.rawValue, forKey: "cloudASRProvider") }
+    }
+    @Published public var stepFunApiKey: String {
+        didSet { KeychainHelper.save(key: "stepFunCloudApiKey", value: stepFunApiKey) }
+    }
+    private var activeASRKey: String {
+        let key = asrProvider == .siliconFlow ? siliconFlowApiKey : stepFunApiKey
+        return key.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
     @Published public var siliconFlowApiKey: String {
         didSet { KeychainHelper.save(key: "siliconFlowApiKey", value: siliconFlowApiKey) }
     }
@@ -303,13 +311,23 @@ public final class ClassroomManager: ObservableObject {
         }
         self.llmApiKey = KeychainHelper.get(key: "llmApiKey") ?? ""
         
-        let previousASR = UserDefaults.standard.string(forKey: "stepfunBaseURL")
-        let previousKey = previousASR.flatMap { URL(string: $0) }?.host == "api.siliconflow.cn"
-            ? (KeychainHelper.get(key: "stepfunApiKey") ?? UserDefaults.standard.string(forKey: "stepfunApiKey"))
-            : nil
-        self.siliconFlowApiKey = KeychainHelper.get(key: "siliconFlowApiKey") ?? previousKey ?? ""
-        if let previousKey, KeychainHelper.get(key: "siliconFlowApiKey") == nil {
-            KeychainHelper.save(key: "siliconFlowApiKey", value: previousKey)
+        let previousHost = UserDefaults.standard.string(forKey: "stepfunBaseURL")
+            .flatMap { URL(string: $0)?.host }
+        let legacyKey = KeychainHelper.get(key: "stepfunApiKey")
+            ?? UserDefaults.standard.string(forKey: "stepfunApiKey")
+        let migratedSiliconFlow = previousHost == "api.siliconflow.cn" ? legacyKey : nil
+        let migratedStepFun = previousHost == nil || previousHost == "api.stepfun.com" ? legacyKey : nil
+        let siliconKey = KeychainHelper.get(key: "siliconFlowApiKey") ?? migratedSiliconFlow ?? ""
+        let stepKey = KeychainHelper.get(key: "stepFunCloudApiKey") ?? migratedStepFun ?? ""
+        self.siliconFlowApiKey = siliconKey
+        self.stepFunApiKey = stepKey
+        self.asrProvider = UserDefaults.standard.string(forKey: "cloudASRProvider")
+            .flatMap(CloudTranscriptionProvider.init(rawValue:))
+            ?? (siliconKey.isEmpty && !stepKey.isEmpty ? .stepFun : .siliconFlow)
+        if !siliconKey.isEmpty { KeychainHelper.save(key: "siliconFlowApiKey", value: siliconKey) }
+        if !stepKey.isEmpty { KeychainHelper.save(key: "stepFunCloudApiKey", value: stepKey) }
+        if previousHost == nil || previousHost == "api.stepfun.com" || previousHost == "api.siliconflow.cn" {
+            UserDefaults.standard.removeObject(forKey: "stepfunApiKey")
         }
 
         try? FileManager.default.createDirectory(at: storageRoot, withIntermediateDirectories: true)
@@ -326,8 +344,13 @@ public final class ClassroomManager: ObservableObject {
         self.llmModel = "deepseek-v4.1-flash-1017"
         self.llmApiKey = ""
         self.siliconFlowApiKey = ""
+        self.stepFunApiKey = ""
+        self.asrProvider = .siliconFlow
         KeychainHelper.delete(key: "llmApiKey")
         KeychainHelper.delete(key: "siliconFlowApiKey")
+        KeychainHelper.delete(key: "stepFunCloudApiKey")
+        KeychainHelper.delete(key: "stepfunApiKey")
+        UserDefaults.standard.removeObject(forKey: "stepfunApiKey")
         UserDefaults.standard.removeObject(forKey: "stepfunBaseURL")
     }
     
@@ -582,10 +605,10 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         
-        let hasASRKey = !siliconFlowApiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let hasASRKey = !activeASRKey.isEmpty
         let effectiveMode: RecordingMode = mode == .realtime && !hasASRKey ? .recordOnly : mode
         if mode != effectiveMode {
-            errorMessage = "尚未填写硅基流动 API Key，本次将仅录音"
+            errorMessage = "当前转写引擎未填写 API Key，本次将仅录音"
         }
         
         let formatter = DateFormatter()
@@ -705,7 +728,7 @@ public final class ClassroomManager: ObservableObject {
         let lastText = predecessor.flatMap { $0.endTime > task.startTime ? $0.text : nil } ?? ""
         
         do {
-            let transcribed = try await self.callSiliconFlowASR(audioData: audioData)
+            let transcribed = try await self.callCloudASR(audioData: audioData)
             let stitched = stitchTranscripts(previous: lastText, current: transcribed)
             let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
             
@@ -1064,10 +1087,10 @@ public final class ClassroomManager: ObservableObject {
         isTranscribingOffline = true
         
         Task {
-            // 星辰 V3.2 课后转写
-            if !siliconFlowApiKey.isEmpty {
+            // 云端课后转写
+            if !activeASRKey.isEmpty {
                 do {
-                    let transcribedText = try await callSiliconFlowASR(audioURL: url)
+                    let transcribedText = try await callCloudASR(audioURL: url)
                     if !transcribedText.isEmpty {
                         var segs: [TranscriptSegment] = []
                         let lines = transcribedText.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -1091,24 +1114,30 @@ public final class ClassroomManager: ObservableObject {
                         return
                     }
                 } catch {
-                    self.errorMessage = "星辰转写失败：\(error.localizedDescription)"
+                    self.errorMessage = "云端转写失败：\(error.localizedDescription)"
                 }
             }
             
             if self.errorMessage.isEmpty {
-                self.errorMessage = self.siliconFlowApiKey.isEmpty ? "请先填写硅基流动 API Key" : "未识别到文字"
+                self.errorMessage = self.activeASRKey.isEmpty ? "请先填写当前转写引擎的 API Key" : "未识别到文字"
             }
             self.isTranscribingOffline = false
         }
     }
     
-    private func callSiliconFlowASR(audioData: Data, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
-        guard let url = URL(string: "\(Self.asrBaseURL)/audio/transcriptions") else { throw URLError(.badURL) }
+    private func callCloudASR(audioData: Data, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
+        let provider = asrProvider
+        let key = activeASRKey
+        guard !key.isEmpty else {
+            throw NSError(domain: "CloudASR", code: 401,
+                          userInfo: [NSLocalizedDescriptionKey: "请先填写当前转写引擎的 API Key"])
+        }
+        guard let url = URL(string: provider.endpoint) else { throw URLError(.badURL) }
         
         let boundary = "Boundary-\(UUID().uuidString)"
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
-        request.setValue("Bearer \(siliconFlowApiKey.trimmingCharacters(in: .whitespacesAndNewlines))", forHTTPHeaderField: "Authorization")
+        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
         request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 120
         
@@ -1116,7 +1145,7 @@ public final class ClassroomManager: ObservableObject {
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(Self.asrModel)\r\n".data(using: .utf8)!)
+        body.append("\(provider.model)\r\n".data(using: .utf8)!)
         
         body.append("--\(boundary)\r\n".data(using: .utf8)!)
         body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
@@ -1139,17 +1168,17 @@ public final class ClassroomManager: ObservableObject {
                 if http.statusCode == 400 && (errStr.contains("no speech") || errStr.contains("silence")) {
                     return ""
                 }
-                throw NSError(domain: "SiliconFlowASR", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: errStr])
+                throw NSError(domain: "CloudASR", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: errStr])
             }
         }
         return ""
     }
 
-    private func callSiliconFlowASR(audioURL: URL) async throws -> String {
+    private func callCloudASR(audioURL: URL) async throws -> String {
         let rawData = try Data(contentsOf: audioURL)
         let filename = audioURL.lastPathComponent.lowercased()
         let mime = filename.hasSuffix(".wav") ? "audio/wav" : (filename.hasSuffix(".mp3") ? "audio/mpeg" : (filename.hasSuffix(".m4a") ? "audio/m4a" : "audio/x-caf"))
-        return try await callSiliconFlowASR(audioData: rawData, filename: audioURL.lastPathComponent, mimeType: mime)
+        return try await callCloudASR(audioData: rawData, filename: audioURL.lastPathComponent, mimeType: mime)
     }
 
     // MARK: - 大模型 HTTP 调用 (DeepSeek 专属问答与智能笔记生成)

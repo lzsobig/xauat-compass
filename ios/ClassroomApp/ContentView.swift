@@ -152,7 +152,7 @@ struct RecordHomeView: View {
                         }
                         .buttonStyle(PlainButtonStyle())
 
-                        Label("星辰 V3.2 · 停顿分段", systemImage: "waveform")
+                        Label(manager.asrProvider.title, systemImage: "waveform")
                             .font(.caption)
                             .foregroundStyle(.secondary)
 
@@ -1471,21 +1471,18 @@ struct SettingsScreen: View {
                     }
                 }
 
-                Section("星辰 V3.2 语音转写") {
-
-                    HStack {
-                        Text("硅基流动 API Key")
-                        Spacer()
-                        if showKey {
-                            TextField("Key", text: $manager.siliconFlowApiKey)
-                                .multilineTextAlignment(.trailing)
-                                .font(.system(size: 11, design: .monospaced))
-                        } else {
-                            SecureField("Key", text: $manager.siliconFlowApiKey)
-                                .multilineTextAlignment(.trailing)
-                                .font(.system(size: 11, design: .monospaced))
+                Section("云端语音转写") {
+                    Picker("转写引擎", selection: $manager.asrProvider) {
+                        ForEach(CloudTranscriptionProvider.allCases) { provider in
+                            Text(provider.title).tag(provider)
                         }
                     }
+                    SecureField("硅基流动 API Key", text: $manager.siliconFlowApiKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                    SecureField("阶跃 API Key", text: $manager.stepFunApiKey)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
                 }
 
                 Section(
@@ -1723,7 +1720,7 @@ struct LessonDetailView: View {
             VStack(spacing: 0) {
                 if isLiveActive {
                     HStack {
-                        Label(manager.isPaused ? "已暂停" : "星辰 V3.2", systemImage: "waveform")
+                        Label(manager.isPaused ? "已暂停" : manager.asrProvider.title, systemImage: "waveform")
                             .font(.caption)
 
                         Spacer()
