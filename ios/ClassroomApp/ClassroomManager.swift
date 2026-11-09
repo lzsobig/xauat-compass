@@ -1154,14 +1154,14 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 大模型 HTTP 调用 (DeepSeek 专属问答与智能笔记生成)
     
-    public func callLLMApi(systemPrompt: String, userPrompt: String) async throws -> String {
+    public func callLLMApi(systemPrompt: String, userPrompt: String, imageJPEG: Data? = nil) async throws -> String {
         guard !llmApiKey.isEmpty else {
             throw NSError(domain: "LLMError", code: 401, userInfo: [NSLocalizedDescriptionKey: "尚未配置有效的 DeepSeek API Key"])
         }
-        return try await executeChatCompletion(baseURL: llmBaseURL, model: llmModel, apiKey: llmApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt)
+        return try await executeChatCompletion(baseURL: llmBaseURL, model: llmModel, apiKey: llmApiKey, systemPrompt: systemPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG)
     }
 
-    private func executeChatCompletion(baseURL: String, model: String, apiKey: String, systemPrompt: String, userPrompt: String) async throws -> String {
+    private func executeChatCompletion(baseURL: String, model: String, apiKey: String, systemPrompt: String, userPrompt: String, imageJPEG: Data? = nil) async throws -> String {
         let cleanBase = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         guard let url = URL(string: "\(cleanBase)/chat/completions") else { throw URLError(.badURL) }
         
@@ -1171,11 +1171,21 @@ public final class ClassroomManager: ObservableObject {
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.timeoutInterval = 120
         
+        let userContent: Any
+        if let imageJPEG {
+            userContent = [
+                ["type": "text", "text": userPrompt],
+                ["type": "image_url", "image_url": ["url": "data:image/jpeg;base64," + imageJPEG.base64EncodedString()]]
+            ] as [[String: Any]]
+        } else {
+            userContent = userPrompt
+        }
+        let mathFormat = "请用标准 Markdown 排版。行内公式用单美元符号包裹，独立公式用双美元符号包裹。避免用裸花括号或代码块包裹公式。"
         let payload: [String: Any] = [
             "model": model,
             "messages": [
-                ["role": "system", "content": systemPrompt],
-                ["role": "user", "content": userPrompt]
+                ["role": "system", "content": systemPrompt + "\n" + mathFormat],
+                ["role": "user", "content": userContent]
             ],
             "temperature": 0.3
         ]
@@ -1295,11 +1305,13 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 课程问答 (支持 90 分钟全堂课检索 + 单段长按选段提问)
 
-    public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil) {
-        guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+    public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil, imageJPEG: Data? = nil) {
+        guard !isAskingQA, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         isAskingQA = true
         
         let citTime = segment?.startTime
+        let imageLabel = imageJPEG == nil ? "" : "（附图）"
+        let questionLabel = query + imageLabel
         
         Task {
             if !llmApiKey.isEmpty {
@@ -1325,13 +1337,22 @@ public final class ClassroomManager: ObservableObject {
                         userPrompt = "【课程标题】\(session.title)\n【课堂录音检索相关实录（按时间顺序列出）】\n\(lectureText.isEmpty ? "（暂无实录文字）" : lectureText)\n\n【学生课堂提问】\n\(query)"
                     }
                     
-                    let answer = try await callLLMApi(systemPrompt: sysPrompt, userPrompt: userPrompt)
+                    if imageJPEG != nil {
+                        userPrompt += "\n请分析随题图片，明确区分图片里的内容与课堂实录。即使暂无实录，也可以解释图片本身。"
+                    }
+                    let recent = session.qaPairs.suffix(3).map { pair in
+                        "问：\(pair.question)\n答：\(pair.answer.prefix(1200))"
+                    }.joined(separator: "\n\n")
+                    if !recent.isEmpty {
+                        userPrompt = "【最近问答，供理解追问】\n\(recent)\n\n" + userPrompt
+                    }
+                    let answer = try await callLLMApi(systemPrompt: sysPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG)
                     
                     // 提取最佳引用时间戳
                     let bestTime = citTime ?? self.findBestCitationTime(in: session.segments, for: query)
                     
                     if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                        let qDisplay = segment != nil ? "[\(formatDuration(segment!.startTime))选段] \(query)" : query
+                        let qDisplay = segment != nil ? "[\(formatDuration(segment!.startTime))选段] \(questionLabel)" : questionLabel
                         let pair = QAPair(question: qDisplay, answer: answer, citationSeconds: bestTime)
                         self.sessions[idx].qaPairs.append(pair)
                         self.saveSessions()
@@ -1346,7 +1367,9 @@ public final class ClassroomManager: ObservableObject {
             // 本地兜底逻辑（未配置 API Key 或断网时）
             let bestCitation = citTime ?? self.findBestCitationTime(in: session.segments, for: query)
             let fallbackAnswer: String
-            if session.segments.isEmpty {
+            if imageJPEG != nil {
+                fallbackAnswer = llmApiKey.isEmpty ? "请先在设置中配置支持图片的 AI 模型和 API Key。" : "图片问答请求失败。请检查网络，确认当前模型支持图片后重新发送。"
+            } else if session.segments.isEmpty {
                 fallbackAnswer = "⚠️ 当前课堂录音尚未生成转写文字。若需使用课堂 AI 助教，请在课后点击「转写录音」或开启实时转写。"
             } else if llmApiKey.isEmpty {
                 let matches = self.retrieveRelevantSegments(in: session.segments, query: query, maxTotalChars: 1500)
@@ -1361,7 +1384,7 @@ public final class ClassroomManager: ObservableObject {
             }
             
             if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                let pair = QAPair(question: query, answer: fallbackAnswer, citationSeconds: bestCitation)
+                let pair = QAPair(question: questionLabel, answer: fallbackAnswer, citationSeconds: imageJPEG == nil ? bestCitation : nil)
                 self.sessions[idx].qaPairs.append(pair)
                 self.saveSessions()
             }

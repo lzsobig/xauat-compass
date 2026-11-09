@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -1700,7 +1701,7 @@ struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
     let session: LessonSession
-    @State private var currentTab: Int = 0 // 0: 文字, 1: 笔记, 2: 问答
+    @State private var currentTab: Int = 0 // 0: 实录，1: AI 助教
     @State private var selectedNoteStyle: NoteStyle = .detailedOutline
     @State private var qaInput = ""
     @State private var followBottom = true
@@ -1787,24 +1788,13 @@ struct LessonDetailView: View {
                     }
 
                     DetailTabPill(
-                        title: "课堂笔记",
-                        systemImage: "note.text",
-                        isSelected: currentTab == 1,
-                        badge: activeSession.notes.count > 0 ? "\(activeSession.notes.count)" : nil
-                    ) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            currentTab = 1
-                        }
-                    }
-
-                    DetailTabPill(
-                        title: "AI 问答",
+                        title: "AI 助教",
                         systemImage: "sparkles",
-                        isSelected: currentTab == 2,
+                        isSelected: currentTab == 1,
                         badge: activeSession.qaPairs.count > 0 ? "\(activeSession.qaPairs.count)" : nil
                     ) {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            currentTab = 2
+                            currentTab = 1
                         }
                     }
                 }
@@ -1823,7 +1813,7 @@ struct LessonDetailView: View {
                         unreadCount: $unreadSegmentCount,
                         onAskAboutSegment: { seg, q in
                             manager.askQuestion(for: activeSession, query: q, segment: seg)
-                            withAnimation { currentTab = 2 }
+                            withAnimation { currentTab = 1 }
                         },
                         onSwitchToTab: { tab in
                             withAnimation { currentTab = tab }
@@ -1831,24 +1821,16 @@ struct LessonDetailView: View {
                     )
                     .tag(0)
 
-                    NotesTabView(
-                        session: activeSession,
-                        selectedStyle: $selectedNoteStyle,
-                        onSwitchToQA: {
-                            withAnimation { currentTab = 2 }
-                        }
-                    )
-                    .tag(1)
-
                     QATabView(
                         session: activeSession,
                         inputText: $qaInput,
+                        selectedNoteStyle: $selectedNoteStyle,
                         onCitationTapped: { sec in
                             withAnimation { currentTab = 0 }
                             manager.playAudio(session: activeSession, seekTo: sec)
                         }
                     )
-                    .tag(2)
+                    .tag(1)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
 
@@ -2731,186 +2713,247 @@ struct QATabView: View {
     @EnvironmentObject var manager: ClassroomManager
     let session: LessonSession
     @Binding var inputText: String
+    @Binding var selectedNoteStyle: NoteStyle
     var onCitationTapped: (TimeInterval) -> Void
 
-    let quickQuestions = [
-        "这节课讲了哪些核心公式？",
-        "老师强调了哪些考试或作业要求？",
-        "总结本节课的核心结论与考点"
+    @FocusState private var composing: Bool
+    @State private var showNotes = false
+    @State private var showPhotos = false
+    @State private var photo: UIImage?
+    @State private var photoError = false
+
+    private let prompts = [
+        ("整理提纲", "按课堂顺序整理这节课的提纲，列出关键概念和推导。"),
+        ("核心公式", "整理这节课的核心公式，解释符号和适用条件。"),
+        ("作业与考点", "整理老师明确提到的作业、实验要求与考试重点。")
     ]
 
     var body: some View {
         VStack(spacing: 0) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    // 快捷问题推荐滑动胶囊
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(quickQuestions, id: \.self) { q in
-                                Button {
-                                    manager.askQuestion(for: session, query: q)
-                                } label: {
-                                    Text(q)
-                                        .font(.caption)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color(UIColor.tertiarySystemFill))
-                                        .cornerRadius(14)
-                                }
-                                .disabled(manager.isAskingQA)
-                            }
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                    }
-
-                    if session.qaPairs.isEmpty && !manager.isAskingQA {
-                        VStack(spacing: 16) {
-                            VStack(spacing: 6) {
-                                Image(systemName: "bubble.left.and.bubble.right")
-                                    .font(.system(size: 38))
-                                    .foregroundColor(.accentColor)
-                                Text("课堂 AI 助教")
-                                    .font(.title3.bold())
-                                Text("随时针对课堂讲解中的疑难点、定理推导与考点提问")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.top, 16)
-
-                            VStack(spacing: 10) {
-                                ForEach(quickQuestions, id: \.self) { q in
-                                    Button {
-                                        manager.askQuestion(for: session, query: q)
-                                    } label: {
-                                        HStack {
-                                            Image(systemName: "questionmark.circle.fill")
-                                                .foregroundColor(.accentColor)
-                                            Text(q)
-                                                .font(.system(size: 14, weight: .medium))
-                                                .foregroundColor(.primary)
-                                            Spacer()
-                                            Image(systemName: "arrow.up.circle.fill")
-                                                .foregroundColor(.accentColor)
-                                        }
-                                        .padding(14)
-                                        .background(Color(UIColor.secondarySystemGroupedBackground))
-                                        .cornerRadius(12)
-                                    }
-                                    .buttonStyle(PlainButtonStyle())
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-                        .padding(.vertical, 10)
-                    } else {
-                        ForEach(session.qaPairs) { pair in
-                            VStack(alignment: .leading, spacing: 8) {
-                                // 用户提问
-                                HStack {
-                                    Spacer()
-                                    Text(pair.question)
-                                        .font(.subheadline)
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 14)
-                                        .padding(.vertical, 10)
-                                        .background(Color.accentColor)
-                                        .cornerRadius(16)
-                                }
-
-                                // AI 回答
-                                HStack(alignment: .top, spacing: 10) {
-                                    Image(systemName: "sparkles")
-                                        .font(.system(size: 14))
-                                        .foregroundColor(.white)
-                                        .padding(6)
-                                        .background(Color(red: 0.0, green: 0.42, blue: 0.40))
-                                        .clipShape(Circle())
-
-                                    VStack(alignment: .leading, spacing: 8) {
-                                        MarkdownContentView(content: pair.answer)
-
-                                        if let sec = pair.citationSeconds {
-                                            Button {
-                                                onCitationTapped(sec)
-                                            } label: {
-                                                Label("定位到实录：\(formatTime(sec))", systemImage: "clock.arrow.circlepath")
-                                                    .font(.caption2)
-                                                    .padding(.horizontal, 8)
-                                                    .padding(.vertical, 4)
-                                                    .background(Color.accentColor.opacity(0.12))
-                                                    .cornerRadius(6)
-                                            }
-                                        }
-                                    }
-                                    .padding(14)
-                                    .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(Color(UIColor.secondarySystemGroupedBackground))
-                                    .cornerRadius(16)
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-                    }
-
-                    // AI 正在思考回答动态卡片
-                    if manager.isAskingQA {
-                        HStack(alignment: .top, spacing: 10) {
-                            ProgressView()
-                                .scaleEffect(0.9)
-                                .padding(6)
-                            Text("DeepSeek v4.1 Flash 正在精读课堂实录并生成解答...")
-                                .font(.system(size: 13, weight: .medium))
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(14)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(UIColor.secondarySystemGroupedBackground))
-                        .cornerRadius(14)
-                        .padding(.horizontal, 16)
-                    }
-                }
-                .padding(.vertical, 8)
-            }
-
-            // 底部提问输入栏 (支持回车一键发送)
-            Divider()
             HStack(spacing: 8) {
-                TextField("向课堂 AI 提问任何公式或知识点...", text: $inputText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .onSubmit {
-                        let q = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        if !q.isEmpty {
-                            manager.askQuestion(for: session, query: q)
-                            inputText = ""
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(prompts, id: \.0) { prompt in
+                            Button(prompt.0) {
+                                inputText = prompt.1
+                                composing = true
+                            }
+                            .buttonStyle(.bordered)
+                            .controlSize(.small)
                         }
                     }
-
-                Button {
-                    let q = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                    if !q.isEmpty {
-                        manager.askQuestion(for: session, query: q)
-                        inputText = ""
-                    }
-                } label: {
-                    Image(systemName: "arrow.up.circle.fill")
-                        .font(.system(size: 32))
-                        .foregroundColor(.accentColor)
                 }
-                .disabled(inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || manager.isAskingQA)
+                Button {
+                    composing = false
+                    showNotes = true
+                } label: {
+                    Label("笔记", systemImage: "note.text")
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.small)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 14)
             .padding(.vertical, 8)
-            .background(Color(UIColor.secondarySystemGroupedBackground))
+
+            ScrollViewReader { proxy in
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 18) {
+                        if session.qaPairs.isEmpty && !manager.isAskingQA {
+                            Label("想问点什么？", systemImage: "sparkles")
+                                .font(.title3.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 52)
+                        }
+                        ForEach(session.qaPairs) { pair in
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text(pair.question)
+                                    .font(.subheadline)
+                                    .textSelection(.enabled)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(Color.accentColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 16))
+                                    .frame(maxWidth: .infinity, alignment: .trailing)
+                                MarkdownContentView(content: pair.answer)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                if let seconds = pair.citationSeconds {
+                                    Button {
+                                        composing = false
+                                        onCitationTapped(seconds)
+                                    } label: {
+                                        Label("跳到 \(Int(seconds) / 60):\(String(format: "%02d", Int(seconds) % 60))", systemImage: "play.circle")
+                                            .font(.caption)
+                                    }
+                                }
+                            }
+                        }
+                        if manager.isAskingQA {
+                            ProgressView("正在整理回答")
+                                .font(.caption)
+                        }
+                        Color.clear.frame(height: 1).id("answer-bottom")
+                    }
+                    .padding(16)
+                }
+                .modifier(AnswerKeyboardDismiss(focused: $composing))
+                .onChange(of: session.qaPairs.count) { _ in
+                    withAnimation(.easeOut(duration: 0.22)) { proxy.scrollTo("answer-bottom", anchor: .bottom) }
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+                if let photo {
+                    HStack(spacing: 8) {
+                        Image(uiImage: photo).resizable().scaledToFill()
+                            .frame(width: 48, height: 42).clipped()
+                            .clipShape(RoundedRectangle(cornerRadius: 7))
+                        Button {
+                            withAnimation { self.photo = nil }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                        }
+                        .accessibilityLabel("移除图片")
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .leading)))
+                }
+                HStack(spacing: 10) {
+                    Button {
+                        composing = false
+                        showPhotos = true
+                    } label: {
+                        Image(systemName: "paperclip").frame(width: 38, height: 42)
+                    }
+                    .accessibilityLabel("添加图片")
+                    TextField("问这节课", text: $inputText)
+                        .focused($composing)
+                        .submitLabel(.send)
+                        .onSubmit(send)
+                    if composing {
+                        Button { composing = false } label: {
+                            Image(systemName: "keyboard.chevron.compact.down").frame(width: 34, height: 42)
+                        }
+                        .accessibilityLabel("收起键盘")
+                    }
+                    Button(action: send) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 30))
+                            .frame(width: 42, height: 42)
+                    }
+                    .accessibilityLabel("发送")
+                    .disabled((inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && photo == nil) || manager.isAskingQA)
+                }
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+            .background(Color(UIColor.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 19))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 6)
+        }
+        .sheet(isPresented: $showNotes) {
+            NavigationView {
+                NotesTabView(session: manager.sessions.first(where: { $0.id == session.id }) ?? session,
+                             selectedStyle: $selectedNoteStyle, onSwitchToQA: { showNotes = false })
+                    .navigationTitle("课堂笔记")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("完成") { showNotes = false }
+                        }
+                    }
+            }
+        }
+        .sheet(isPresented: $showPhotos) {
+            ClassroomPhotoPicker { result in
+                showPhotos = false
+                switch result {
+                case .success(let image): withAnimation { photo = image }
+                case .failure: photoError = true
+                }
+            } onCancel: {
+                showPhotos = false
+            }
+        }
+        .alert("无法读取这张图片", isPresented: $photoError) {
+            Button("好", role: .cancel) {}
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidHideNotification)) { _ in
+            composing = false
         }
     }
 
-    private func formatTime(_ sec: TimeInterval) -> String {
-        let whole = Int(sec)
-        return String(format: "%02d:%02d", whole / 60, whole % 60)
+    private func send() {
+        let query = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !manager.isAskingQA, !query.isEmpty || photo != nil else { return }
+        var jpeg: Data?
+        if let photo {
+            let scale = min(1, 1600 / max(photo.size.width, photo.size.height))
+            let size = CGSize(width: photo.size.width * scale, height: photo.size.height * scale)
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            let image = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+                photo.draw(in: CGRect(origin: .zero, size: size))
+            }
+            guard let data = image.jpegData(compressionQuality: 0.8) else {
+                photoError = true
+                return
+            }
+            jpeg = data
+        }
+        manager.askQuestion(for: session, query: query.isEmpty ? "请解释这张图片里的内容。" : query, imageJPEG: jpeg)
+        composing = false
+        withAnimation { photo = nil; inputText = "" }
     }
 }
 
+private struct AnswerKeyboardDismiss: ViewModifier {
+    var focused: FocusState<Bool>.Binding
+
+    func body(content: Content) -> some View {
+        if #available(iOS 16, *) {
+            content.scrollDismissesKeyboard(.interactively)
+        } else {
+            content.simultaneousGesture(DragGesture(minimumDistance: 20).onChanged { value in
+                if value.translation.height > 20 { focused.wrappedValue = false }
+            })
+        }
+    }
+}
+
+private struct ClassroomPhotoPicker: UIViewControllerRepresentable {
+    var onResult: (Result<UIImage, Error>) -> Void
+    var onCancel: () -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    func makeUIViewController(context: Context) -> PHPickerViewController {
+        var config = PHPickerConfiguration()
+        config.filter = .images
+        config.selectionLimit = 1
+        let picker = PHPickerViewController(configuration: config)
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ controller: PHPickerViewController, context: Context) {}
+
+    final class Coordinator: NSObject, PHPickerViewControllerDelegate {
+        let parent: ClassroomPhotoPicker
+        init(parent: ClassroomPhotoPicker) { self.parent = parent }
+
+        func picker(_ picker: PHPickerViewController, didFinishPicking results: [PHPickerResult]) {
+            guard let provider = results.first?.itemProvider else { parent.onCancel(); return }
+            provider.loadObject(ofClass: UIImage.self) { [parent] item, error in
+                DispatchQueue.main.async {
+                    if let image = item as? UIImage {
+                        parent.onResult(.success(image))
+                    } else {
+                        parent.onResult(.failure(error ?? CocoaError(.fileReadCorruptFile)))
+                    }
+                }
+            }
+        }
+    }
+}
 
 // MARK: - 底部录音控制栏
 

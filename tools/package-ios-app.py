@@ -30,6 +30,7 @@ def main():
         root = Path(temporary)
         bundle = root / "Payload" / "ClassroomApp.app"
         bundle.mkdir(parents=True)
+        shutil.copytree(SOURCE / "MathAssets", bundle / "MathAssets")
         executable = bundle / "ClassroomApp"
         swift_sources = [str(p) for p in sorted(SOURCE.glob("*.swift"))]
         try:
