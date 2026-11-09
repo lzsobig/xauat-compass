@@ -236,6 +236,8 @@ public final class ClassroomManager: ObservableObject {
     @Published public var stepFunApiKey: String {
         didSet { KeychainHelper.save(key: "stepFunCloudApiKey", value: stepFunApiKey) }
     }
+    public var hasActiveASRKey: Bool { !activeASRKey.isEmpty }
+
     private var activeASRKey: String {
         let key = asrProvider == .siliconFlow ? siliconFlowApiKey : stepFunApiKey
         return key.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -605,12 +607,11 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         
-        let hasASRKey = !activeASRKey.isEmpty
-        let effectiveMode: RecordingMode = mode == .realtime && !hasASRKey ? .recordOnly : mode
-        if mode != effectiveMode {
-            errorMessage = "当前转写引擎未填写 API Key，本次将仅录音"
+        guard mode != .realtime || hasActiveASRKey else {
+            errorMessage = "请先填写「\(asrProvider.title)」的 API Key"
+            return
         }
-        
+
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_CN")
         formatter.dateFormat = "M月d日"
@@ -622,7 +623,7 @@ public final class ClassroomManager: ObservableObject {
             courseId: course?.id,
             title: defaultTitle,
             startedAt: Date(),
-            mode: effectiveMode,
+            mode: mode,
             status: .recording,
             storageMode: R2UploadManager.shared.storageMode,
             storageStatus: .localOnly
@@ -650,7 +651,7 @@ public final class ClassroomManager: ObservableObject {
             }
             let file = try AVAudioFile(forWriting: rawURL, settings: format.settings, commonFormat: format.commonFormat, interleaved: format.isInterleaved)
             
-            let sink = AudioCapture(file: file, sampleRate: format.sampleRate, collectSlices: effectiveMode == .realtime)
+            let sink = AudioCapture(file: file, sampleRate: format.sampleRate, collectSlices: mode == .realtime)
             self.capture = sink
             self.currentChunkIndex = 0
             

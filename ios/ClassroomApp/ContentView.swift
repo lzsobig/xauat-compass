@@ -111,6 +111,8 @@ struct RecordHomeView: View {
     @Binding var selectedCourse: Course?
     @Binding var showingCoursePicker: Bool
     var onOpenSession: (LessonSession) -> Void
+    @State private var showASRKeyPrompt = false
+    @State private var showASRSettings = false
 
     var body: some View {
         NavigationView {
@@ -159,6 +161,10 @@ struct RecordHomeView: View {
                         HStack(spacing: 12) {
                             Button {
                                 Task {
+                                    guard manager.hasActiveASRKey else {
+                                        showASRKeyPrompt = true
+                                        return
+                                    }
                                     await manager.startRecording(course: selectedCourse, mode: .realtime)
                                     if let cur = manager.currentSession {
                                         onOpenSession(cur)
@@ -300,6 +306,15 @@ struct RecordHomeView: View {
             .background(Color(UIColor.systemGroupedBackground).ignoresSafeArea())
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .alert("实时转写需要 API Key", isPresented: $showASRKeyPrompt) {
+            Button("去设置") { showASRSettings = true }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("当前引擎为\(manager.asrProvider.title)。请填写对应 Key 后再开始实时转写。")
+        }
+        .sheet(isPresented: $showASRSettings) {
+            SettingsScreen().environmentObject(manager)
+        }
     }
 
     private func courseColor(for id: UUID?) -> String {
@@ -1720,7 +1735,7 @@ struct LessonDetailView: View {
             VStack(spacing: 0) {
                 if isLiveActive {
                     HStack {
-                        Label(manager.isPaused ? "已暂停" : manager.asrProvider.title, systemImage: "waveform")
+                        Label(manager.isPaused ? "已暂停" : (activeSession.mode == .realtime ? manager.asrProvider.title : "仅录音"), systemImage: "waveform")
                             .font(.caption)
 
                         Spacer()
@@ -2169,6 +2184,14 @@ struct TranscriptTabView: View {
                             .padding(.vertical, 14)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
                             .cornerRadius(16)
+                        }
+
+                        if isLive && session.mode == .realtime,
+                           let failed = session.chunkTasks.last(where: { $0.status == .failed }) {
+                            Label("转写分段失败，录音仍在保存。可在结束后补转写。", systemImage: "exclamationmark.triangle")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                                .accessibilityHint(failed.lastError ?? "")
                         }
 
                         if session.segments.isEmpty {
