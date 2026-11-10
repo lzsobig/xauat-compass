@@ -95,6 +95,16 @@ struct ClassroomContentTests {
         lesson.automaticMinutesAttempted = true
         let roundtrip = try decoder.decode(LessonSession.self, from: encoder.encode(lesson))
         precondition(roundtrip.attachments[0].id == attachment.id && roundtrip.automaticMinutesAttempted)
+        var interrupted = lesson
+        interrupted.minutesGenerationState = .generating
+        precondition(interrupted.recoverInterruptedMinutes())
+        precondition(interrupted.minutesGenerationState == .queued && !interrupted.automaticMinutesAttempted)
+        let manualNote = LessonNote(style: .minutes, content: "手工整理的纪要")
+        interrupted.notes = [manualNote]
+        interrupted.minutesGenerationState = .generating
+        precondition(interrupted.recoverInterruptedMinutes())
+        precondition(interrupted.notes[0].content == manualNote.content && interrupted.notes[0].id == manualNote.id)
+        precondition(interrupted.minutesGenerationState == .failed)
 
         for text in ["", "短句", String(repeating: "课堂中文内容。", count: 7000), String(repeating: "段落内容\n", count: 5000)] {
             let batches = ClassroomTextBatches.split(text, limit: 8000)

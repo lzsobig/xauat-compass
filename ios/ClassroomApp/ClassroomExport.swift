@@ -193,8 +193,10 @@ enum ClassroomExporter {
             .replacingOccurrences(of: "\"", with: "&quot;")
     }
 
-    private static func paragraph(_ text: String, level: Int = 0) -> String {
-        let properties = level > 0 ? "<w:pPr><w:pStyle w:val=\"Heading\(min(level, 3))\"/></w:pPr>" : ""
+    private static func paragraph(_ text: String, level: Int = 0, keepWithNext: Bool = false) -> String {
+        var properties = level > 0 ? "<w:pStyle w:val=\"Heading\(min(level, 3))\"/>" : ""
+        if keepWithNext { properties += "<w:keepNext/>" }
+        if !properties.isEmpty { properties = "<w:pPr>" + properties + "</w:pPr>" }
         let plain = text.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "__", with: "")
         return "<w:p>\(properties)<w:r><w:t xml:space=\"preserve\">\(xml(plain))</w:t></w:r></w:p>"
     }
@@ -259,7 +261,7 @@ enum ClassroomExporter {
             case .heading(let text, let level): body += paragraph(text, level: level)
             case .text(let text): body += paragraphs(text)
             case .image(let image):
-                body += paragraph(image.caption)
+                body += paragraph(image.caption, keepWithNext: image.jpeg != nil)
                 guard let jpeg = image.jpeg else { continue }
                 try validate(image)
                 imageIndex += 1

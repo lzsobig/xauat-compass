@@ -2134,16 +2134,6 @@ struct TranscriptTabView: View {
                                 .accessibilityHint(failed.lastError ?? "")
                         }
 
-                        if isLive {
-                            HStack {
-                                Text(manager.isChunkTranscribing ? "正在转写" : "当前录音")
-                                    .font(.subheadline).foregroundColor(.secondary)
-                                Spacer()
-                                TranscriptAttachmentControl(session: session, segment: nil)
-                            }
-                        }
-                        TranscriptAttachmentImages(session: session, segment: nil)
-
                         if session.segments.isEmpty {
                             VStack(spacing: 12) {
                                 Image(systemName: "waveform.slash")
@@ -2171,6 +2161,7 @@ struct TranscriptTabView: View {
                             .padding(.vertical, 50)
                         } else {
                             ForEach(session.segments) { seg in
+                                TranscriptAttachmentImages(session: session, segment: nil, orphanBefore: seg.startTime)
                                 HStack(alignment: .top, spacing: 10) {
                                     if isSelectMode {
                                         Button {
@@ -2275,13 +2266,24 @@ struct TranscriptTabView: View {
                                 }
                             }
                         }
+                        if isLive {
+                            HStack {
+                                Text(manager.isChunkTranscribing ? "正在转写" : "当前录音")
+                                    .font(.subheadline).foregroundColor(.secondary)
+                                Spacer()
+                                TranscriptAttachmentControl(session: session, segment: nil)
+                            }
+                        }
+
+                        TranscriptAttachmentImages(session: session, segment: nil)
+                        Color.clear.frame(height: 1).id("transcript-bottom")
                     }
                     .padding(16)
                 }
                 .onChange(of: session.segments.count) { _ in
-                    if followBottom, let last = session.segments.last {
+                    if followBottom {
                         withAnimation {
-                            proxy.scrollTo(last.id, anchor: .bottom)
+                            proxy.scrollTo("transcript-bottom", anchor: .bottom)
                         }
                     }
                 }
@@ -2591,7 +2593,10 @@ struct NotesTabView: View {
                         }
                         .padding(.horizontal, 4)
 
-                        MarkdownContentView(content: note.content)
+                        MarkdownContentView(content: note.content) { time in
+                            guard time <= session.duration else { return }
+                            manager.playAudio(session: session, seekTo: time)
+                        }
                             .padding(16)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color(UIColor.secondarySystemGroupedBackground))
@@ -2805,7 +2810,10 @@ struct QATabView: View {
                                     .font(.caption.weight(.semibold))
                                     .foregroundStyle(.secondary)
                                     .padding(.top, 7)
-                                MarkdownContentView(content: pair.answer)
+                                MarkdownContentView(content: pair.answer) { time in
+                                    guard time <= session.duration else { return }
+                                    onCitationTapped(time)
+                                }
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                 if pair.scope == "recent" {
                                     Button("用整节课重答") {
@@ -3141,6 +3149,7 @@ private struct TranscriptAttachmentImages: View {
     @EnvironmentObject var manager: ClassroomManager
     let session: LessonSession
     let segment: TranscriptSegment?
+    var orphanBefore: TimeInterval? = nil
     @State private var removing: LessonAttachment?
 
     private func formatDuration(_ time: TimeInterval) -> String {
@@ -3149,8 +3158,13 @@ private struct TranscriptAttachmentImages: View {
     }
 
     private var attachments: [LessonAttachment] {
-        session.attachments.filter { $0.resolvedSegment(in: session.segments) == segment?.id }
-            .sorted { $0.time < $1.time }
+        session.attachments.filter { attachment in
+            guard attachment.resolvedSegment(in: session.segments) == segment?.id else { return false }
+            if segment != nil { return true }
+            let upper = orphanBefore ?? .infinity
+            let lower = session.segments.map(\.startTime).filter { $0 < upper }.max() ?? 0
+            return attachment.time >= lower && attachment.time < upper
+        }.sorted { $0.time < $1.time }
     }
 
     var body: some View {

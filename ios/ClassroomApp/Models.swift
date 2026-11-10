@@ -475,6 +475,24 @@ extension LessonAttachment {
     }
 }
 
+public enum LessonMinutesState: String, Codable, Sendable {
+    case queued, generating, completed, edited, failed
+}
+
+extension LessonSession {
+    mutating func recoverInterruptedMinutes() -> Bool {
+        guard minutesGenerationState == .generating else { return false }
+        if notes.contains(where: { $0.style == .minutes }) {
+            minutesGenerationState = .failed
+            minutesGenerationError = "上次重新生成中断，已保留原纪要，可手动重试"
+        } else {
+            minutesGenerationState = .queued
+            automaticMinutesAttempted = false
+        }
+        return true
+    }
+}
+
 public struct LessonSession: Identifiable, Codable, Sendable {
     public var id: UUID
     public var courseId: UUID?
@@ -493,6 +511,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     public var attachments: [LessonAttachment] = []
     public var automaticMinutesAttempted: Bool = false
     public var minutesGenerationError: String? = nil
+    public var minutesGenerationState: LessonMinutesState? = nil
     public var summaryTopic: String
     
     // 分片转写任务与临时音频清理状态
@@ -554,7 +573,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     
     enum CodingKeys: String, CodingKey {
         case id, courseId, title, startedAt, endedAt, duration, audioFileName, mode, status
-        case marks, segments, notes, qaPairs, summaryTopic, attachments, automaticMinutesAttempted, minutesGenerationError
+        case marks, segments, notes, qaPairs, summaryTopic, attachments, automaticMinutesAttempted, minutesGenerationError, minutesGenerationState
         case chunkTasks, isTempAudioPurged
         case storageMode, storageStatus, remoteAudioKey, audioSize, lastUploadError
     }
@@ -575,6 +594,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.attachments = try container.decodeIfPresent([LessonAttachment].self, forKey: .attachments) ?? []
         self.automaticMinutesAttempted = try container.decodeIfPresent(Bool.self, forKey: .automaticMinutesAttempted) ?? false
         self.minutesGenerationError = try container.decodeIfPresent(String.self, forKey: .minutesGenerationError)
+        self.minutesGenerationState = try container.decodeIfPresent(LessonMinutesState.self, forKey: .minutesGenerationState)
         self.notes = try container.decodeIfPresent([LessonNote].self, forKey: .notes) ?? []
         self.qaPairs = try container.decodeIfPresent([QAPair].self, forKey: .qaPairs) ?? []
         self.summaryTopic = try container.decodeIfPresent(String.self, forKey: .summaryTopic) ?? ""
@@ -605,6 +625,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         try container.encode(attachments, forKey: .attachments)
         try container.encode(automaticMinutesAttempted, forKey: .automaticMinutesAttempted)
         try container.encodeIfPresent(minutesGenerationError, forKey: .minutesGenerationError)
+        try container.encodeIfPresent(minutesGenerationState, forKey: .minutesGenerationState)
         try container.encode(qaPairs, forKey: .qaPairs)
         try container.encode(summaryTopic, forKey: .summaryTopic)
         try container.encode(chunkTasks, forKey: .chunkTasks)

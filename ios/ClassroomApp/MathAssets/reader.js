@@ -48,6 +48,32 @@ window.showAnswer = (source) => {
         fragment.append(text.slice(offset));
         node.replaceWith(fragment);
     }
+    // Create only app-owned timestamp controls after sanitizing model output.
+    const timeWalker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (timeWalker.nextNode()) textNodes.push(timeWalker.currentNode);
+    for (const node of textNodes) {
+        if (node.parentElement?.closest('pre, code, a, .katex')) continue;
+        const text = node.textContent;
+        const matches = [...text.matchAll(/\[(\d{1,3}):([0-5]\d)\]/g)];
+        if (!matches.length) continue;
+        const fragment = document.createDocumentFragment();
+        let offset = 0;
+        for (const match of matches) {
+            fragment.append(text.slice(offset, match.index));
+            const button = document.createElement('button');
+            const seconds = Number(match[1]) * 60 + Number(match[2]);
+            button.type = 'button';
+            button.className = 'timestamp';
+            button.textContent = match[0];
+            button.setAttribute('aria-label', `回听 ${match[1]} 分 ${match[2]} 秒`);
+            button.addEventListener('click', () => window.webkit?.messageHandlers?.answerSeek?.postMessage(seconds));
+            fragment.append(button);
+            offset = match.index + match[0].length;
+        }
+        fragment.append(text.slice(offset));
+        node.replaceWith(fragment);
+    }
 };
 
 new ResizeObserver(() => {

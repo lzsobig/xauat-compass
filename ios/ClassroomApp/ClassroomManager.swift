@@ -231,6 +231,8 @@ public final class ClassroomManager: ObservableObject {
     private var streamingTimeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
     private var automaticMinutesQueue: [UUID] = []
+    private var chunkQueue: [(sessionId: UUID, taskId: UUID)] = []
+    private var chunkQueueWorker: Task<Void, Never>?
 
     public init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -274,6 +276,7 @@ public final class ClassroomManager: ObservableObject {
         migrateLegacyRecordings()
         updateCourseSuggestion()
         setupInterruptionObserver()
+        recoverMinutesJobs()
     }
     
     private static func importPersonalASRKeys() -> [String: String] {
@@ -333,16 +336,14 @@ public final class ClassroomManager: ObservableObject {
         chunksFolder(for: sessionId).appendingPathComponent(fileName)
     }
 
-    public func appendChunkTask(_ task: ChunkTranscriptionTask, to sessionId: UUID) {
-        if let idx = sessions.firstIndex(where: { $0.id == sessionId }) {
-            if !sessions[idx].chunkTasks.contains(where: { $0.id == task.id || $0.sequenceIndex == task.sequenceIndex }) {
-                sessions[idx].chunkTasks.append(task)
-                if currentSession?.id == sessionId {
-                    currentSession?.chunkTasks = sessions[idx].chunkTasks
-                }
-                saveSessions()
-            }
-        }
+    public func appendChunkTask(_ task: ChunkTranscriptionTask, to sessionId: UUID) throws {
+        guard let idx = sessions.firstIndex(where: { $0.id == sessionId }) else { throw CocoaError(.fileNoSuchFile) }
+        guard !sessions[idx].chunkTasks.contains(where: { $0.id == task.id || $0.sequenceIndex == task.sequenceIndex }) else { return }
+        var updated = sessions
+        updated[idx].chunkTasks.append(task)
+        try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+        sessions = updated
+        if currentSession?.id == sessionId { currentSession?.chunkTasks = updated[idx].chunkTasks }
     }
 
     public func updateChunkTask(sessionId: UUID, taskId: UUID, mutate: (inout ChunkTranscriptionTask) -> Void) {
@@ -487,12 +488,7 @@ public final class ClassroomManager: ObservableObject {
                 sessions[i].status = .pendingCatchUp
                 modified = true
             } else if !sessionHasIncomplete && sessions[i].mode == .realtime && !sessions[i].chunkTasks.isEmpty && !sessions[i].isTempAudioPurged && sessions[i].status != .recording {
-                // 如果重启时发现该课堂所有分片皆已成功转写，自动清理残留临时音频
-                let mainAudioURL = audioURL(for: sessions[i])
-                try? FileManager.default.removeItem(at: mainAudioURL)
-                let folder = chunksFolder(for: sessions[i].id)
-                try? FileManager.default.removeItem(at: folder)
-                sessions[i].isTempAudioPurged = true
+                // The main recording remains available for playback, photos and export after restart.
                 sessions[i].status = .completed
                 modified = true
             }
@@ -781,13 +777,26 @@ public final class ClassroomManager: ObservableObject {
         sessions[idx].status = .pendingCatchUp
         saveSessions()
         
-        Task {
-            for task in pendingTasks.sorted(by: { $0.sequenceIndex < $1.sequenceIndex }) {
-                // 真正的 async/await 顺序请求，等待网络与落盘完成后再进行下一个分片
-                _ = await self.processChunkTask(sessionId: session.id, task: task)
+        for task in pendingTasks.sorted(by: { $0.sequenceIndex < $1.sequenceIndex }) {
+            queueChunkTask(sessionId: session.id, taskId: task.id)
+        }
+    }
+
+    private func queueChunkTask(sessionId: UUID, taskId: UUID) {
+        guard !chunkQueue.contains(where: { $0.taskId == taskId }) else { return }
+        chunkQueue.append((sessionId, taskId))
+        guard chunkQueueWorker == nil else { return }
+        chunkQueueWorker = Task { [weak self] in
+            guard let self else { return }
+            while !self.chunkQueue.isEmpty {
+                let next = self.chunkQueue.removeFirst()
+                guard let session = self.sessions.first(where: { $0.id == next.sessionId }),
+                      let task = session.chunkTasks.first(where: { $0.id == next.taskId }),
+                      task.status == .pending || task.status == .failed else { continue }
+                _ = await self.processChunkTask(sessionId: next.sessionId, task: task)
+                self.checkAndFinalizeSessionStorage(sessionId: next.sessionId)
             }
-            // 队列全部处理完毕后，执行终结检查
-            self.checkAndFinalizeSessionStorage(sessionId: session.id)
+            self.chunkQueueWorker = nil
         }
     }
 
@@ -1037,8 +1046,8 @@ public final class ClassroomManager: ObservableObject {
                 sequenceIndex: index, startTime: slice.start, endTime: slice.end,
                 chunkFileName: filename, status: .pending
             )
-            appendChunkTask(task, to: sessionId)
-            Task { await self.processChunkTask(sessionId: sessionId, task: task) }
+            try appendChunkTask(task, to: sessionId)
+            queueChunkTask(sessionId: sessionId, taskId: task.id)
         } catch {
             errorMessage = "音频分段保存失败：\(error.localizedDescription)"
         }
@@ -1273,6 +1282,16 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 智能笔记生成
     
+    private func recoverMinutesJobs() {
+        var updated = false
+        for index in sessions.indices {
+            if sessions[index].recoverInterruptedMinutes() { updated = true }
+        }
+        if updated { saveSessions() }
+        let pending = sessions.filter { $0.minutesGenerationState == .queued }.map(\.id)
+        Task { for id in pending { self.enqueueAutomaticMinutes(sessionId: id) } }
+    }
+
     private func enqueueAutomaticMinutes(sessionId: UUID) {
         guard let session = sessions.first(where: { $0.id == sessionId }),
               session.status != .recording, session.status != .paused,
@@ -1280,7 +1299,19 @@ public final class ClassroomManager: ObservableObject {
               session.chunkTasks.allSatisfy({ $0.status == .completed }),
               !session.automaticMinutesAttempted,
               !session.notes.contains(where: { $0.style == .minutes }) else { return }
-        if !automaticMinutesQueue.contains(sessionId) { automaticMinutesQueue.append(sessionId) }
+        if !automaticMinutesQueue.contains(sessionId) {
+            guard let index = sessions.firstIndex(where: { $0.id == sessionId }) else { return }
+            var updated = sessions
+            updated[index].minutesGenerationState = .queued
+            do {
+                try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+                sessions = updated
+                automaticMinutesQueue.append(sessionId)
+            } catch {
+                errorMessage = "纪要任务保存失败：\(error.localizedDescription)"
+                return
+            }
+        }
         drainAutomaticMinutesQueue()
     }
 
@@ -1303,7 +1334,7 @@ public final class ClassroomManager: ObservableObject {
         if !isGeneratingNotes { drainAutomaticMinutesQueue() }
     }
 
-    public func saveNoteContent(sessionId: UUID, style: NoteStyle, content: String) throws {
+    public func saveNoteContent(sessionId: UUID, style: NoteStyle, content: String, generated: Bool = false) throws {
         guard let index = sessions.firstIndex(where: { $0.id == sessionId }) else {
             throw CocoaError(.fileNoSuchFile)
         }
@@ -1313,7 +1344,10 @@ public final class ClassroomManager: ObservableObject {
         } else {
             updated[index].notes.append(LessonNote(style: style, content: content))
         }
-        updated[index].minutesGenerationError = nil
+        if style == .minutes {
+            updated[index].minutesGenerationError = nil
+            updated[index].minutesGenerationState = generated ? .completed : .edited
+        }
         try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
         sessions = updated
     }
@@ -1327,6 +1361,18 @@ public final class ClassroomManager: ObservableObject {
             return
         }
         errorMessage = ""
+        if style == .minutes, let index = sessions.firstIndex(where: { $0.id == session.id }) {
+            var updated = sessions
+            updated[index].minutesGenerationState = .generating
+            updated[index].minutesGenerationError = nil
+            do {
+                try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+                sessions = updated
+            } catch {
+                errorMessage = "纪要任务保存失败：\(error.localizedDescription)"
+                return
+            }
+        }
         isGeneratingNotes = true
         let originalContent = session.notes.first(where: { $0.style == style })?.content
         Task {
@@ -1381,11 +1427,12 @@ public final class ClassroomManager: ObservableObject {
                     errorMessage = "笔记已在生成期间被编辑，已保留你的修改"
                     return
                 }
-                try saveNoteContent(sessionId: session.id, style: style, content: result)
+                try saveNoteContent(sessionId: session.id, style: style, content: result, generated: true)
             } catch {
                 errorMessage = "\(style.title)生成失败：\(error.localizedDescription)"
                 if style == .minutes, let index = sessions.firstIndex(where: { $0.id == session.id }) {
                     sessions[index].minutesGenerationError = errorMessage
+                    sessions[index].minutesGenerationState = .failed
                     saveSessions()
                 }
             }
