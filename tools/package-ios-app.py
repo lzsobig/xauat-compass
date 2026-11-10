@@ -7,6 +7,7 @@ import subprocess
 import sys
 import tempfile
 import hashlib
+import json
 from pathlib import Path
 from vad_build_support import ios_runtime_arguments
 
@@ -68,6 +69,17 @@ def main():
         info.update(MinimumOSVersion=MINIMUM_IOS, CFBundleSupportedPlatforms=["iPhoneOS"])
         with (bundle / "Info.plist").open("wb") as file:
             plistlib.dump(info, file)
+        manifest = {
+            "version": info["CFBundleShortVersionString"],
+            "build": info["CFBundleVersion"],
+            "bundle_id": info["CFBundleIdentifier"],
+            "source_commit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+            "baseline_commit": "a3daa14594bb101b5016707ca61e2b44ddddc7dd",
+            "baseline_version": "1.4.3 (22)",
+            "silero_model_sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
+            "sherpa_onnx_version": "1.12.20",
+        }
+        (bundle / "ClassroomBuild.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
         subprocess.run(["xcrun", "vtool", "-show-build", str(executable)], check=True)
         archive = root / "classroom.ipa"
         subprocess.run(
@@ -77,6 +89,8 @@ def main():
         output.parent.mkdir(parents=True, exist_ok=True)
         with archive.open("rb") as source, output.open("xb") as destination:
             shutil.copyfileobj(source, destination)
+        manifest["ipa_sha256"] = hashlib.sha256(output.read_bytes()).hexdigest()
+        output.with_suffix(".json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     print(f"{output} (requires device signing)")
 
 

@@ -74,11 +74,13 @@ struct ClassroomContentTests {
             ChunkTranscriptionTask(sequenceIndex: 1, startTime: 17.2, endTime: 35, chunkFileName: "1.wav"),
             ChunkTranscriptionTask(sequenceIndex: 2, startTime: 35, endTime: 38, chunkFileName: "2.wav")
         ]
+        lesson.marks = [5]
         // Simulate a failed first chunk, followed by retry after its successor finished.
         lesson.completeTranscriptChunk(at: 1, text: "受力分析，然后计算")
         let successorID = lesson.segments[0].id
         lesson.segments[0].isMarked = true
         lesson.completeTranscriptChunk(at: 0, text: "今天讨论受力分析")
+        precondition(lesson.segments[0].isMarked, "a mark made before ASR finished must survive")
         precondition(lesson.segments[1].text == "然后计算")
         precondition(lesson.segments[1].id == successorID && lesson.segments[1].isMarked)
         precondition(lesson.chunkTasks[1].rawRecognizedText == "受力分析，然后计算")

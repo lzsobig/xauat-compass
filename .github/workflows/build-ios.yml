@@ -50,5 +50,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: ClassroomApp-ipa
-          path: output/ClassroomApp.ipa
+          path: |
+            output/ClassroomApp.ipa
+            output/ClassroomApp.json
           if-no-files-found: error

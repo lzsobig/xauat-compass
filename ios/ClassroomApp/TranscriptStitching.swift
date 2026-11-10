@@ -68,7 +68,8 @@ extension LessonSession {
                     sequenceIndex: chunk.sequenceIndex,
                     startTime: chunk.startTime,
                     endTime: chunk.endTime,
-                    text: displayText
+                    text: displayText,
+                    isMarked: marks.contains { $0 >= chunk.startTime && $0 <= chunk.endTime }
                 ))
             }
         }

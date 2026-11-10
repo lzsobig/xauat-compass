@@ -1578,7 +1578,7 @@ struct SettingsScreen: View {
                     HStack {
                         Text("版本")
                         Spacer()
-                        Text(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—")
+                        Text("\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") · Build \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")")
                             .foregroundColor(.secondary)
                     }
                 }
