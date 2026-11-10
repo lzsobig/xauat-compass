@@ -7,7 +7,7 @@ def ios_runtime_arguments(root: Path):
     libraries = []
     header = None
     for name in ["sherpa-onnx.xcframework", "onnxruntime.xcframework"]:
-        frameworks = list(root.rglob(name))
+        frameworks = sorted({path.resolve() for path in root.rglob(name)})
         if len(frameworks) != 1:
             raise RuntimeError(f"Expected one {name}, found {len(frameworks)}")
         framework = frameworks[0]
