@@ -258,12 +258,25 @@ public struct TimetableEngine {
 
         var headerX: [Int: CGFloat] = [:]
         var headerY: CGFloat = 0
+        // PDFKit may group the whole weekday row into one text item; use each word's real bounds.
+        let rawHeaderText = rawPageString as NSString
+        for (index, dayName) in DAYS.enumerated() {
+            let range = rawHeaderText.range(of: dayName)
+            if range.location != NSNotFound,
+               let selection = firstPage.selection(for: range) {
+                let bounds = selection.bounds(for: firstPage)
+                if !bounds.isEmpty {
+                    headerX[index] = bounds.midX
+                    headerY = max(headerY, bounds.minY)
+                }
+            }
+        }
         for item in items {
             let clean = item.text.replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
             for (idx, dayName) in DAYS.enumerated() {
                 if clean.contains(dayName) {
                     let centerX = item.x + item.width / 2.0
-                    headerX[idx] = centerX
+                    if headerX[idx] == nil { headerX[idx] = centerX }
                     if headerY == 0 || item.y > headerY { headerY = item.y }
                 }
             }
