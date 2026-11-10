@@ -18,7 +18,8 @@ def main():
     subprocess.run(["say", "-o", str(fixture), "This is a synthetic classroom test. We explain the important concepts and then discuss the assignment. Please check the recording and the final sentence."], check=True)
     executable = output / "vad-tests"
     subprocess.run(["swiftc", "-D", "CLASSROOM_SHERPA", "-import-objc-header", str(header),
-                    str(ROOT / "ios/ClassroomApp/SileroVoiceDetector.swift"), str(ROOT / "tests/classroom_vad_tests.swift"),
+                    str(ROOT / "ios/ClassroomApp/SileroVoiceDetector.swift"), str(ROOT / "ios/ClassroomApp/ClassroomSliceBuffer.swift"),
+                    str(ROOT / "tests/classroom_vad_tests.swift"),
                     "-L", str(library.parent), "-lsherpa-onnx-c-api", "-Xlinker", "-rpath", "-Xlinker", str(library.parent),
                     "-o", str(executable)], check=True)
     env = os.environ.copy()
