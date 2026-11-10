@@ -3086,6 +3086,7 @@ private struct TranscriptAttachmentControl: View {
     let segment: TranscriptSegment?
     @State private var showLibrary = false
     @State private var showCamera = false
+    @State private var choosingSource = false
     @State private var insertionTime: TimeInterval = 0
 
     private func freezeTime() {
@@ -3093,23 +3094,22 @@ private struct TranscriptAttachmentControl: View {
     }
 
     var body: some View {
-        Menu {
-            Button {
-                freezeTime()
-                showLibrary = true
-            } label: { Label("从相册添加", systemImage: "photo") }
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button {
-                    freezeTime()
-                    showCamera = true
-                } label: { Label("拍摄课件", systemImage: "camera") }
-            }
+        Button {
+            freezeTime()
+            choosingSource = true
         } label: {
             Image(systemName: "photo.badge.plus")
                 .frame(width: 44, height: 44)
                 .contentShape(Rectangle())
         }
         .accessibilityLabel("在这段实录下插入图片")
+        .confirmationDialog("插入课件图", isPresented: $choosingSource, titleVisibility: .visible) {
+            Button("从相册添加") { showLibrary = true }
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("拍摄课件") { showCamera = true }
+            }
+            Button("取消", role: .cancel) { }
+        }
         .sheet(isPresented: $showLibrary) {
             ClassroomPhotoPicker { result in
                 showLibrary = false

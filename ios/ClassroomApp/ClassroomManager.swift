@@ -366,6 +366,7 @@ public final class ClassroomManager: ObservableObject {
             timetable = state.current.timetable
             lastCommittedCourses = state.previousImport?.courses
             lastCommittedTimetable = state.previousImport?.timetable
+            lastCommittedDeletedCourses = state.previousImport?.deletedCourses
             deletedTimetableCourses = state.deletedCourses
         } else {
             if let data = try? Data(contentsOf: timetableURL), let loaded = try? decoder.decode(TimetableData.self, from: data) {
@@ -378,6 +379,15 @@ public final class ClassroomManager: ObservableObject {
 
         if let data = try? Data(contentsOf: sessionsURL), let loaded = try? decoder.decode([LessonSession].self, from: data) {
             self.sessions = loaded.sorted { $0.startedAt > $1.startedAt }
+            let deletedIds = Set(deletedTimetableCourses.map(\.id))
+            var repaired = false
+            for index in sessions.indices {
+                if let courseId = sessions[index].courseId, deletedIds.contains(courseId) {
+                    sessions[index].courseId = nil
+                    repaired = true
+                }
+            }
+            if repaired { saveSessions() }
         }
     }
 
@@ -386,7 +396,7 @@ public final class ClassroomManager: ObservableObject {
         let undo: CourseTimetableSnapshot?
         if let previous { undo = previous }
         else if let oldCourses = lastCommittedCourses, let oldTable = lastCommittedTimetable {
-            undo = CourseTimetableSnapshot(courses: oldCourses, timetable: oldTable)
+            undo = CourseTimetableSnapshot(courses: oldCourses, timetable: oldTable, deletedCourses: lastCommittedDeletedCourses)
         } else { undo = nil }
         return CourseTimetableState(current: CourseTimetableSnapshot(courses: courses, timetable: timetable),
             previousImport: undo, deletedCourses: deletedTimetableCourses)
@@ -1757,6 +1767,7 @@ public final class ClassroomManager: ObservableObject {
     
     public var lastCommittedTimetable: TimetableData? = nil
     public var lastCommittedCourses: [Course]? = nil
+    private var lastCommittedDeletedCourses: [Course]? = nil
     
     public func parseTimetableDraft(data: Data) throws -> TimetableImportDraft {
         return try TimetableEngine.parseTimetableDraft(data: data)
@@ -1789,111 +1800,24 @@ public final class ClassroomManager: ObservableObject {
     
     @discardableResult
     public func commitTimetableImport(draft: TimetableImportDraft) -> Bool {
-        let semester = draft.semester.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !semester.isEmpty else { errorMessage = "请先填写学期"; return false }
-        var draft = draft
-        draft.semester = semester
-        var candidateCourses = courses
-        var candidateDeleted = deletedTimetableCourses
-        let previous = CourseTimetableSnapshot(courses: courses, timetable: timetable)
-        
-        let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
-        var colorIdx = candidateCourses.count
-        
-        var activeCourseIdMap: [String: UUID] = [:]
-        
-        for item in draft.items where item.isSelected {
-            let finalName = item.editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !finalName.isEmpty else { continue }
-            
-            if let existingIdx = candidateCourses.firstIndex(where: { $0.source == .timetable && $0.semester == semester && ($0.id == item.matchedCourseId || $0.name == finalName) }) {
-                candidateCourses[existingIdx].name = finalName
-                if !item.teacher.isEmpty { candidateCourses[existingIdx].teacher = item.teacher }
-                if !item.room.isEmpty { candidateCourses[existingIdx].room = item.room }
-                candidateCourses[existingIdx].semester = draft.semester
-                candidateCourses[existingIdx].status = .active
-                candidateCourses[existingIdx].source = .timetable
-                activeCourseIdMap[item.originalName] = candidateCourses[existingIdx].id
-                activeCourseIdMap[finalName] = candidateCourses[existingIdx].id
-            } else if item.restoreDeletedCourse == true,
-                      let deleted = candidateDeleted.first(where: {
-                          $0.id == item.deletedCourseId && $0.semester == semester && $0.source == .timetable
-                      }) {
-                var restored = deleted
-                restored.name = finalName
-                restored.status = .active
-                if !item.teacher.isEmpty { restored.teacher = item.teacher }
-                if !item.room.isEmpty { restored.room = item.room }
-                candidateCourses.append(restored)
-                candidateDeleted.removeAll { $0.id == restored.id }
-                activeCourseIdMap[item.originalName] = restored.id
-                activeCourseIdMap[finalName] = restored.id
-            } else {
-                let newCourse = Course(
-                    name: finalName,
-                    teacher: item.teacher,
-                    room: item.room,
-                    colorHex: colors[colorIdx % colors.count],
-                    semester: draft.semester,
-                    source: .timetable,
-                    status: .active
-                )
-                colorIdx += 1
-                candidateCourses.append(newCourse)
-                activeCourseIdMap[item.originalName] = newCourse.id
-                activeCourseIdMap[finalName] = newCourse.id
-            }
-        }
-        
-        let importedNames = Set(draft.items.filter { $0.isSelected }.map { $0.editedName.trimmingCharacters(in: .whitespacesAndNewlines) })
-        for i in 0..<candidateCourses.count {
-            if candidateCourses[i].source == .timetable && candidateCourses[i].semester == draft.semester {
-                if !importedNames.contains(candidateCourses[i].name) {
-                    candidateCourses[i].status = .historical
-                }
-            }
-        }
-        
-        var committedSlots: [TimetableSlot] = []
-        for var slot in draft.slots {
-            if let draftItem = draft.items.first(where: { $0.originalName == slot.courseName }) {
-                guard draftItem.isSelected else { continue }
-                slot.courseName = draftItem.editedName
-                slot.courseId = activeCourseIdMap[draftItem.originalName] ?? activeCourseIdMap[draftItem.editedName]
-                if !draftItem.teacher.isEmpty { slot.teacher = draftItem.teacher }
-                if !draftItem.room.isEmpty { slot.room = draftItem.room }
-            } else if let cId = activeCourseIdMap[slot.courseName] {
-                slot.courseId = cId
-            }
-            slot.semester = draft.semester
-            committedSlots.append(slot)
-        }
-        
-        let curWeek = SemesterCalendar.currentWeek()
-        let candidateTimetable = TimetableData(
-            currentWeek: self.timetable.currentWeek > 0 ? self.timetable.currentWeek : curWeek,
-            slots: committedSlots,
-            updatedAt: Date()
-        )
-        
         do {
-            var state = makeCourseTimetableState(courses: candidateCourses, timetable: candidateTimetable, previous: previous)
-            state.deletedCourses = candidateDeleted
+            let state = try makeCourseTimetableState(courses: courses, timetable: timetable).importing(draft)
             try state.write(to: courseTimetableURL)
-            lastCommittedCourses = previous.courses
-            lastCommittedTimetable = previous.timetable
-            deletedTimetableCourses = candidateDeleted
-            courses = candidateCourses
-            timetable = candidateTimetable
+            lastCommittedCourses = state.previousImport?.courses
+            lastCommittedTimetable = state.previousImport?.timetable
+            lastCommittedDeletedCourses = state.previousImport?.deletedCourses
+            deletedTimetableCourses = state.deletedCourses
+            courses = state.current.courses
+            timetable = state.current.timetable
             errorMessage = ""
             updateCourseSuggestion()
             return true
         } catch {
-            errorMessage = "课表导入保存失败，原课表保留：\(error.localizedDescription)"
+            errorMessage = "课表导入失败，原课表保留：\(error.localizedDescription)"
             return false
         }
     }
-    
+
     public func createCourse(name: String, teacher: String = "", room: String = "") {
         let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
         let newC = Course(
@@ -1936,13 +1860,15 @@ public final class ClassroomManager: ObservableObject {
     public func rollbackTimetableImport() {
         guard let oldCourses = lastCommittedCourses, let oldTable = lastCommittedTimetable else { return }
         let state = CourseTimetableState(current: CourseTimetableSnapshot(courses: oldCourses, timetable: oldTable),
-            previousImport: nil, deletedCourses: deletedTimetableCourses)
+            previousImport: nil, deletedCourses: lastCommittedDeletedCourses ?? deletedTimetableCourses)
         do {
             try state.write(to: courseTimetableURL)
             courses = oldCourses
             timetable = oldTable
             lastCommittedCourses = nil
             lastCommittedTimetable = nil
+            lastCommittedDeletedCourses = nil
+            deletedTimetableCourses = state.deletedCourses
             updateCourseSuggestion()
         } catch { errorMessage = "撤销保存失败：\(error.localizedDescription)" }
     }
@@ -1956,11 +1882,12 @@ public final class ClassroomManager: ObservableObject {
     }
 
     public func deleteCourse(course: Course, purgeAllData: Bool = false) {
-        if course.source == .timetable && !deletedTimetableCourses.contains(where: { $0.id == course.id }) {
-            deletedTimetableCourses.append(course)
-        }
-        courses.removeAll { $0.id == course.id }
-        timetable.slots.removeAll { $0.courseId == course.id || ($0.courseId == nil && $0.courseName == course.name && $0.semester == course.semester) }
+        let state = makeCourseTimetableState(courses: courses, timetable: timetable).removing(course)
+        do { try state.write(to: courseTimetableURL) }
+        catch { errorMessage = "课程删除保存失败：\(error.localizedDescription)"; return }
+        courses = state.current.courses
+        timetable = state.current.timetable
+        deletedTimetableCourses = state.deletedCourses
 
         if purgeAllData {
             let sessionsToDelete = sessions.filter { $0.courseId == course.id }

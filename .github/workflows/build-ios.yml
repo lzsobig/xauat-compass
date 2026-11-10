@@ -29,6 +29,10 @@ jobs:
         run: |
           swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomASRRequest.swift ios/ClassroomApp/TranscriptStitching.swift ios/ClassroomApp/ClassroomTextBatches.swift ios/ClassroomApp/ClassroomSliceBuffer.swift ios/ClassroomApp/ClassroomQuestionContext.swift tests/classroom_content_tests.swift -o /tmp/classroom-content-tests
           /tmp/classroom-content-tests
+      - name: Test production timetable state and persisted undo
+        run: |
+          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/CourseTimetableState.swift tests/classroom_timetable_state_tests.swift -o /tmp/classroom-timetable-tests
+          /tmp/classroom-timetable-tests
       - name: Test real bundled Silero model
         run: python3 tools/run-vad-tests.py
       - name: Compile and package for iPhone
