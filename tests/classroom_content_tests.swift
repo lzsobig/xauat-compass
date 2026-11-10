@@ -43,6 +43,18 @@ struct ClassroomContentTests {
         missingModel.append(Array(repeating: 8000, count: 512)) { _ in nil }
         missingModel.append(Array(repeating: 0, count: 17920)) { _ in nil }
         precondition(missingModel.take() != nil, "RMS fallback must remain usable")
+        let boundary = TranscriptSegment(startTime: 110, endTime: 125, text: "边界以前的旧内容")
+        let recent = TranscriptSegment(startTime: 130, endTime: 145, text: "最近的老师提问")
+        let future = TranscriptSegment(startTime: 295, endTime: 310, text: "尚未完成的一句")
+        precondition(ClassroomQuestionContext.recent([boundary, recent, future], end: 300).map { $0.id } == [recent.id])
+        let lecture = (0..<150).map { index in
+            TranscriptSegment(sequenceIndex: index, startTime: Double(index * 20), endTime: Double(index * 20 + 20),
+                text: index == 70 ? "本节讲解桁架零杆的判断方法" : String(repeating: "其他课堂内容", count: 50))
+        }
+        let retrieval = ClassroomQuestionContext.retrieve(lecture, query: "怎么判断桁架中的零杆", budget: 900)
+        precondition(retrieval.contains(where: { $0.sequenceIndex == 70 }), "Chinese keyword retrieval must find the actual topic")
+        precondition(retrieval.reduce(0) { $0 + $1.text.count } <= 900)
+        precondition(retrieval.count < 10, "neighbor expansion must not cascade through the lecture")
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         var lesson = LessonSession(title: "中文测试课", status: .completed)

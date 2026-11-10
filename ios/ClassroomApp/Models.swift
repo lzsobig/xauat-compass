@@ -241,6 +241,8 @@ public struct QAPair: Identifiable, Codable, Sendable {
     public var imageJPEG: Data?
     public var citationSeconds: TimeInterval?
     public var createdAt: Date
+    public var scope: String? = nil
+    public var originalQuery: String? = nil
     
     public init(id: UUID = UUID(), question: String, answer: String, citationSeconds: TimeInterval? = nil, imageJPEG: Data? = nil, createdAt: Date = Date()) {
         self.id = id

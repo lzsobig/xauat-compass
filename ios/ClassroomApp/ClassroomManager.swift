@@ -1437,7 +1437,7 @@ public final class ClassroomManager: ObservableObject {
     public func recentQuestionSegments(for session: LessonSession) -> [TranscriptSegment] {
         let end = currentSession?.id == session.id && isRecording
             ? recordingElapsed : max(session.duration, session.segments.map(\.endTime).max() ?? 0)
-        return session.segments.filter { $0.endTime > max(0, end - 180) && $0.startTime <= end }
+        return ClassroomQuestionContext.recent(session.segments, end: end)
     }
 
     public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil, imageJPEG: Data? = nil, recentOnly: Bool = false) {
@@ -1505,8 +1505,10 @@ public final class ClassroomManager: ObservableObject {
                     
                     if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                         let qDisplay = segment != nil ? "[\(formatDuration(segment!.startTime))选段] \(questionLabel)" : questionLabel
-                        let pair = QAPair(question: qDisplay, answer: answer, citationSeconds: bestTime, imageJPEG: imageJPEG)
-                        self.sessions[idx].qaPairs.append(pair)
+                        var pair = QAPair(question: qDisplay, answer: answer, citationSeconds: bestTime, imageJPEG: imageJPEG)
+                        pair.scope = segment != nil ? "segment" : (recentOnly ? "recent" : "whole")
+                pair.originalQuery = query
+                self.sessions[idx].qaPairs.append(pair)
                         self.saveSessions()
                     }
                     return
@@ -1535,7 +1537,9 @@ public final class ClassroomManager: ObservableObject {
             }
             
             if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                let pair = QAPair(question: questionLabel, answer: fallbackAnswer, citationSeconds: imageJPEG == nil ? bestCitation : nil, imageJPEG: imageJPEG)
+                var pair = QAPair(question: questionLabel, answer: fallbackAnswer, citationSeconds: imageJPEG == nil ? bestCitation : nil, imageJPEG: imageJPEG)
+                pair.scope = segment != nil ? "segment" : (recentOnly ? "recent" : "whole")
+                pair.originalQuery = query
                 self.sessions[idx].qaPairs.append(pair)
                 self.saveSessions()
             }
@@ -1544,45 +1548,9 @@ public final class ClassroomManager: ObservableObject {
     
     /// 全堂课智能段落检索（支持 90 分钟完整课堂检索）
     public func retrieveRelevantSegments(in segments: [TranscriptSegment], query: String, maxTotalChars: Int = 12000) -> [TranscriptSegment] {
-        guard !segments.isEmpty else { return [] }
-        
-        let totalChars = segments.reduce(0) { $0 + $1.text.count }
-        if totalChars <= maxTotalChars {
-            return segments.sorted { $0.startTime < $1.startTime }
-        }
-        
-        let cleanQuery = query.lowercased()
-        let queryTerms = cleanQuery.components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { $0.count >= 2 }
-        
-        var scored: [(seg: TranscriptSegment, score: Double)] = []
-        for seg in segments {
-            var score: Double = 0
-            let text = seg.text.lowercased()
-            if text.contains(cleanQuery) { score += 10.0 }
-            for term in queryTerms {
-                if text.contains(term) { score += 3.0 }
-            }
-            if seg.isMarked { score += 2.0 }
-            if score > 0 {
-                scored.append((seg, score))
-            }
-        }
-        
-        let topSorted = scored.sorted { $0.score > $1.score }.prefix(15)
-        var selectedIds = Set(topSorted.map { $0.seg.id })
-        
-        for (idx, seg) in segments.enumerated() {
-            if selectedIds.contains(seg.id) {
-                if idx > 0 { selectedIds.insert(segments[idx - 1].id) }
-                if idx < segments.count - 1 { selectedIds.insert(segments[idx + 1].id) }
-            }
-        }
-        
-        let result = segments.filter { selectedIds.contains($0.id) }.sorted { $0.startTime < $1.startTime }
-        return result.isEmpty ? Array(segments.prefix(12)) : result
+        ClassroomQuestionContext.retrieve(segments, query: query, budget: maxTotalChars)
     }
-    
+
     private func findSurroundingSegments(in segments: [TranscriptSegment], around targetTime: TimeInterval, windowSeconds: TimeInterval) -> [TranscriptSegment] {
         let half = windowSeconds / 2.0
         return segments.filter { $0.startTime >= (targetTime - half) && $0.startTime <= (targetTime + half) }

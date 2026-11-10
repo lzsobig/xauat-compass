@@ -2807,6 +2807,17 @@ struct QATabView: View {
                                     .padding(.top, 7)
                                 MarkdownContentView(content: pair.answer)
                                     .frame(maxWidth: .infinity, alignment: .leading)
+                                if pair.scope == "recent" {
+                                    Button("用整节课重答") {
+                                        recentScope = false
+                                        pendingQuestion = pair.originalQuery ?? pair.question
+                                        pendingImage = pair.imageJPEG
+                                        waitingSince = Date()
+                                        manager.askQuestion(for: session, query: pair.originalQuery ?? pair.question, imageJPEG: pair.imageJPEG)
+                                    }
+                                    .font(.caption)
+                                    .disabled(manager.isAskingQA)
+                                }
                                 Button {
                                     UIPasteboard.general.string = pair.answer
                                 } label: {

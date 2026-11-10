@@ -27,7 +27,7 @@ jobs:
         run: swift tests/test_swift_logic.swift
       - name: Test production classroom models and transcript boundaries
         run: |
-          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomASRRequest.swift ios/ClassroomApp/TranscriptStitching.swift ios/ClassroomApp/ClassroomTextBatches.swift ios/ClassroomApp/ClassroomSliceBuffer.swift tests/classroom_content_tests.swift -o /tmp/classroom-content-tests
+          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomASRRequest.swift ios/ClassroomApp/TranscriptStitching.swift ios/ClassroomApp/ClassroomTextBatches.swift ios/ClassroomApp/ClassroomSliceBuffer.swift ios/ClassroomApp/ClassroomQuestionContext.swift tests/classroom_content_tests.swift -o /tmp/classroom-content-tests
           /tmp/classroom-content-tests
       - name: Test real bundled Silero model
         run: python3 tools/run-vad-tests.py

@@ -26,7 +26,9 @@ def ios_runtime_arguments(root: Path):
             raise RuntimeError(f"Missing iOS static library {library.name}")
         libraries.append(str(library))
         if name.startswith("sherpa"):
-            headers = list(directory.rglob("c-api.h"))
+            headers = list((framework / "Headers").rglob("c-api.h"))
+            if not headers:
+                headers = list(directory.rglob("c-api.h"))
             if len(headers) != 1:
                 raise RuntimeError("Missing sherpa-onnx C API header")
             header = str(headers[0])
