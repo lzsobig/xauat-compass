@@ -1727,8 +1727,9 @@ struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
     let session: LessonSession
-    @State private var currentTab: Int = 0 // 0: 实录，1: 纪要，2: 问答
+    @State private var currentTab: Int = 0 // 0: 实录，1: 问答
     @State private var selectedNoteStyle: NoteStyle = .minutes
+    @State private var showMinutes = false
     @State private var qaInput = ""
     @State private var followBottom = true
     @State private var unreadSegmentCount = 0
@@ -1814,24 +1815,13 @@ struct LessonDetailView: View {
                     }
 
                     DetailTabPill(
-                        title: "纪要",
-                        systemImage: "doc.text",
-                        isSelected: currentTab == 1,
-                        badge: nil
-                    ) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            currentTab = 1
-                        }
-                    }
-
-                    DetailTabPill(
                         title: "问答",
                         systemImage: "sparkles",
-                        isSelected: currentTab == 2,
+                        isSelected: currentTab == 1,
                         badge: activeSession.qaPairs.count > 0 ? "\(activeSession.qaPairs.count)" : nil
                     ) {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
-                            currentTab = 2
+                            currentTab = 1
                         }
                     }
                 }
@@ -1850,17 +1840,17 @@ struct LessonDetailView: View {
                         unreadCount: $unreadSegmentCount,
                         onAskAboutSegment: { seg, q in
                             manager.askQuestion(for: activeSession, query: q, segment: seg)
-                            withAnimation { currentTab = 2 }
+                            withAnimation { currentTab = 1 }
                         },
                         onSwitchToTab: { tab in
                             withAnimation { currentTab = tab }
+                        },
+                        onShowMinutes: {
+                            selectedNoteStyle = .minutes
+                            showMinutes = true
                         }
                     )
                     .tag(0)
-
-                    NotesTabView(session: activeSession, selectedStyle: $selectedNoteStyle,
-                                 onSwitchToQA: { withAnimation { currentTab = 2 } })
-                        .tag(1)
 
                     QATabView(
                         session: activeSession,
@@ -1871,7 +1861,7 @@ struct LessonDetailView: View {
                             manager.playAudio(session: activeSession, seekTo: sec)
                         }
                     )
-                    .tag(2)
+                    .tag(1)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
 
@@ -1882,6 +1872,19 @@ struct LessonDetailView: View {
                     }
                 } else if currentTab == 0 {
                     AudioPlayerControlBar(session: activeSession)
+                }
+            }
+            .sheet(isPresented: $showMinutes) {
+                NavigationView {
+                    NotesTabView(session: activeSession, selectedStyle: $selectedNoteStyle,
+                                 onSwitchToQA: { showMinutes = false; currentTab = 1 })
+                        .navigationTitle("课堂纪要")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("完成") { showMinutes = false }
+                            }
+                        }
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -2041,6 +2044,7 @@ struct TranscriptTabView: View {
     @Binding var unreadCount: Int
     var onAskAboutSegment: ((TranscriptSegment, String) -> Void)? = nil
     var onSwitchToTab: ((Int) -> Void)? = nil
+    var onShowMinutes: (() -> Void)? = nil
 
     @State private var selectedSegmentForQA: TranscriptSegment?
     @State private var isSelectMode: Bool = false
@@ -2105,6 +2109,18 @@ struct TranscriptTabView: View {
                     .background(Color.green.opacity(0.08))
                 }
 
+                if !isLive {
+                    HStack {
+                        Button { onShowMinutes?() } label: {
+                            Label("查看纪要", systemImage: "doc.text")
+                                .font(.subheadline.weight(.medium))
+                        }
+                        Spacer()
+                        if manager.isGeneratingNotes { ProgressView().scaleEffect(0.8) }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                }
                 // 多选操作顶栏
                 if !session.segments.isEmpty && !isLive {
                     HStack {
