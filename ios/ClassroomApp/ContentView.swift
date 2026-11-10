@@ -2268,7 +2268,7 @@ struct TranscriptTabView: View {
                         }
                         if isLive {
                             HStack {
-                                Text(manager.isChunkTranscribing ? "正在转写" : "当前录音")
+                                Text(session.chunkTasks.contains(where: { $0.status == .pending || $0.status == .transcribing }) ? "正在转写" : "当前录音")
                                     .font(.subheadline).foregroundColor(.secondary)
                                 Spacer()
                                 TranscriptAttachmentControl(session: session, segment: nil)
@@ -3090,7 +3090,7 @@ private struct TranscriptAttachmentControl: View {
     @State private var insertionTime: TimeInterval = 0
 
     private func freezeTime() {
-        insertionTime = segment?.startTime ?? manager.recordingElapsed
+        insertionTime = segment?.startTime ?? manager.currentRecordingTime
     }
 
     var body: some View {

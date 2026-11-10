@@ -63,19 +63,22 @@ struct ClassroomSliceBuffer {
         let forcedBreak = samples.count >= configuration.maximumSamples && speechSinceCut
         guard (final && hasNewAudio) || naturalBreak || forcedBreak else { return nil }
         let end: Int
-        if final { end = totalSamples }
+        let terminal = final && samples.count <= configuration.maximumSamples
+        if terminal { end = totalSamples }
+        else if final { end = min(totalSamples, bufferStart + configuration.maximumSamples) }
         else if naturalBreak { end = min(totalSamples, lastSpeechEnd + configuration.postRollSamples) }
         else { end = min(totalSamples, bufferStart + configuration.maximumSamples) }
         let count = max(0, min(samples.count, end - bufferStart))
         guard count > 0 else { return nil }
         let output = ClassroomAudioSlice(samples: Array(samples.prefix(count)), startSample: bufferStart, endSample: end)
-        retainedOverlap = !final && forcedBreak && !naturalBreak ? min(configuration.overlapSamples, count) : 0
+        let hardBoundary = !terminal && (final || (forcedBreak && !naturalBreak))
+        retainedOverlap = hardBoundary ? min(configuration.overlapSamples, count) : 0
         let removeCount = count - retainedOverlap
         samples.removeFirst(removeCount)
         bufferStart += removeCount
         lastOutputEnd = end
         // Preserve speech already classified beyond a hard boundary; overlap alone cannot start a segment.
-        speechSinceCut = !final && lastSpeechEnd > end
+        speechSinceCut = !terminal && lastSpeechEnd > end
         return output
     }
 }

@@ -34,6 +34,19 @@ struct ClassroomContentTests {
         }
         precondition(slices.last?.endSample == original.count, "the last short tail must not be lost")
         precondition(slicer.take(final: true) == nil, "a second stop must not submit duplicate audio")
+        var delayed = ClassroomSliceBuffer()
+        let delayedCount = 62 * 16000 + 17
+        delayed.append(Array(repeating: 3000, count: delayedCount)) { _ in true }
+        var flushedEnd = 0
+        var flushCount = 0
+        while let slice = delayed.take(final: true) {
+            precondition(slice.samples.count <= 320000)
+            precondition(slice.endSample > flushedEnd)
+            if flushCount > 0 { precondition(slice.startSample == flushedEnd - 16000) }
+            flushedEnd = slice.endSample
+            flushCount += 1
+        }
+        precondition(flushedEnd == delayedCount && flushCount >= 4, "delayed UI timers must not create a huge final upload or lose the tail")
         var shortWord = ClassroomSliceBuffer()
         shortWord.append(Array(repeating: 1200, count: 512)) { _ in true }
         shortWord.append(Array(repeating: 0, count: 17920)) { _ in false }

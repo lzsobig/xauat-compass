@@ -661,7 +661,7 @@ public final class ClassroomManager: ObservableObject {
             self.isPaused = false
             self.recordingElapsed = 0
             // 录音计时与停顿分段
-            recordingTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            recordingTimer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
                 Task { @MainActor in
                     guard let self = self, self.isRecording, !self.isPaused else { return }
                     if let cap = self.capture {
@@ -676,6 +676,7 @@ public final class ClassroomManager: ObservableObject {
                     }
                 }
             }
+            if let recordingTimer { RunLoop.main.add(recordingTimer, forMode: .common) }
         } catch {
             capture?.close()
             capture = nil
@@ -829,14 +830,21 @@ public final class ClassroomManager: ObservableObject {
         return true
     }
 
+    public var currentRecordingTime: TimeInterval { capture?.recordedDuration ?? recordingElapsed }
+
     public func pauseRecording() {
         guard isRecording && !isPaused else { return }
         engine.pause()
-        if let sessionId = currentSession?.id, let slice = capture?.takeSlice(final: true) {
-            enqueueSlice(slice, sessionId: sessionId)
+        if let sessionId = currentSession?.id {
+            while let slice = capture?.takeSlice(final: true) { enqueueSlice(slice, sessionId: sessionId) }
         }
+        recordingElapsed = currentRecordingTime
         isPaused = true
         currentSession?.status = .paused
+        if let id = currentSession?.id, let index = sessions.firstIndex(where: { $0.id == id }) {
+            sessions[index].status = .paused
+            sessions[index].duration = recordingElapsed
+        }
         saveSessions()
     }
     
@@ -847,6 +855,9 @@ public final class ClassroomManager: ObservableObject {
             try engine.start()
             isPaused = false
             currentSession?.status = .recording
+            if let id = currentSession?.id, let index = sessions.firstIndex(where: { $0.id == id }) {
+                sessions[index].status = .recording
+            }
             saveSessions()
         } catch {
             errorMessage = "恢复录音失败：\(error.localizedDescription)"
@@ -855,7 +866,7 @@ public final class ClassroomManager: ObservableObject {
     
     public func markMoment() {
         guard isRecording, var cur = currentSession else { return }
-        let now = recordingElapsed
+        let now = currentRecordingTime
         cur.marks.append(now)
         
         for i in 0..<cur.segments.count {
@@ -918,7 +929,10 @@ public final class ClassroomManager: ObservableObject {
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
         
-        let remainingSlice = discard ? nil : capture?.takeSlice(final: true)
+        if !discard {
+            while let slice = capture?.takeSlice(final: true) { enqueueSlice(slice, sessionId: cur.id) }
+            cur.chunkTasks = sessions.first(where: { $0.id == cur.id })?.chunkTasks ?? cur.chunkTasks
+        }
         let finalDuration = capture?.recordedDuration ?? recordingElapsed
         capture?.close()
         capture = nil
@@ -940,10 +954,6 @@ public final class ClassroomManager: ObservableObject {
             return
         }
 
-        if let remainingSlice {
-            enqueueSlice(remainingSlice, sessionId: cur.id)
-            cur.chunkTasks = sessions.first(where: { $0.id == cur.id })?.chunkTasks ?? cur.chunkTasks
-        }
         
         // 2. 模式与音频压缩处理
         if cur.mode == .recordOnly {
@@ -1493,7 +1503,7 @@ public final class ClassroomManager: ObservableObject {
 
     public func recentQuestionSegments(for session: LessonSession) -> [TranscriptSegment] {
         let end = currentSession?.id == session.id && isRecording
-            ? recordingElapsed : max(session.duration, session.segments.map(\.endTime).max() ?? 0)
+            ? currentRecordingTime : max(session.duration, session.segments.map(\.endTime).max() ?? 0)
         return ClassroomQuestionContext.recent(session.segments, end: end)
     }
 
