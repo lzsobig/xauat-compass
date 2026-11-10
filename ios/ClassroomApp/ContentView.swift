@@ -1500,12 +1500,8 @@ struct SettingsScreen: View {
                     }
                 }
 
-                Section("云端语音转写") {
-                    Picker("转写引擎", selection: $manager.asrProvider) {
-                        ForEach(CloudTranscriptionProvider.allCases) { provider in
-                            Text(provider.title).tag(provider)
-                        }
-                    }
+                Section(header: Text("语音转写密钥"),
+                        footer: Text("转写服务统一在首页选择，录音期间保持不变")) {
                     SecureField("硅基流动 API Key", text: $manager.siliconFlowApiKey)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
@@ -1730,6 +1726,7 @@ struct LessonDetailView: View {
     @State private var currentTab: Int = 0 // 0: 实录，1: 问答
     @State private var selectedNoteStyle: NoteStyle = .minutes
     @State private var showMinutes = false
+    @State private var showExport = false
     @State private var qaInput = ""
     @State private var followBottom = true
     @State private var unreadSegmentCount = 0
@@ -1901,39 +1898,11 @@ struct LessonDetailView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     HStack(spacing: 12) {
-                        Menu {
-                            Button {
-                                exportAllToTXT(session: activeSession)
-                            } label: {
-                                Label("导出整堂课 · 实录、笔记和问答", systemImage: "doc.text.fill")
-                            }
-                            if !activeSession.segments.isEmpty {
-                                Button {
-                                    exportTranscriptOnlyToTXT(session: activeSession)
-                                } label: {
-                                    Label("仅导出语音实录为 TXT", systemImage: "waveform")
-                                }
-                            }
-                            if !activeSession.qaPairs.isEmpty {
-                                Button {
-                                    exportQAOnlyToTXT(session: activeSession)
-                                } label: {
-                                    Label("仅导出 AI 问答为 TXT", systemImage: "bubble.left.and.bubble.right")
-                                }
-                            }
-                            if !activeSession.notes.isEmpty {
-                                Button {
-                                    exportNotesOnlyToTXT(session: activeSession)
-                                } label: {
-                                    Label("仅导出课堂笔记为 TXT", systemImage: "note.text")
-                                }
-                            }
-                        } label: {
+                        Button { showExport = true } label: {
                             Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 16))
-                                .foregroundColor(.primary)
-                                .padding(4)
+                                .frame(width: 44, height: 44)
                         }
+                        .accessibilityLabel("导出课堂")
 
                         Button("完成") {
                             presentationMode.wrappedValue.dismiss()
@@ -1943,88 +1912,9 @@ struct LessonDetailView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .sheet(isPresented: $showExport) { ClassroomExportSheet(session: activeSession) }
         .sheet(item: $shareItem) { item in
             ShareSheet(activityItems: [item.fileURL])
-        }
-    }
-
-    private func exportAllToTXT(session: LessonSession) {
-        var text = """
-========================================
-课程：\(session.courseName)
-主题：\(session.title)
-课堂时长：\(formatDuration(session.duration))
-========================================
-
-"""
-        if !session.notes.isEmpty {
-            text += "\n----------------------------------------\n【智能课堂笔记】\n----------------------------------------\n\n"
-            for n in session.notes {
-                text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
-            }
-        }
-        if !session.segments.isEmpty {
-            text += "\n----------------------------------------\n【课堂逐句实录】\n----------------------------------------\n\n"
-            let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
-            text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
-        }
-        if !session.qaPairs.isEmpty {
-            text += "\n\n【AI 问答】\n\n" + qaExportText(session: session)
-        }
-        let name = "\(session.title)-整节课记录"
-        if let url = createTempTXT(filename: name, content: text) {
-            shareItem = ShareItem(fileURL: url)
-        }
-    }
-
-    private func qaExportText(session: LessonSession) -> String {
-        session.qaPairs.enumerated().map { index, pair in
-            let citation = pair.citationSeconds.map { "\n实录定位 [\(formatDuration($0))]" } ?? ""
-            return "\(index + 1). \(pair.question)\n\n\(pair.answer)\(citation)"
-        }.joined(separator: "\n\n")
-    }
-
-    private func exportQAOnlyToTXT(session: LessonSession) {
-        let text = "【AI 问答】\n\(session.title)\n\n" + qaExportText(session: session)
-        if let url = createTempTXT(filename: "\(session.title)-AI问答", content: text) {
-            shareItem = ShareItem(fileURL: url)
-        }
-    }
-
-    private func exportTranscriptOnlyToTXT(session: LessonSession) {
-        var text = """
-========================================
-【课堂语音实录】
-课程：\(session.courseName)
-主题：\(session.title)
-课堂时长：\(formatDuration(session.duration))
-实录分段：共 \(session.segments.count) 段
-========================================
-
-"""
-        let sortedSegs = session.segments.sorted { $0.startTime < $1.startTime }
-        text += sortedSegs.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n\n")
-        let name = "\(session.title)-实录文本"
-        if let url = createTempTXT(filename: name, content: text) {
-            shareItem = ShareItem(fileURL: url)
-        }
-    }
-
-    private func exportNotesOnlyToTXT(session: LessonSession) {
-        var text = """
-========================================
-【课堂笔记与纪要】
-课程：\(session.courseName)
-主题：\(session.title)
-========================================
-
-"""
-        for n in session.notes {
-            text += "### 【\(n.style.title)】\n\n\(n.content)\n\n"
-        }
-        let name = "\(session.title)-课堂笔记"
-        if let url = createTempTXT(filename: name, content: text) {
-            shareItem = ShareItem(fileURL: url)
         }
     }
 
@@ -3238,6 +3128,11 @@ private struct TranscriptAttachmentImages: View {
     let session: LessonSession
     let segment: TranscriptSegment?
     @State private var removing: LessonAttachment?
+
+    private func formatDuration(_ time: TimeInterval) -> String {
+        let seconds = max(0, Int(time))
+        return String(format: "%02d:%02d", seconds / 60, seconds % 60)
+    }
 
     private var attachments: [LessonAttachment] {
         session.attachments.filter { $0.resolvedSegment(in: session.segments) == segment?.id }

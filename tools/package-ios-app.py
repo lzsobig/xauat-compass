@@ -31,8 +31,10 @@ def main():
         bundle = root / "Payload" / "ClassroomApp.app"
         bundle.mkdir(parents=True)
         shutil.copytree(SOURCE / "MathAssets", bundle / "MathAssets")
+        shutil.copy2(ROOT / "ios" / "Vendor" / "ZIPFoundation" / "LICENSE", bundle / "ZIPFoundation-LICENSE.txt")
         executable = bundle / "ClassroomApp"
         swift_sources = [str(p) for p in sorted(SOURCE.glob("*.swift"))]
+        swift_sources += [str(p) for p in sorted((ROOT / "ios" / "Vendor" / "ZIPFoundation").glob("*.swift"))]
         try:
             subprocess.run(
                 [

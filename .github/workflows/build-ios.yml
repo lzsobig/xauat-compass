@@ -7,8 +7,11 @@ on:
       - 'codex/ios-build-*'
     paths:
       - 'ios/ClassroomApp/**'
+      - 'ios/Vendor/**'
       - 'tools/package-ios-app.py'
       - 'tests/test_swift_logic.swift'
+      - 'tests/classroom_*'
+      - 'tests/verify_classroom_exports.py'
       - '.github/workflows/build-ios.yml'
 
 permissions:
@@ -27,6 +30,16 @@ jobs:
           /tmp/classroom-content-tests
       - name: Compile and package for iPhone
         run: python3 tools/package-ios-app.py output/ClassroomApp.ipa
+      - name: Generate and verify real classroom exports
+        run: |
+          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomExport.swift ios/Vendor/ZIPFoundation/*.swift tests/classroom_export_tests.swift -o /tmp/classroom-export-tests
+          /tmp/classroom-export-tests output/export-fixtures
+          python3 tests/verify_classroom_exports.py output/export-fixtures
+      - uses: actions/upload-artifact@v4
+        with:
+          name: classroom-export-fixtures
+          path: output/export-fixtures
+          if-no-files-found: error
       - uses: actions/upload-artifact@v4
         with:
           name: ClassroomApp-ipa
