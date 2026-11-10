@@ -391,6 +391,8 @@ public struct DraftCourseItem: Identifiable, Codable, Sendable {
     public var action: DraftCourseAction
     public var matchedCourseId: UUID?
     public var isSelected: Bool
+    public var deletedCourseId: UUID? = nil
+    public var restoreDeletedCourse: Bool? = nil
     
     public init(
         id: UUID = UUID(),

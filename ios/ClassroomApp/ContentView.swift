@@ -3603,6 +3603,12 @@ struct TimetableImportPreviewSheet: View {
                                         }
                                     }
 
+                                    if item.deletedCourseId != nil {
+                                        Toggle("恢复已删除的课程文件夹", isOn: Binding(get: {
+                                            item.restoreDeletedCourse == true
+                                        }, set: { item.restoreDeletedCourse = $0 }))
+                                        .font(.caption)
+                                    }
                                     let info = [item.teacher, item.room].filter { !$0.isEmpty }.joined(separator: " @ ")
                                     if !info.isEmpty {
                                         Text(info)

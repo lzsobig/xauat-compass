@@ -9,6 +9,7 @@ on:
       - 'ios/ClassroomApp/**'
       - 'ios/Vendor/**'
       - 'tools/package-ios-app.py'
+      - 'tools/*vad*'
       - 'tests/test_swift_logic.swift'
       - 'tests/classroom_*'
       - 'tests/verify_classroom_exports.py'
@@ -26,8 +27,10 @@ jobs:
         run: swift tests/test_swift_logic.swift
       - name: Test production classroom models and transcript boundaries
         run: |
-          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomASRRequest.swift ios/ClassroomApp/TranscriptStitching.swift ios/ClassroomApp/ClassroomTextBatches.swift tests/classroom_content_tests.swift -o /tmp/classroom-content-tests
+          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomASRRequest.swift ios/ClassroomApp/TranscriptStitching.swift ios/ClassroomApp/ClassroomTextBatches.swift ios/ClassroomApp/ClassroomSliceBuffer.swift tests/classroom_content_tests.swift -o /tmp/classroom-content-tests
           /tmp/classroom-content-tests
+      - name: Test real bundled Silero model
+        run: python3 tools/run-vad-tests.py
       - name: Compile and package for iPhone
         run: python3 tools/package-ios-app.py output/ClassroomApp.ipa
       - name: Generate and verify real classroom exports

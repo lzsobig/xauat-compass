@@ -6,7 +6,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import hashlib
 from pathlib import Path
+from vad_build_support import ios_runtime_arguments
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "ios" / "ClassroomApp"
@@ -26,12 +28,19 @@ def main():
     sdk = subprocess.check_output(
         ["xcrun", "--sdk", "iphoneos", "--show-sdk-path"], text=True
     ).strip()
+    subprocess.run([sys.executable, str(ROOT / "tools" / "prepare-vad-runtime.py")], check=True)
+    vad_arguments = ios_runtime_arguments(ROOT / "output" / "vad-runtime" / "sherpa-onnx-1.12.20-ios")
+    model = SOURCE / "VADAssets" / "silero_vad.int8.onnx"
+    if hashlib.sha256(model.read_bytes()).hexdigest() != "c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20":
+        raise RuntimeError("Silero model integrity check failed")
     with tempfile.TemporaryDirectory(prefix="classroom-ios-") as temporary:
         root = Path(temporary)
         bundle = root / "Payload" / "ClassroomApp.app"
         bundle.mkdir(parents=True)
         shutil.copytree(SOURCE / "MathAssets", bundle / "MathAssets")
         shutil.copy2(ROOT / "ios" / "Vendor" / "ZIPFoundation" / "LICENSE", bundle / "ZIPFoundation-LICENSE.txt")
+        shutil.copy2(model, bundle / model.name)
+        shutil.copytree(SOURCE / "VADAssets", bundle / "VADAssets")
         executable = bundle / "ClassroomApp"
         swift_sources = [str(p) for p in sorted(SOURCE.glob("*.swift"))]
         swift_sources += [str(p) for p in sorted((ROOT / "ios" / "Vendor" / "ZIPFoundation").glob("*.swift"))]
@@ -42,6 +51,7 @@ def main():
                     "-target", f"arm64-apple-ios{MINIMUM_IOS}", "-O", "-parse-as-library",
                     "-module-name", "ClassroomApp",
                     *swift_sources,
+                    *vad_arguments,
                     "-o", str(executable),
                 ],
                 capture_output=True,

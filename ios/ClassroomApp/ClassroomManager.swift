@@ -54,19 +54,15 @@ private final class AudioCapture {
     private var sampleRate: Double = 44100
     private var writeFailed = false
     
-    // 星辰 ASR 实时分段缓冲区 (重采样到 16kHz 16-bit 单声道)
-    private var sliceSamples: [Int16] = []
+    private var sliceBuffer = ClassroomSliceBuffer()
     private var sliceStepAccumulator: Double = 0
-    private var retainedOverlapSamples = 0
-
-    private var consecutiveSilenceFrames = 0
-    private var voicedFrames = 0
-    private var noiseFloor: Float = 0.003
+    private let voiceDetector: SileroVoiceDetector?
 
     private let collectSlices: Bool
 
     init(file: AVAudioFile, sampleRate: Double, collectSlices: Bool) {
         self.collectSlices = collectSlices
+        self.voiceDetector = collectSlices ? SileroVoiceDetector() : nil
         self.file = file
         self.sampleRate = sampleRate
     }
@@ -84,23 +80,8 @@ private final class AudioCapture {
                 let channel0 = floatChannelData[0]
                 let frameCount = Int(buffer.frameLength)
                 
-                // 实时计算当前音频帧的 RMS 能量
-                var sumSquares: Float = 0
-                for f in 0..<frameCount {
-                    let s = channel0[f]
-                    sumSquares += s * s
-                }
-                let rms = frameCount > 0 ? sqrt(sumSquares / Float(frameCount)) : 0
-                
-                let threshold = max(0.006, min(0.04, noiseFloor * 2.8))
-                if rms < threshold {
-                    consecutiveSilenceFrames += frameCount
-                    noiseFloor = noiseFloor * 0.98 + rms * 0.02
-                } else {
-                    consecutiveSilenceFrames = 0
-                    voicedFrames += frameCount
-                }
-                
+                var resampled: [Int16] = []
+                resampled.reserveCapacity(Int(Double(frameCount) * 16000 / sampleRate) + 1)
                 let step = sampleRate / 16000.0
                 var idx: Double = sliceStepAccumulator
                 while idx < Double(frameCount) {
@@ -108,19 +89,12 @@ private final class AudioCapture {
                     let rawFloat = channel0[sampleIdx]
                     let clamped = max(-1.0, min(1.0, rawFloat))
                     let int16Sample = Int16(clamped * 32767.0)
-                    sliceSamples.append(int16Sample)
+                    resampled.append(int16Sample)
                     idx += step
                 }
                 sliceStepAccumulator = idx - Double(frameCount)
-                if consecutiveSilenceFrames >= Int(sampleRate * 0.8),
-                   voicedFrames < Int(sampleRate * 0.12) {
-                    voicedFrames = 0
-                }
-                if voicedFrames == 0 && consecutiveSilenceFrames >= Int(sampleRate * 0.8) {
-                    retainedOverlapSamples = 0
-                }
-                if voicedFrames == 0 && retainedOverlapSamples == 0 && sliceSamples.count > 4800 {
-                    sliceSamples.removeFirst(sliceSamples.count - 4800)
+                sliceBuffer.append(resampled) { [voiceDetector] window in
+                    voiceDetector?.isSpeech(window)
                 }
             }
             return nil
@@ -134,23 +108,9 @@ private final class AudioCapture {
         lock.lock()
         defer { lock.unlock() }
 
-        let duration = Double(sliceSamples.count) / 16000
-        let silence = Double(consecutiveSilenceFrames) / sampleRate
-        let speechDuration = Double(voicedFrames) / sampleRate
-        let naturalBreak = duration >= 2.0 && silence >= 0.8
-        let forcedBreak = duration >= 18
-        let hasNewAudio = sliceSamples.count > retainedOverlapSamples
-        guard (final && hasNewAudio) ||
-              (naturalBreak && speechDuration >= 0.35) ||
-              (forcedBreak && speechDuration >= 0.12) else { return nil }
-
-        let end = Double(totalFrames) / sampleRate
-        let samples = sliceSamples
-        retainedOverlapSamples = !final && forcedBreak && silence < 0.8 ? 12_800 : 0
-        sliceSamples = Array(samples.suffix(retainedOverlapSamples))
-        consecutiveSilenceFrames = 0
-        voicedFrames = 0
-        return (pcmToWav(samples: samples, sampleRate: 16000), max(0, end - duration), end)
+        guard let slice = sliceBuffer.take(final: final) else { return nil }
+        return (pcmToWav(samples: slice.samples, sampleRate: 16000),
+                Double(slice.startSample) / 16000, Double(slice.endSample) / 16000)
     }
 
     var recordedDuration: TimeInterval {
@@ -164,8 +124,7 @@ private final class AudioCapture {
         lock.lock()
         defer { lock.unlock() }
         file = nil
-        sliceSamples.removeAll()
-        consecutiveSilenceFrames = 0
+        sliceBuffer = ClassroomSliceBuffer()
     }
 }
 
@@ -1804,6 +1763,10 @@ public final class ClassroomManager: ObservableObject {
             } else {
                 updated.items[i].action = .create
                 updated.items[i].matchedCourseId = nil
+                if let deleted = deletedTimetableCourses.first(where: { $0.name == itemName && $0.semester == draft.semester }) {
+                    updated.items[i].deletedCourseId = deleted.id
+                    updated.items[i].restoreDeletedCourse = true
+                }
             }
         }
         return updated
@@ -1816,6 +1779,7 @@ public final class ClassroomManager: ObservableObject {
         var draft = draft
         draft.semester = semester
         var candidateCourses = courses
+        var candidateDeleted = deletedTimetableCourses
         let previous = CourseTimetableSnapshot(courses: courses, timetable: timetable)
         
         let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
@@ -1836,6 +1800,19 @@ public final class ClassroomManager: ObservableObject {
                 candidateCourses[existingIdx].source = .timetable
                 activeCourseIdMap[item.originalName] = candidateCourses[existingIdx].id
                 activeCourseIdMap[finalName] = candidateCourses[existingIdx].id
+            } else if item.restoreDeletedCourse == true,
+                      let deleted = candidateDeleted.first(where: {
+                          $0.id == item.deletedCourseId && $0.semester == semester && $0.source == .timetable
+                      }) {
+                var restored = deleted
+                restored.name = finalName
+                restored.status = .active
+                if !item.teacher.isEmpty { restored.teacher = item.teacher }
+                if !item.room.isEmpty { restored.room = item.room }
+                candidateCourses.append(restored)
+                candidateDeleted.removeAll { $0.id == restored.id }
+                activeCourseIdMap[item.originalName] = restored.id
+                activeCourseIdMap[finalName] = restored.id
             } else {
                 let newCourse = Course(
                     name: finalName,
@@ -1885,10 +1862,12 @@ public final class ClassroomManager: ObservableObject {
         )
         
         do {
-            let state = makeCourseTimetableState(courses: candidateCourses, timetable: candidateTimetable, previous: previous)
+            var state = makeCourseTimetableState(courses: candidateCourses, timetable: candidateTimetable, previous: previous)
+            state.deletedCourses = candidateDeleted
             try state.write(to: courseTimetableURL)
             lastCommittedCourses = previous.courses
             lastCommittedTimetable = previous.timetable
+            deletedTimetableCourses = candidateDeleted
             courses = candidateCourses
             timetable = candidateTimetable
             errorMessage = ""

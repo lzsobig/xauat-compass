@@ -17,6 +17,32 @@ struct ClassroomContentTests {
             _ = try ClassroomASRRequest.make(provider: .stepFun, key: "  ", audioData: Data())
             preconditionFailure("missing key must never fall back to another provider")
         } catch { }
+        // Exercise production slicing with deterministic VAD decisions, including exact audio ownership.
+        var slicer = ClassroomSliceBuffer()
+        let original = (0..<700123).map { Int16($0 % 30000) }
+        var slices: [ClassroomAudioSlice] = []
+        for offset in stride(from: 0, to: original.count, by: 512) {
+            slicer.append(Array(original[offset..<min(original.count, offset + 512)])) { _ in true }
+            if let slice = slicer.take() { slices.append(slice) }
+        }
+        if let tail = slicer.take(final: true) { slices.append(tail) }
+        precondition(slices.count >= 3)
+        for (index, slice) in slices.enumerated() {
+            precondition(slice.samples == Array(original[slice.startSample..<slice.endSample]))
+            precondition(slice.samples.count <= 320000)
+            if index > 0 { precondition(slice.startSample == slices[index - 1].endSample - 16000) }
+        }
+        precondition(slices.last?.endSample == original.count, "the last short tail must not be lost")
+        precondition(slicer.take(final: true) == nil, "a second stop must not submit duplicate audio")
+        var shortWord = ClassroomSliceBuffer()
+        shortWord.append(Array(repeating: 1200, count: 512)) { _ in true }
+        shortWord.append(Array(repeating: 0, count: 17920)) { _ in false }
+        let natural = shortWord.take()!
+        precondition(natural.endSample == 512 + 8000, "preserve short words and the post-roll")
+        var missingModel = ClassroomSliceBuffer()
+        missingModel.append(Array(repeating: 8000, count: 512)) { _ in nil }
+        missingModel.append(Array(repeating: 0, count: 17920)) { _ in nil }
+        precondition(missingModel.take() != nil, "RMS fallback must remain usable")
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         var lesson = LessonSession(title: "中文测试课", status: .completed)
