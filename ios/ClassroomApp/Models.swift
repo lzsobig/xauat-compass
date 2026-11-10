@@ -113,6 +113,7 @@ public struct ChunkTranscriptionTask: Identifiable, Codable, Sendable, Equatable
     public var retryCount: Int
     public var lastError: String?
     public var recognizedText: String?
+    public var rawRecognizedText: String? = nil
     
     public init(
         id: UUID = UUID(),
@@ -452,6 +453,24 @@ public struct TimetableData: Codable, Sendable {
     }
 }
 
+public struct LessonAttachment: Identifiable, Codable, Sendable {
+    public var id: UUID = UUID()
+    public var time: TimeInterval
+    public var segmentId: UUID?
+    public var fileName: String
+}
+
+extension LessonAttachment {
+    /// Stable IDs win while valid; after retranscription resolve against audio time.
+    public func resolvedSegment(in segments: [TranscriptSegment]) -> UUID? {
+        if let segmentId, segments.contains(where: { $0.id == segmentId && $0.startTime <= time && time <= $0.endTime }) {
+            return segmentId
+        }
+        return segments.filter { $0.startTime <= time && time <= $0.endTime }
+            .max(by: { $0.startTime < $1.startTime })?.id
+    }
+}
+
 public struct LessonSession: Identifiable, Codable, Sendable {
     public var id: UUID
     public var courseId: UUID?
@@ -467,6 +486,9 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     public var segments: [TranscriptSegment]
     public var notes: [LessonNote]
     public var qaPairs: [QAPair]
+    public var attachments: [LessonAttachment] = []
+    public var automaticMinutesAttempted: Bool = false
+    public var minutesGenerationError: String? = nil
     public var summaryTopic: String
     
     // 分片转写任务与临时音频清理状态
@@ -528,7 +550,7 @@ public struct LessonSession: Identifiable, Codable, Sendable {
     
     enum CodingKeys: String, CodingKey {
         case id, courseId, title, startedAt, endedAt, duration, audioFileName, mode, status
-        case marks, segments, notes, qaPairs, summaryTopic
+        case marks, segments, notes, qaPairs, summaryTopic, attachments, automaticMinutesAttempted, minutesGenerationError
         case chunkTasks, isTempAudioPurged
         case storageMode, storageStatus, remoteAudioKey, audioSize, lastUploadError
     }
@@ -546,6 +568,9 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         self.status = try container.decodeIfPresent(LessonStatus.self, forKey: .status) ?? .completed
         self.marks = try container.decodeIfPresent([TimeInterval].self, forKey: .marks) ?? []
         self.segments = try container.decodeIfPresent([TranscriptSegment].self, forKey: .segments) ?? []
+        self.attachments = try container.decodeIfPresent([LessonAttachment].self, forKey: .attachments) ?? []
+        self.automaticMinutesAttempted = try container.decodeIfPresent(Bool.self, forKey: .automaticMinutesAttempted) ?? false
+        self.minutesGenerationError = try container.decodeIfPresent(String.self, forKey: .minutesGenerationError)
         self.notes = try container.decodeIfPresent([LessonNote].self, forKey: .notes) ?? []
         self.qaPairs = try container.decodeIfPresent([QAPair].self, forKey: .qaPairs) ?? []
         self.summaryTopic = try container.decodeIfPresent(String.self, forKey: .summaryTopic) ?? ""
@@ -573,6 +598,9 @@ public struct LessonSession: Identifiable, Codable, Sendable {
         try container.encode(marks, forKey: .marks)
         try container.encode(segments, forKey: .segments)
         try container.encode(notes, forKey: .notes)
+        try container.encode(attachments, forKey: .attachments)
+        try container.encode(automaticMinutesAttempted, forKey: .automaticMinutesAttempted)
+        try container.encodeIfPresent(minutesGenerationError, forKey: .minutesGenerationError)
         try container.encode(qaPairs, forKey: .qaPairs)
         try container.encode(summaryTopic, forKey: .summaryTopic)
         try container.encode(chunkTasks, forKey: .chunkTasks)

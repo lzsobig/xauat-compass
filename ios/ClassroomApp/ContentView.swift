@@ -1727,8 +1727,8 @@ struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
     let session: LessonSession
-    @State private var currentTab: Int = 0 // 0: 实录，1: AI 助教
-    @State private var selectedNoteStyle: NoteStyle = .detailedOutline
+    @State private var currentTab: Int = 0 // 0: 实录，1: 纪要，2: 问答
+    @State private var selectedNoteStyle: NoteStyle = .minutes
     @State private var qaInput = ""
     @State private var followBottom = true
     @State private var unreadSegmentCount = 0
@@ -1803,7 +1803,7 @@ struct LessonDetailView: View {
                 // 自定义大触控 Tab 导航栏 (带未读/条目角标与动画)
                 HStack(spacing: 6) {
                     DetailTabPill(
-                        title: "实录文字",
+                        title: "实录",
                         systemImage: "waveform",
                         isSelected: currentTab == 0,
                         badge: activeSession.segments.count > 0 ? "\(activeSession.segments.count)" : nil
@@ -1814,13 +1814,24 @@ struct LessonDetailView: View {
                     }
 
                     DetailTabPill(
-                        title: "AI 助教",
-                        systemImage: "sparkles",
+                        title: "纪要",
+                        systemImage: "doc.text",
                         isSelected: currentTab == 1,
-                        badge: activeSession.qaPairs.count > 0 ? "\(activeSession.qaPairs.count)" : nil
+                        badge: nil
                     ) {
                         withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
                             currentTab = 1
+                        }
+                    }
+
+                    DetailTabPill(
+                        title: "问答",
+                        systemImage: "sparkles",
+                        isSelected: currentTab == 2,
+                        badge: activeSession.qaPairs.count > 0 ? "\(activeSession.qaPairs.count)" : nil
+                    ) {
+                        withAnimation(.spring(response: 0.35, dampingFraction: 0.75)) {
+                            currentTab = 2
                         }
                     }
                 }
@@ -1839,13 +1850,17 @@ struct LessonDetailView: View {
                         unreadCount: $unreadSegmentCount,
                         onAskAboutSegment: { seg, q in
                             manager.askQuestion(for: activeSession, query: q, segment: seg)
-                            withAnimation { currentTab = 1 }
+                            withAnimation { currentTab = 2 }
                         },
                         onSwitchToTab: { tab in
                             withAnimation { currentTab = tab }
                         }
                     )
                     .tag(0)
+
+                    NotesTabView(session: activeSession, selectedStyle: $selectedNoteStyle,
+                                 onSwitchToQA: { withAnimation { currentTab = 2 } })
+                        .tag(1)
 
                     QATabView(
                         session: activeSession,
@@ -1856,7 +1871,7 @@ struct LessonDetailView: View {
                             manager.playAudio(session: activeSession, seekTo: sec)
                         }
                     )
-                    .tag(1)
+                    .tag(2)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
 
@@ -2210,6 +2225,16 @@ struct TranscriptTabView: View {
                                 .accessibilityHint(failed.lastError ?? "")
                         }
 
+                        if isLive {
+                            HStack {
+                                Text(manager.isChunkTranscribing ? "正在转写" : "当前录音")
+                                    .font(.subheadline).foregroundColor(.secondary)
+                                Spacer()
+                                TranscriptAttachmentControl(session: session, segment: nil)
+                            }
+                        }
+                        TranscriptAttachmentImages(session: session, segment: nil)
+
                         if session.segments.isEmpty {
                             VStack(spacing: 12) {
                                 Image(systemName: "waveform.slash")
@@ -2277,6 +2302,7 @@ struct TranscriptTabView: View {
                                             .font(.body)
                                             .foregroundColor(.primary)
                                             .textSelection(.enabled)
+                                        TranscriptAttachmentImages(session: session, segment: seg)
                                     }
                                     .contentShape(Rectangle())
                                     .onTapGesture {
@@ -2292,6 +2318,7 @@ struct TranscriptTabView: View {
                                     Spacer()
 
                                     if !isSelectMode {
+                                        TranscriptAttachmentControl(session: session, segment: seg)
                                         Button {
                                             selectedSegmentForQA = seg
                                         } label: {
@@ -2565,6 +2592,9 @@ struct NotesTabView: View {
     @Binding var selectedStyle: NoteStyle
     var onSwitchToQA: (() -> Void)? = nil
     @State private var copiedNotice = false
+    @State private var editing = false
+    @State private var draftContent = ""
+    @State private var editError = ""
     @State private var shareItem: ShareItem? = nil
 
     var currentNote: LessonNote? {
@@ -2575,6 +2605,22 @@ struct NotesTabView: View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
+                    if let error = session.minutesGenerationError {
+                        Text(error).font(.caption).foregroundColor(.red)
+                    }
+                    HStack {
+                        Menu {
+                            ForEach(NoteStyle.allCases, id: \.self) { style in
+                                Button(style.title) { selectedStyle = style }
+                            }
+                        } label: { Label(selectedStyle.title, systemImage: "doc.text") }
+                        Spacer()
+                        Button {
+                            draftContent = currentNote?.content ?? ""
+                            editError = ""
+                            editing = true
+                        } label: { Label("编辑", systemImage: "pencil") }
+                    }
                     // 生成中动画指示器
                     if manager.isGeneratingNotes {
                         HStack(spacing: 12) {
@@ -2724,6 +2770,15 @@ struct NotesTabView: View {
 
                             VStack(spacing: 10) {
                                 NoteGenerationCard(
+                                    title: "课堂纪要",
+                                    subtitle: "课堂内容、重点、作业与提醒",
+                                    icon: "doc.text",
+                                    accentColor: .blue
+                                ) {
+                                    selectedStyle = .minutes
+                                    manager.generateNotes(for: session, style: .minutes)
+                                }
+                                NoteGenerationCard(
                                     title: "系统详细提纲",
                                     subtitle: "定理推导过程、板书架构与知识层级全面梳理",
                                     icon: "list.bullet.rectangle",
@@ -2759,6 +2814,29 @@ struct NotesTabView: View {
                 }
                 .padding(16)
             }
+            .sheet(isPresented: $editing) {
+                NavigationView {
+                    VStack {
+                        TextEditor(text: $draftContent).padding()
+                        if !editError.isEmpty { Text(editError).foregroundColor(.red).font(.caption) }
+                    }
+                    .navigationTitle("编辑" + selectedStyle.title)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("取消") { editing = false }
+                        }
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("保存") {
+                                do {
+                                    try manager.saveNoteContent(sessionId: session.id, style: selectedStyle, content: draftContent)
+                                    editing = false
+                                } catch { editError = "保存失败：\(error.localizedDescription)" }
+                            }
+                        }
+                    }
+                }
+            }
             .sheet(item: $shareItem) { item in
                 ShareSheet(activityItems: [item.fileURL])
             }
@@ -2786,6 +2864,11 @@ struct QATabView: View {
     @State private var waitingSince: Date?
     @State private var photo: UIImage?
     @State private var photoError = false
+    @State private var recentScope: Bool?
+
+    private var usesRecentScope: Bool {
+        recentScope ?? (manager.isRecording && manager.currentSession?.id == session.id)
+    }
     @State private var showMinutesError = false
 
     private let prompts = [
@@ -2796,43 +2879,6 @@ struct QATabView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 8) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        Button(session.notes.contains(where: { $0.style == .minutes }) ? "查看纪要" : "生成纪要") {
-                            composing = false
-                            selectedNoteStyle = .minutes
-                            if !session.notes.contains(where: { $0.style == .minutes }) {
-                                manager.generateNotes(for: session, style: .minutes)
-                            }
-                            showNotes = manager.isGeneratingNotes || session.notes.contains(where: { $0.style == .minutes })
-                            showMinutesError = !showNotes
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .controlSize(.small)
-                        .disabled(manager.isGeneratingNotes)
-                        ForEach(prompts, id: \.0) { prompt in
-                            Button(prompt.0) {
-                                inputText = prompt.1
-                                composing = true
-                            }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
-                        }
-                    }
-                }
-                Button {
-                    composing = false
-                    showNotes = true
-                } label: {
-                    Label("笔记", systemImage: "note.text")
-                }
-                .buttonStyle(.bordered)
-                .controlSize(.small)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 18) {
@@ -2922,6 +2968,16 @@ struct QATabView: View {
             }
 
             VStack(alignment: .leading, spacing: 8) {
+                Menu {
+                    Button("最近 3 分钟") { recentScope = true }
+                    Button("整节课") { recentScope = false }
+                } label: {
+                    Label(usesRecentScope ? "最近 3 分钟" : "整节课", systemImage: "chevron.down")
+                        .font(.footnote)
+                }
+                if usesRecentScope && manager.currentSession?.id == session.id && manager.isChunkTranscribing {
+                    Text("最新一段正在转写").font(.caption).foregroundStyle(.secondary)
+                }
                 if let photo {
                     HStack(spacing: 8) {
                         Image(uiImage: photo).resizable().scaledToFill()
@@ -3067,6 +3123,10 @@ struct QATabView: View {
     private func send() {
         let query = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !manager.isAskingQA, !query.isEmpty || photo != nil else { return }
+        if usesRecentScope && photo == nil && manager.recentQuestionSegments(for: session).isEmpty {
+            manager.errorMessage = "最近 3 分钟还没有可用转写"
+            return
+        }
         var jpeg: Data?
         if let photo {
             let scale = min(1, 1600 / max(photo.size.width, photo.size.height))
@@ -3086,9 +3146,122 @@ struct QATabView: View {
         pendingQuestion = message
         pendingImage = jpeg
         waitingSince = Date()
-        manager.askQuestion(for: session, query: message, imageJPEG: jpeg)
+        manager.askQuestion(for: session, query: message, imageJPEG: jpeg, recentOnly: usesRecentScope)
         composing = false
         withAnimation { photo = nil; inputText = "" }
+    }
+}
+
+private struct TranscriptAttachmentControl: View {
+    @EnvironmentObject var manager: ClassroomManager
+    let session: LessonSession
+    let segment: TranscriptSegment?
+    @State private var showLibrary = false
+    @State private var showCamera = false
+    @State private var insertionTime: TimeInterval = 0
+
+    private func freezeTime() {
+        insertionTime = segment?.startTime ?? manager.recordingElapsed
+    }
+
+    var body: some View {
+        Menu {
+            Button {
+                freezeTime()
+                showLibrary = true
+            } label: { Label("从相册添加", systemImage: "photo") }
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button {
+                    freezeTime()
+                    showCamera = true
+                } label: { Label("拍摄课件", systemImage: "camera") }
+            }
+        } label: {
+            Image(systemName: "photo.badge.plus")
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel("在这段实录下插入图片")
+        .sheet(isPresented: $showLibrary) {
+            ClassroomPhotoPicker { result in
+                showLibrary = false
+                switch result {
+                case .success(let image): save(image)
+                case .failure(let error): manager.errorMessage = "读取图片失败：\(error.localizedDescription)"
+                }
+            } onCancel: { showLibrary = false }
+        }
+        .sheet(isPresented: $showCamera) {
+            ClassroomCamera { image in
+                showCamera = false
+                if let image { save(image) }
+            }
+        }
+    }
+
+    private func save(_ image: UIImage) {
+        let scale = min(1, 2400 / max(image.size.width, image.size.height))
+        let size = CGSize(width: max(1, image.size.width * scale), height: max(1, image.size.height * scale))
+        let format = UIGraphicsImageRendererFormat()
+        format.scale = 1
+        let resized = UIGraphicsImageRenderer(size: size, format: format).image { _ in
+            image.draw(in: CGRect(origin: .zero, size: size))
+        }
+        guard let jpeg = resized.jpegData(compressionQuality: 0.85) else {
+            manager.errorMessage = "图片编码失败，请重新选择"
+            return
+        }
+        do {
+            try manager.addAttachment(sessionId: session.id, time: insertionTime, segmentId: segment?.id, jpeg: jpeg)
+        } catch { manager.errorMessage = "保存课件图失败：\(error.localizedDescription)" }
+    }
+}
+
+private struct TranscriptAttachmentImages: View {
+    @EnvironmentObject var manager: ClassroomManager
+    let session: LessonSession
+    let segment: TranscriptSegment?
+    @State private var removing: LessonAttachment?
+
+    private var attachments: [LessonAttachment] {
+        session.attachments.filter { $0.resolvedSegment(in: session.segments) == segment?.id }
+            .sorted { $0.time < $1.time }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(attachments) { attachment in
+                VStack(alignment: .leading, spacing: 6) {
+                    if let image = UIImage(contentsOfFile: manager.attachmentURL(attachment).path) {
+                        Image(uiImage: image).resizable().scaledToFit().cornerRadius(10)
+                            .accessibilityLabel("课件图，\(formatDuration(attachment.time))")
+                    } else {
+                        Label("课件图文件缺失", systemImage: "photo")
+                            .foregroundColor(.secondary)
+                    }
+                    HStack {
+                        Button {
+                            manager.playAudio(session: session, seekTo: attachment.time)
+                        } label: { Label(formatDuration(attachment.time), systemImage: "play.circle") }
+                        Spacer()
+                        Button(role: .destructive) { removing = attachment } label: {
+                            Image(systemName: "trash").frame(width: 44, height: 44)
+                        }.accessibilityLabel("移除课件图")
+                    }.font(.caption)
+                }
+                .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: attachments.map { $0.id })
+        .alert("移除这张课件图？", isPresented: Binding(get: { removing != nil }, set: { if !$0 { removing = nil } })) {
+            Button("取消", role: .cancel) { removing = nil }
+            Button("移除", role: .destructive) {
+                guard let attachment = removing else { return }
+                do { try manager.removeAttachment(sessionId: session.id, attachment: attachment) }
+                catch { manager.errorMessage = "移除图片失败：\(error.localizedDescription)" }
+                removing = nil
+            }
+        }
     }
 }
 

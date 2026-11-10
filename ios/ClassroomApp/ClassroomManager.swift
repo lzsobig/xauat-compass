@@ -47,45 +47,6 @@ public func pcmToWav(samples: [Int16], sampleRate: Int = 16000) -> Data {
     return data
 }
 
-// MARK: - 语音切片文字平滑拼接与去重
-public func stitchTranscripts(previous: String, current: String) -> String {
-    let punctChars = "，。！？、；： \t\n"
-    var pCore = previous.trimmingCharacters(in: .whitespacesAndNewlines)
-    while let last = pCore.last, punctChars.contains(last) {
-        pCore.removeLast()
-    }
-    var cCore = current.trimmingCharacters(in: .whitespacesAndNewlines)
-    while let first = cCore.first, punctChars.contains(first) {
-        cCore.removeFirst()
-    }
-    
-    guard !pCore.isEmpty else { return current }
-    guard !cCore.isEmpty else { return "" }
-    
-    let pChars = Array(pCore)
-    let cChars = Array(cCore)
-    
-    // 在 2 到 14 个字符范围内寻找前一句尾部与后一句头部的重叠匹配
-    let maxMatchLen = min(14, min(pChars.count, cChars.count))
-    if maxMatchLen >= 2 {
-        for len in stride(from: maxMatchLen, through: 2, by: -1) {
-            let tail = String(pChars.suffix(len))
-            let head = String(cChars.prefix(len))
-            
-            if tail == head {
-                if let range = current.range(of: head) {
-                    var remaining = String(current[range.upperBound...])
-                    while let first = remaining.first, punctChars.contains(first) {
-                        remaining.removeFirst()
-                    }
-                    return remaining
-                }
-            }
-        }
-    }
-    return current
-}
-
 private final class AudioCapture {
     private let lock = NSLock()
     private var file: AVAudioFile?
@@ -96,6 +57,7 @@ private final class AudioCapture {
     // 星辰 ASR 实时分段缓冲区 (重采样到 16kHz 16-bit 单声道)
     private var sliceSamples: [Int16] = []
     private var sliceStepAccumulator: Double = 0
+    private var retainedOverlapSamples = 0
 
     private var consecutiveSilenceFrames = 0
     private var voicedFrames = 0
@@ -154,7 +116,10 @@ private final class AudioCapture {
                    voicedFrames < Int(sampleRate * 0.12) {
                     voicedFrames = 0
                 }
-                if voicedFrames == 0 && sliceSamples.count > 4800 {
+                if voicedFrames == 0 && consecutiveSilenceFrames >= Int(sampleRate * 0.8) {
+                    retainedOverlapSamples = 0
+                }
+                if voicedFrames == 0 && retainedOverlapSamples == 0 && sliceSamples.count > 4800 {
                     sliceSamples.removeFirst(sliceSamples.count - 4800)
                 }
             }
@@ -173,15 +138,16 @@ private final class AudioCapture {
         let silence = Double(consecutiveSilenceFrames) / sampleRate
         let speechDuration = Double(voicedFrames) / sampleRate
         let naturalBreak = duration >= 2.0 && silence >= 0.8
-        let forcedBreak = duration >= 12
-        guard (final && speechDuration >= 0.12) ||
+        let forcedBreak = duration >= 18
+        let hasNewAudio = sliceSamples.count > retainedOverlapSamples
+        guard (final && hasNewAudio) ||
               (naturalBreak && speechDuration >= 0.35) ||
               (forcedBreak && speechDuration >= 0.12) else { return nil }
 
         let end = Double(totalFrames) / sampleRate
         let samples = sliceSamples
-        let overlap = !final && forcedBreak && silence < 0.8 ? 5600 : 0
-        sliceSamples = Array(samples.suffix(overlap))
+        retainedOverlapSamples = !final && forcedBreak && silence < 0.8 ? 12_800 : 0
+        sliceSamples = Array(samples.suffix(retainedOverlapSamples))
         consecutiveSilenceFrames = 0
         voicedFrames = 0
         return (pcmToWav(samples: samples, sampleRate: 16000), max(0, end - duration), end)
@@ -299,6 +265,7 @@ public final class ClassroomManager: ObservableObject {
     private var streamingPlayer: AVPlayer?
     private var streamingTimeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
+    private var automaticMinutesQueue: [UUID] = []
 
     public init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -470,6 +437,42 @@ public final class ClassroomManager: ObservableObject {
     public func saveTimetable() {
         if let data = try? JSONEncoder().encode(timetable) {
             try? data.write(to: timetableURL, options: .atomic)
+        }
+    }
+
+    public func attachmentURL(_ attachment: LessonAttachment) -> URL {
+        storageRoot.appendingPathComponent("attachments").appendingPathComponent(attachment.fileName)
+    }
+
+    public func addAttachment(sessionId: UUID, time: TimeInterval, segmentId: UUID?, jpeg: Data) throws {
+        guard let index = sessions.firstIndex(where: { $0.id == sessionId }) else { throw CocoaError(.fileNoSuchFile) }
+        guard !jpeg.isEmpty else { throw CocoaError(.fileWriteInvalidFileName) }
+        let attachment = LessonAttachment(time: max(0, time), segmentId: segmentId, fileName: UUID().uuidString + ".jpg")
+        let url = attachmentURL(attachment)
+        try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try jpeg.write(to: url, options: .atomic)
+        var updated = sessions
+        updated[index].attachments.append(attachment)
+        do {
+            try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+        } catch {
+            try? FileManager.default.removeItem(at: url)
+            throw error
+        }
+        sessions = updated
+        if currentSession?.id == sessionId { currentSession?.attachments = updated[index].attachments }
+    }
+
+    public func removeAttachment(sessionId: UUID, attachment: LessonAttachment) throws {
+        guard let index = sessions.firstIndex(where: { $0.id == sessionId }) else { return }
+        var updated = sessions
+        updated[index].attachments.removeAll { $0.id == attachment.id }
+        try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+        sessions = updated
+        if currentSession?.id == sessionId { currentSession?.attachments = updated[index].attachments }
+        let url = attachmentURL(attachment)
+        if FileManager.default.fileExists(atPath: url.path) {
+            try FileManager.default.removeItem(at: url)
         }
     }
 
@@ -747,31 +750,14 @@ public final class ClassroomManager: ObservableObject {
             return false
         }
         
-        let predecessor = sess.segments.first { $0.sequenceIndex == task.sequenceIndex - 1 }
-        let lastText = predecessor.flatMap { $0.endTime > task.startTime ? $0.text : nil } ?? ""
-        
         do {
             let transcribed = try await self.callCloudASR(audioData: audioData)
-            let stitched = stitchTranscripts(previous: lastText, current: transcribed)
-            let clean = stitched.trimmingCharacters(in: .whitespacesAndNewlines)
-            
+            guard try self.completeChunkTask(sessionId: sessionId, taskId: task.id, text: transcribed) else {
+                self.isChunkTranscribing = false
+                return false
+            }
             self.isChunkTranscribing = false
-            self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
-                $0.status = .completed
-                $0.recognizedText = clean
-                $0.lastError = nil
-            }
-            
-            if !clean.isEmpty {
-                let seg = TranscriptSegment(
-                    sequenceIndex: task.sequenceIndex,
-                    startTime: task.startTime,
-                    endTime: task.endTime,
-                    text: clean
-                )
-                self.insertAndSortSegment(segment: seg, targetSessionId: sessionId)
-            }
-            
+
             // 只有转写确认成功后，才安全删除该分片本地临时文件
             try? FileManager.default.removeItem(at: chunkURL)
             
@@ -825,6 +811,7 @@ public final class ClassroomManager: ObservableObject {
             sessions[idx].status = .completed
         }
         saveSessions()
+        if sessions[idx].status == .completed { enqueueAutomaticMinutes(sessionId: sessionId) }
     }
 
     /// 真正的 async/await 顺序补转写队列
@@ -846,28 +833,25 @@ public final class ClassroomManager: ObservableObject {
         }
     }
 
-    /// 按顺序插入段落并按时间戳升序排序，杜绝网络并发乱序
-    private func insertAndSortSegment(segment: TranscriptSegment, targetSessionId: UUID) {
-        if let idx = self.sessions.firstIndex(where: { $0.id == targetSessionId }) {
-            var segs = self.sessions[idx].segments
-            // 幂等防重：检查是否已有相同 ID 或完全重叠相同起始时间与序号的段落
-            if !segs.contains(where: { $0.id == segment.id || ($0.startTime == segment.startTime && $0.sequenceIndex == segment.sequenceIndex) }) {
-                segs.append(segment)
-                segs.sort {
-                    if $0.startTime != $1.startTime {
-                        return $0.startTime < $1.startTime
-                    }
-                    return $0.sequenceIndex < $1.sequenceIndex
-                }
-                self.sessions[idx].segments = segs
-                if self.currentSession?.id == targetSessionId {
-                    self.currentSession?.segments = segs
-                }
-                self.saveSessions()
-            }
+    private func completeChunkTask(sessionId: UUID, taskId: UUID, text: String) throws -> Bool {
+        guard let sessionIndex = sessions.firstIndex(where: { $0.id == sessionId }),
+              let taskIndex = sessions[sessionIndex].chunkTasks.firstIndex(where: { $0.id == taskId }) else {
+            return false
         }
+
+        var session = sessions[sessionIndex]
+        session.completeTranscriptChunk(at: taskIndex, text: text)
+        var updatedSessions = sessions
+        updatedSessions[sessionIndex] = session
+        try JSONEncoder().encode(updatedSessions).write(to: sessionsURL, options: .atomic)
+        sessions = updatedSessions
+        if currentSession?.id == sessionId {
+            currentSession?.chunkTasks = session.chunkTasks
+            currentSession?.segments = session.segments
+        }
+        return true
     }
-    
+
     public func pauseRecording() {
         guard isRecording && !isPaused else { return }
         engine.pause()
@@ -1137,6 +1121,7 @@ public final class ClassroomManager: ObservableObject {
                         if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                             self.sessions[idx].segments = segs
                             self.saveSessions()
+                            self.enqueueAutomaticMinutes(sessionId: session.id)
                             // 保持音频文件完整保留！严禁删除本地音频！
                         }
                         self.isTranscribingOffline = false
@@ -1350,74 +1335,125 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 智能笔记生成
     
+    private func enqueueAutomaticMinutes(sessionId: UUID) {
+        guard let session = sessions.first(where: { $0.id == sessionId }),
+              session.status != .recording, session.status != .paused,
+              !session.segments.isEmpty,
+              session.chunkTasks.allSatisfy({ $0.status == .completed }),
+              !session.automaticMinutesAttempted,
+              !session.notes.contains(where: { $0.style == .minutes }) else { return }
+        if !automaticMinutesQueue.contains(sessionId) { automaticMinutesQueue.append(sessionId) }
+        drainAutomaticMinutesQueue()
+    }
+
+    private func drainAutomaticMinutesQueue() {
+        guard !isGeneratingNotes, !automaticMinutesQueue.isEmpty else { return }
+        let id = automaticMinutesQueue.removeFirst()
+        guard let index = sessions.firstIndex(where: { $0.id == id }),
+              !sessions[index].automaticMinutesAttempted,
+              !sessions[index].notes.contains(where: { $0.style == .minutes }) else {
+            drainAutomaticMinutesQueue()
+            return
+        }
+        var updated = sessions
+        updated[index].automaticMinutesAttempted = true
+        do {
+            try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+            sessions = updated
+            generateNotes(for: sessions[index], style: .minutes)
+        } catch { errorMessage = "无法保存纪要任务：\(error.localizedDescription)" }
+        if !isGeneratingNotes { drainAutomaticMinutesQueue() }
+    }
+
+    public func saveNoteContent(sessionId: UUID, style: NoteStyle, content: String) throws {
+        guard let index = sessions.firstIndex(where: { $0.id == sessionId }) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        var updated = sessions
+        if let noteIndex = updated[index].notes.firstIndex(where: { $0.style == style }) {
+            updated[index].notes[noteIndex].content = content
+        } else {
+            updated[index].notes.append(LessonNote(style: style, content: content))
+        }
+        updated[index].minutesGenerationError = nil
+        try JSONEncoder().encode(updated).write(to: sessionsURL, options: .atomic)
+        sessions = updated
+    }
+
     public func generateNotes(for session: LessonSession, style: NoteStyle) {
         guard !isGeneratingNotes else { return }
-        errorMessage = ""
+        let session = sessions.first(where: { $0.id == session.id }) ?? session
         let fullText = session.fullTranscript
         guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            errorMessage = "课堂还没有转写文字，暂时无法生成笔记"
+            errorMessage = "课堂还没有转写文字，暂时无法生成纪要"
             return
         }
-        if style == .minutes && llmApiKey.isEmpty {
-            errorMessage = "请先配置 AI 模型和 API Key，再生成纪要"
-            return
-        }
+        errorMessage = ""
         isGeneratingNotes = true
-        
+        let originalContent = session.notes.first(where: { $0.style == style })?.content
         Task {
-            defer { self.isGeneratingNotes = false }
-            if !llmApiKey.isEmpty {
-                do {
-                    let sysPrompt = """
-                    你是一位西安建筑科技大学资深骨干名师。请根据以下课堂实录，撰写一份排版精美、结构清晰的【\(style.title)】笔记。
-                    排版要求：
-                    1. 必须使用标准 Markdown 格式：一级标题（#）、二级章节（##）、三级要点（###）。
-                    2. 核心考点与公式对比必须制作成规整的 Markdown 表格（| 表头1 | 表头2 |，包含分割线 |---|---|）。
-                    3. 老师着重强调的难点或作业要求请使用引用块（> 引用）显著标出。
-                    4. 严格围绕课堂真实录音内容，条理分明，不要包含任何闲话或代码块外框包裹。
-                    """
-                    let markStr = session.marks.map { formatDuration($0) }.joined(separator: ", ")
-                    let userPrompt = "【课程标题】\(session.title)\n【老师标记重点时间】\(markStr.isEmpty ? "无" : markStr)\n\n【课堂文字实录】\n\(fullText)"
-                    
-                    let minutesFormat = """
-                    按「课堂主题」「主要内容」「关键结论」「作业与待办」组织纪要。
-                    对实录中明确提到的要求保留可核对的时间和条件。未提及的截止日期、负责人或任务写「未提及」。
-                    """
-                    let prompt = style == .minutes ? sysPrompt + "\n" + minutesFormat : sysPrompt
-                    let aiResult = try await callLLMApi(systemPrompt: prompt, userPrompt: userPrompt)
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                    guard !aiResult.isEmpty else {
-                        self.errorMessage = "AI 未返回内容，请重试"
-                        return
-                    }
-                    
-                    if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                        var notes = self.sessions[idx].notes.filter { $0.style != style }
-                        notes.append(LessonNote(style: style, content: aiResult))
-                        self.sessions[idx].notes = notes
-                        self.saveSessions()
-                    }
-                    return
-                } catch {
-                    if style == .minutes {
-                        self.errorMessage = "纪要生成失败，请检查 AI 设置或网络后重试"
-                        return
-                    }
-                    print("AI 笔记生成失败，降级为本地规则整理：", error)
-                }
+            defer {
+                self.isGeneratingNotes = false
+                self.drainAutomaticMinutesQueue()
             }
-            
-            // 本地兜底整理（明确标注为本地规则整理，不冒充 AI 大模型生成结果）
-            let generated = Self.synthesizeNotes(fullText: fullText, marks: session.marks, style: style, courseTitle: session.title)
-            if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                var notes = self.sessions[idx].notes.filter { $0.style != style }
-                notes.append(LessonNote(style: style, content: generated))
-                self.sessions[idx].notes = notes
-                self.saveSessions()
+            do {
+                let result: String
+                if !llmApiKey.isEmpty {
+                    let system = """
+                    仅根据课堂实录整理中文 Markdown 笔记，不编造信息。
+                    保留原始 [分:秒] 时间引用，重要结论和作业须能回听核对。
+                    未明确提到的作业、日期、负责人和要求写「未提及」。
+                    """
+                    let format = style == .minutes
+                        ? "按「课堂内容」「重点」「作业与提醒」三个二级标题整理纪要。"
+                        : "整理为「\(style.title)」，公式可使用 Markdown，注意保留老师原话含义。"
+                    var source = session.segments.sorted { $0.startTime < $1.startTime }
+                        .map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n")
+                    // Bound every request, including a single unusually long ASR paragraph.
+                    while source.count > 12000 {
+                        let batches = ClassroomTextBatches.split(source, limit: 8000)
+                        var summaries: [String] = []
+                        for batch in batches {
+                            let partial = try await callLLMApi(systemPrompt: system,
+                                userPrompt: "压缩以下课堂片段至不超过 1200 字，保留概念、结论、明确作业及其原始时间引用，不推测遗漏内容。\n\n" + batch)
+                            guard !partial.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                                throw URLError(.cannotDecodeContentData)
+                            }
+                            summaries.append(partial)
+                        }
+                        let reduced = summaries.joined(separator: "\n\n")
+                        guard reduced.count < source.count else {
+                            throw NSError(domain: "ClassroomMinutes", code: 1,
+                                userInfo: [NSLocalizedDescriptionKey: "分段纪要未能缩短，请重试或调整模型"])
+                        }
+                        source = reduced
+                    }
+                    result = try await callLLMApi(systemPrompt: system + "\n" + format,
+                        userPrompt: "课程：\(session.title)\n\n" + source)
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                } else if style == .minutes {
+                    throw NSError(domain: "ClassroomMinutes", code: 2,
+                        userInfo: [NSLocalizedDescriptionKey: "请先配置 AI 模型和 API Key，再重试纪要"])
+                } else {
+                    result = Self.synthesizeNotes(fullText: fullText, marks: session.marks, style: style, courseTitle: session.title)
+                }
+                guard !result.isEmpty else { throw URLError(.cannotDecodeContentData) }
+                guard let latest = sessions.first(where: { $0.id == session.id }) else { return }
+                guard latest.notes.first(where: { $0.style == style })?.content == originalContent else {
+                    errorMessage = "笔记已在生成期间被编辑，已保留你的修改"
+                    return
+                }
+                try saveNoteContent(sessionId: session.id, style: style, content: result)
+            } catch {
+                errorMessage = "\(style.title)生成失败：\(error.localizedDescription)"
+                if style == .minutes, let index = sessions.firstIndex(where: { $0.id == session.id }) {
+                    sessions[index].minutesGenerationError = errorMessage
+                    saveSessions()
+                }
             }
         }
     }
-    
+
     nonisolated private static func synthesizeNotes(fullText: String, marks: [TimeInterval], style: NoteStyle, courseTitle: String) -> String {
         guard !fullText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return "当前课堂尚未完成语音转写，无法提炼课堂笔记。请等待实时转写完成或在课后点击「转写录音」。"
@@ -1460,8 +1496,19 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 课程问答 (支持 90 分钟全堂课检索 + 单段长按选段提问)
 
-    public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil, imageJPEG: Data? = nil) {
+    public func recentQuestionSegments(for session: LessonSession) -> [TranscriptSegment] {
+        let end = currentSession?.id == session.id && isRecording
+            ? recordingElapsed : max(session.duration, session.segments.map(\.endTime).max() ?? 0)
+        return session.segments.filter { $0.endTime > max(0, end - 180) && $0.startTime <= end }
+    }
+
+    public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil, imageJPEG: Data? = nil, recentOnly: Bool = false) {
         guard !isAskingQA, !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        let segments = recentOnly ? recentQuestionSegments(for: session) : session.segments
+        if recentOnly && segments.isEmpty && imageJPEG == nil {
+            errorMessage = "最近 3 分钟还没有可用转写"
+            return
+        }
         streamingAnswer = ""
         answeringSessionID = session.id
         isAskingQA = true
@@ -1492,6 +1539,9 @@ public final class ClassroomManager: ObservableObject {
                         let contextSegments = self.findSurroundingSegments(in: session.segments, around: seg.startTime, windowSeconds: 120)
                         let contextText = contextSegments.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n")
                         userPrompt = "【学生选中的课堂段落】[\(formatDuration(seg.startTime))]: \"\(seg.text)\"\n\n【选中段落上下文实录】\n\(contextText)\n\n【学生针对选段的提问】\n\(query)"
+                    } else if recentOnly {
+                        let recentText = segments.map { "[\(formatDuration($0.startTime))] \($0.text)" }.joined(separator: "\n")
+                        userPrompt = "【最近 3 分钟已完成的课堂实录】\n\(recentText)\n\n【提问】\(query)\n先给一句简短答案。"
                     } else {
                         // 全堂课智能段落检索：扫描整节课（可覆盖 90 分钟完整录音），检索最相关的课堂片段
                         let relevantSegments = self.retrieveRelevantSegments(in: session.segments, query: query, maxTotalChars: 12000)
@@ -1505,7 +1555,7 @@ public final class ClassroomManager: ObservableObject {
                     let recent = session.qaPairs.suffix(3).map { pair in
                         "问：\(pair.question)\n答：\(pair.answer.prefix(1200))"
                     }.joined(separator: "\n\n")
-                    if !recent.isEmpty {
+                    if !recentOnly && !recent.isEmpty {
                         userPrompt = "【最近问答，供理解追问】\n\(recent)\n\n" + userPrompt
                     }
                     let answer = try await callLLMApi(systemPrompt: sysPrompt, userPrompt: userPrompt, imageJPEG: imageJPEG) { partial in
@@ -1513,7 +1563,7 @@ public final class ClassroomManager: ObservableObject {
                     }
                     
                     // 提取最佳引用时间戳
-                    let bestTime = citTime ?? self.findBestCitationTime(in: session.segments, for: query)
+                    let bestTime = citTime ?? self.findBestCitationTime(in: segments, for: query)
                     
                     if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
                         let qDisplay = segment != nil ? "[\(formatDuration(segment!.startTime))选段] \(questionLabel)" : questionLabel
@@ -1528,14 +1578,14 @@ public final class ClassroomManager: ObservableObject {
             }
             
             // 本地兜底逻辑（未配置 API Key 或断网时）
-            let bestCitation = citTime ?? self.findBestCitationTime(in: session.segments, for: query)
+            let bestCitation = citTime ?? self.findBestCitationTime(in: segments, for: query)
             let fallbackAnswer: String
             if imageJPEG != nil {
                 fallbackAnswer = llmApiKey.isEmpty ? "请先在设置中配置支持图片的 AI 模型和 API Key。" : "图片问答请求失败。请检查网络，确认当前模型支持图片后重新发送。"
             } else if session.segments.isEmpty {
                 fallbackAnswer = "⚠️ 当前课堂录音尚未生成转写文字。若需使用课堂 AI 助教，请在课后点击「转写录音」或开启实时转写。"
             } else if llmApiKey.isEmpty {
-                let matches = self.retrieveRelevantSegments(in: session.segments, query: query, maxTotalChars: 1500)
+                let matches = self.retrieveRelevantSegments(in: segments, query: query, maxTotalChars: 1500)
                 if matches.isEmpty {
                     fallbackAnswer = "未在课堂实录中搜索到与「\(query)」直接相关的讲解片段。请在「设置」中填入大模型 API Key 以启用深度语义推理。"
                 } else {
@@ -1973,6 +2023,9 @@ public final class ClassroomManager: ObservableObject {
         }
         sessions.removeAll { $0.id == session.id }
         saveSessions()
+        for attachment in session.attachments {
+            try? FileManager.default.removeItem(at: attachmentURL(attachment))
+        }
     }
 
     private func formatDuration(_ sec: TimeInterval) -> String {
