@@ -321,7 +321,17 @@ public struct TimetableEngine {
         var allSlots: [TimetableSlot] = []
         for dayIdx in 0..<7 {
             let colItems = columns[dayIdx].sorted { $0.y > $1.y }
-            let fullColText = colItems.map { $0.text }.joined(separator: "")
+            var fullColText = colItems.map { $0.text }.joined(separator: "")
+            if firstPage.numberOfCharacters > 0 {
+                // PDFPage.string inserts layout newlines that characterBounds(at:) does not index.
+                // Read each geometric weekday column directly instead of aligning those two arrays.
+                let left = dayIdx > 0 ? (centres[dayIdx - 1] + centres[dayIdx]) / 2 : centres[0] - (centres[1] - centres[0]) / 2
+                let right = dayIdx < 6 ? (centres[dayIdx] + centres[dayIdx + 1]) / 2 : centres[6] + (centres[6] - centres[5]) / 2
+                let rectangle = CGRect(x: left, y: bottomY + 1, width: max(1, right - left), height: max(1, headerY - bottomY - 3))
+                if let text = firstPage.selection(for: rectangle)?.string, !text.isEmpty {
+                    fullColText = normalizeText(text).components(separatedBy: .newlines).joined()
+                }
+            }
             let entries = fullColText.components(separatedBy: "●").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
             
             for ent in entries {
