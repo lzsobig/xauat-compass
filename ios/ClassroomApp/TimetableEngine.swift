@@ -1,5 +1,7 @@
 import Foundation
 import PDFKit
+import Vision
+import CoreGraphics
 
 public struct TimetableEngine {
     public static let DAYS = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"]
@@ -28,6 +30,7 @@ public struct TimetableEngine {
     
     public static func parseWeeks(_ spec: String) throws -> [(weekFrom: Int, weekTo: Int, parity: String)] {
         let clean = spec.replacingOccurrences(of: "\\s+", with: "", options: .regularExpression)
+            .replacingOccurrences(of: "-", with: "~").replacingOccurrences(of: "～", with: "~")
         let parts = clean.components(separatedBy: CharacterSet(charactersIn: ",，")).filter { !$0.isEmpty }
         var ranges: [(weekFrom: Int, weekTo: Int, parity: String)] = []
         
@@ -120,60 +123,41 @@ public struct TimetableEngine {
         return (name: name, teacher: teacher, slots: slots)
     }
     
-        public static func parseTimetableDraft(data: Data) throws -> TimetableImportDraft {
-        guard let doc = PDFDocument(data: data), doc.pageCount > 0, let firstPage = doc.page(at: 0) else {
-            throw NSError(domain: "TimetableError", code: 2, userInfo: [NSLocalizedDescriptionKey: "无法打开课表 PDF 或文档为空"])
+    public static func parseTimetableDraft(data: Data) throws -> TimetableImportDraft {
+        guard let document = PDFDocument(data: data), document.pageCount > 0 else {
+            throw NSError(domain: "TimetableError", code: 2, userInfo: [NSLocalizedDescriptionKey: "无法打开课表 PDF"])
         }
-        
-        let rawPageString = firstPage.string ?? ""
-        let normalizedPage = normalizeText(rawPageString)
-        
-        var extractedSemester = "2026-2027-1"
-        var extractedStudentName = "李振"
-        var extractedClassName = "智建2501"
-        var extractedSchoolName = "西安建筑科技大学"
-        var warnings: [String] = []
+        var combined = TimetableImportDraft(semester: "", studentName: "", className: "", schoolName: "")
+        for index in 0..<document.pageCount {
+            guard let page = document.page(at: index) else { throw CocoaError(.fileReadCorruptFile) }
+            do {
+                let draft = try parsePageDraft(page)
+                if combined.semester.isEmpty { combined.semester = draft.semester }
+                combined.slots.append(contentsOf: draft.slots)
+                combined.warnings.append(contentsOf: draft.warnings)
+            } catch {
+                throw NSError(domain: "TimetableError", code: 3, userInfo: [NSLocalizedDescriptionKey: "第 \(index + 1) 页解析失败，原课表未修改：\(error.localizedDescription)"])
+            }
+        }
+        var seen = Set<String>()
+        combined.slots = combined.slots.filter { slot in
+            let key = [slot.courseName, String(slot.day), String(slot.fromPeriod), String(slot.toPeriod), String(slot.weekFrom), String(slot.weekTo), slot.parity, slot.room, slot.teacher].joined(separator: "|")
+            return seen.insert(key).inserted
+        }
+        combined.items = coursesFrom(slots: combined.slots).map {
+            DraftCourseItem(originalName: $0.name, teacher: $0.teacher, room: $0.room)
+        }
+        if combined.semester.isEmpty { combined.warnings.append("未识别到学期，请确认后填写") }
+        return combined
+    }
 
-        // 提取学期
-        if let semMatch = rawPageString.range(of: "\\d{4}-\\d{4}-\\d", options: .regularExpression) {
-            extractedSemester = String(rawPageString[semMatch])
-        }
-        
-        // 1. 建大课表 / 智建2501 / 李振 / 2502070113 等：100% 精确识别与还原 (全 64 节次，全周次全教室)
-        let hasXAUATKeywords = normalizedPage.contains("智建2501") ||
-                               normalizedPage.contains("李振") ||
-                               normalizedPage.contains("2502070113") ||
-                               normalizedPage.contains("智能建造") ||
-                               (rawPageString.contains("西安") && rawPageString.contains("建筑科技") && rawPageString.contains("课表")) ||
-                               (rawPageString.contains("草堂") && rawPageString.contains("学期课表")) ||
-                               (normalizedPage.contains("建筑科技") && normalizedPage.contains("课表")) ||
-                               normalizedPage.contains("草堂")
-        
-        if hasXAUATKeywords {
-            let slots = defaultSlots()
-            let courses = coursesFrom(slots: slots)
-            let draftItems = courses.map { c in
-                DraftCourseItem(
-                    originalName: c.name,
-                    editedName: c.name,
-                    teacher: c.teacher,
-                    room: c.room,
-                    action: .create,
-                    isSelected: true
-                )
-            }.sorted { $0.originalName < $1.originalName }
-            
-            return TimetableImportDraft(
-                semester: extractedSemester,
-                studentName: extractedStudentName,
-                className: extractedClassName,
-                schoolName: extractedSchoolName,
-                slots: slots,
-                items: draftItems,
-                warnings: warnings
-            )
-        }
-        
+    private static func parsePageDraft(_ firstPage: PDFPage) throws -> TimetableImportDraft {
+        var rawPageString = firstPage.string ?? ""
+        var extractedSemester = ""
+        let extractedStudentName = ""
+        let extractedClassName = ""
+        let extractedSchoolName = ""
+        var warnings: [String] = []
         // 2. 通用 PDF 坐标解析
         struct TextItem {
             let text: String
@@ -222,6 +206,56 @@ public struct TimetableEngine {
             }
         }
         
+        if items.isEmpty || rawPageString.trimmingCharacters(in: .whitespacesAndNewlines).count < 20 {
+            let bounds = firstPage.bounds(for: .mediaBox)
+            let scale: CGFloat = 2
+            guard let context = CGContext(data: nil, width: max(1, Int(bounds.width * scale)),
+                height: max(1, Int(bounds.height * scale)), bitsPerComponent: 8, bytesPerRow: 0,
+                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else {
+                throw CocoaError(.fileReadCorruptFile)
+            }
+            context.setFillColor(CGColor(gray: 1, alpha: 1))
+            context.fill(CGRect(x: 0, y: 0, width: bounds.width * scale, height: bounds.height * scale))
+            context.scaleBy(x: scale, y: scale)
+            context.translateBy(x: -bounds.minX, y: -bounds.minY)
+            firstPage.draw(with: .mediaBox, to: context)
+            guard let image = context.makeImage() else { throw CocoaError(.fileReadCorruptFile) }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLevel = .accurate
+            request.recognitionLanguages = ["zh-Hans", "en-US"]
+            request.usesLanguageCorrection = true
+            try VNImageRequestHandler(cgImage: image).perform([request])
+            items.removeAll()
+            var recognized: [String] = []
+            for observation in request.results ?? [] {
+                guard let candidate = observation.topCandidates(1).first else { continue }
+                let text = normalizeText(candidate.string)
+                recognized.append(text)
+                var splitHeaders = false
+                for day in DAYS {
+                    if let range = candidate.string.range(of: day),
+                       let box = try candidate.boundingBox(for: range)?.boundingBox {
+                        items.append(TextItem(text: day, x: bounds.minX + box.minX * bounds.width,
+                            y: bounds.minY + box.minY * bounds.height, width: box.width * bounds.width))
+                        splitHeaders = true
+                    }
+                }
+                if !splitHeaders {
+                    let box = observation.boundingBox
+                    items.append(TextItem(text: text, x: bounds.minX + box.minX * bounds.width,
+                        y: bounds.minY + box.minY * bounds.height, width: box.width * bounds.width))
+                }
+            }
+            rawPageString = recognized.joined(separator: "\n")
+            warnings.append("扫描页已使用本机文字识别，请核对课程与周次")
+        }
+        let nsText = rawPageString as NSString
+        let semesterPattern = "(\\d{4})[-~～](\\d{4})(?:[-学年第期\\s]*)([12])"
+        if let regex = try? NSRegularExpression(pattern: semesterPattern),
+           let match = regex.firstMatch(in: rawPageString, range: NSRange(location: 0, length: nsText.length)) {
+            extractedSemester = [1, 2, 3].map { nsText.substring(with: match.range(at: $0)) }.joined(separator: "-")
+        }
+
         var headerX: [Int: CGFloat] = [:]
         var headerY: CGFloat = 0
         for item in items {

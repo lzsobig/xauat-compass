@@ -152,7 +152,7 @@ struct RecordHomeView: View {
                         .buttonStyle(PlainButtonStyle())
 
                         Menu {
-                            Picker("转写引擎", selection: $manager.asrProvider) {
+                            Picker("转写引擎", selection: Binding(get: { manager.asrProvider }, set: { manager.selectASRProvider($0) })) {
                                 ForEach(CloudTranscriptionProvider.allCases) { provider in
                                     Text(provider.title).tag(provider)
                                 }
@@ -1323,7 +1323,10 @@ struct TimetableScreen: View {
                     TimetableImportPreviewSheet(
                         draft: draft,
                         onConfirm: { finalDraft in
-                            manager.commitTimetableImport(draft: finalDraft)
+                            guard manager.commitTimetableImport(draft: finalDraft) else {
+                                importStatus = manager.errorMessage
+                                return
+                            }
                             selectedWeek = manager.timetable.currentWeek > 0 ? manager.timetable.currentWeek : SemesterCalendar.currentWeek()
                             importStatus = "课表导入成功！共导入 \(finalDraft.items.filter { $0.isSelected }.count) 门课程，\(finalDraft.slots.count) 个课程节次"
                             pendingImportDraft = nil
@@ -3556,6 +3559,13 @@ struct TimetableImportPreviewSheet: View {
 
                 // 课程列表
                 List {
+                    Section("学期") {
+                        TextField("例如 2026-2027-1", text: $draft.semester)
+                            .textInputAutocapitalization(.never)
+                        ForEach(draft.warnings, id: \.self) { warning in
+                            Text(warning).font(.caption).foregroundColor(.orange)
+                        }
+                    }
                     Section(header: Text("课程对照清单 (可编辑名称或取消勾选)")) {
                         ForEach($draft.items) { $item in
                             HStack(alignment: .center, spacing: 12) {
@@ -3635,7 +3645,7 @@ struct TimetableImportPreviewSheet: View {
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
-                        .disabled(selectedCount == 0)
+                        .disabled(selectedCount == 0 || draft.semester.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                     }
                     .padding(.horizontal)
                     .padding(.bottom, 12)

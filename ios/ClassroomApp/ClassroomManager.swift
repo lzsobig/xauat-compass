@@ -196,13 +196,19 @@ public final class ClassroomManager: ObservableObject {
             KeychainHelper.save(key: "llmApiKey", value: llmApiKey)
         }
     }
-    @Published public var asrProvider: CloudTranscriptionProvider {
+    @Published public private(set) var asrProvider: CloudTranscriptionProvider {
         didSet { UserDefaults.standard.set(asrProvider.rawValue, forKey: "cloudASRProvider") }
     }
     @Published public var stepFunApiKey: String {
         didSet { KeychainHelper.save(key: "stepFunCloudApiKey", value: stepFunApiKey) }
     }
     public var hasActiveASRKey: Bool { !activeASRKey.isEmpty }
+
+    public func selectASRProvider(_ provider: CloudTranscriptionProvider) {
+        guard !isRecording else { return }
+        asrProvider = provider
+    }
+
 
     private var activeASRKey: String {
         let key = asrProvider == .siliconFlow ? siliconFlowApiKey : stepFunApiKey
@@ -336,7 +342,6 @@ public final class ClassroomManager: ObservableObject {
         self.llmApiKey = ""
         self.siliconFlowApiKey = ""
         self.stepFunApiKey = ""
-        self.asrProvider = .siliconFlow
         KeychainHelper.delete(key: "llmApiKey")
         KeychainHelper.delete(key: "siliconFlowApiKey")
         KeychainHelper.delete(key: "stepFunCloudApiKey")
@@ -348,6 +353,8 @@ public final class ClassroomManager: ObservableObject {
     // MARK: - 持久化与文件管理
     
     private var coursesURL: URL { storageRoot.appendingPathComponent("courses.json") }
+    private var courseTimetableURL: URL { storageRoot.appendingPathComponent("course-timetable.json") }
+    private var deletedTimetableCourses: [Course] = []
     private var timetableURL: URL { storageRoot.appendingPathComponent("timetable.json") }
     private var sessionsURL: URL { storageRoot.appendingPathComponent("sessions.json") }
     
@@ -393,52 +400,44 @@ public final class ClassroomManager: ObservableObject {
     private func loadData() {
         let decoder = JSONDecoder()
         
-        if let data = try? Data(contentsOf: timetableURL), let loaded = try? decoder.decode(TimetableData.self, from: data), !loaded.slots.isEmpty {
-            self.timetable = loaded
+        if let data = try? Data(contentsOf: courseTimetableURL),
+           let state = try? decoder.decode(CourseTimetableState.self, from: data) {
+            courses = state.current.courses
+            timetable = state.current.timetable
+            lastCommittedCourses = state.previousImport?.courses
+            lastCommittedTimetable = state.previousImport?.timetable
+            deletedTimetableCourses = state.deletedCourses
         } else {
-            let defaults = TimetableEngine.defaultSlots()
-            self.timetable = TimetableData(currentWeek: 10, slots: defaults, updatedAt: Date())
-            saveTimetable()
+            if let data = try? Data(contentsOf: timetableURL), let loaded = try? decoder.decode(TimetableData.self, from: data) {
+                timetable = loaded
+            } else { timetable = TimetableData() }
+            if let data = try? Data(contentsOf: coursesURL), let loaded = try? decoder.decode([Course].self, from: data) {
+                courses = loaded
+            } else { courses = TimetableEngine.coursesFrom(slots: timetable.slots) }
         }
-        
-        // 关键修复：只要 courses.json 存在且能正确解码，必须完整保留用户课程，无论课程数量是多少 (彻底移除 loaded.count > 4)
-        if let data = try? Data(contentsOf: coursesURL), let loaded = try? decoder.decode([Course].self, from: data) {
-            self.courses = loaded
-        } else {
-            var uniqueCourses: [String: Course] = [:]
-            let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
-            var idx = 0
-            for slot in TimetableEngine.defaultSlots() {
-                if uniqueCourses[slot.courseName] == nil {
-                    uniqueCourses[slot.courseName] = Course(
-                        name: slot.courseName,
-                        teacher: slot.teacher,
-                        room: slot.room,
-                        colorHex: colors[idx % colors.count]
-                    )
-                    idx += 1
-                }
-            }
-            self.courses = Array(uniqueCourses.values).sorted { $0.name < $1.name }
-            saveCourses()
-        }
-        
+
         if let data = try? Data(contentsOf: sessionsURL), let loaded = try? decoder.decode([LessonSession].self, from: data) {
             self.sessions = loaded.sorted { $0.startedAt > $1.startedAt }
         }
     }
 
-    public func saveCourses() {
-        if let data = try? JSONEncoder().encode(courses) {
-            try? data.write(to: coursesURL, options: .atomic)
-        }
+    private func makeCourseTimetableState(courses: [Course], timetable: TimetableData,
+                                          previous: CourseTimetableSnapshot? = nil) -> CourseTimetableState {
+        let undo: CourseTimetableSnapshot?
+        if let previous { undo = previous }
+        else if let oldCourses = lastCommittedCourses, let oldTable = lastCommittedTimetable {
+            undo = CourseTimetableSnapshot(courses: oldCourses, timetable: oldTable)
+        } else { undo = nil }
+        return CourseTimetableState(current: CourseTimetableSnapshot(courses: courses, timetable: timetable),
+            previousImport: undo, deletedCourses: deletedTimetableCourses)
     }
 
-    public func saveTimetable() {
-        if let data = try? JSONEncoder().encode(timetable) {
-            try? data.write(to: timetableURL, options: .atomic)
-        }
+    public func saveCourses() {
+        do { try makeCourseTimetableState(courses: courses, timetable: timetable).write(to: courseTimetableURL) }
+        catch { errorMessage = "课程与课表保存失败：\(error.localizedDescription)" }
     }
+
+    public func saveTimetable() { saveCourses() }
 
     public func attachmentURL(_ attachment: LessonAttachment) -> URL {
         storageRoot.appendingPathComponent("attachments").appendingPathComponent(attachment.fileName)
@@ -1146,29 +1145,9 @@ public final class ClassroomManager: ObservableObject {
             throw NSError(domain: "CloudASR", code: 401,
                           userInfo: [NSLocalizedDescriptionKey: "请先填写当前转写引擎的 API Key"])
         }
-        guard let url = URL(string: provider.endpoint) else { throw URLError(.badURL) }
-        
-        let boundary = "Boundary-\(UUID().uuidString)"
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-        request.timeoutInterval = 120
-        
-        var body = Data()
-        
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"model\"\r\n\r\n".data(using: .utf8)!)
-        body.append("\(provider.model)\r\n".data(using: .utf8)!)
-        
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"\(filename)\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-        body.append(audioData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-        
-        request.httpBody = body
-        
+        let request = try ClassroomASRRequest.make(provider: provider, key: key,
+            audioData: audioData, filename: filename, mimeType: mimeType)
+
         let (data, response) = try await URLSession.shared.data(for: request)
         if let http = response as? HTTPURLResponse {
             if (200...299).contains(http.statusCode) {
@@ -1813,7 +1792,7 @@ public final class ClassroomManager: ObservableObject {
         var updated = draft
         for i in 0..<updated.items.count {
             let itemName = updated.items[i].editedName.trimmingCharacters(in: .whitespacesAndNewlines)
-            if let existing = courses.first(where: { $0.name == itemName }) {
+            if let existing = courses.first(where: { $0.name == itemName && $0.semester == draft.semester && $0.source == .timetable }) {
                 updated.items[i].action = .matchExisting
                 updated.items[i].matchedCourseId = existing.id
                 if updated.items[i].teacher.isEmpty && !existing.teacher.isEmpty {
@@ -1830,12 +1809,17 @@ public final class ClassroomManager: ObservableObject {
         return updated
     }
     
-    public func commitTimetableImport(draft: TimetableImportDraft) {
-        lastCommittedTimetable = self.timetable
-        lastCommittedCourses = self.courses
+    @discardableResult
+    public func commitTimetableImport(draft: TimetableImportDraft) -> Bool {
+        let semester = draft.semester.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !semester.isEmpty else { errorMessage = "请先填写学期"; return false }
+        var draft = draft
+        draft.semester = semester
+        var candidateCourses = courses
+        let previous = CourseTimetableSnapshot(courses: courses, timetable: timetable)
         
         let colors = ["#007AFF", "#34C759", "#FF9500", "#AF52DE", "#FF2D55", "#5856D6", "#00C7BE", "#32ADE6"]
-        var colorIdx = courses.count
+        var colorIdx = candidateCourses.count
         
         var activeCourseIdMap: [String: UUID] = [:]
         
@@ -1843,15 +1827,15 @@ public final class ClassroomManager: ObservableObject {
             let finalName = item.editedName.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !finalName.isEmpty else { continue }
             
-            if let existingIdx = courses.firstIndex(where: { $0.id == item.matchedCourseId || $0.name == finalName }) {
-                courses[existingIdx].name = finalName
-                if !item.teacher.isEmpty { courses[existingIdx].teacher = item.teacher }
-                if !item.room.isEmpty { courses[existingIdx].room = item.room }
-                courses[existingIdx].semester = draft.semester
-                courses[existingIdx].status = .active
-                courses[existingIdx].source = .timetable
-                activeCourseIdMap[item.originalName] = courses[existingIdx].id
-                activeCourseIdMap[finalName] = courses[existingIdx].id
+            if let existingIdx = candidateCourses.firstIndex(where: { $0.source == .timetable && $0.semester == semester && ($0.id == item.matchedCourseId || $0.name == finalName) }) {
+                candidateCourses[existingIdx].name = finalName
+                if !item.teacher.isEmpty { candidateCourses[existingIdx].teacher = item.teacher }
+                if !item.room.isEmpty { candidateCourses[existingIdx].room = item.room }
+                candidateCourses[existingIdx].semester = draft.semester
+                candidateCourses[existingIdx].status = .active
+                candidateCourses[existingIdx].source = .timetable
+                activeCourseIdMap[item.originalName] = candidateCourses[existingIdx].id
+                activeCourseIdMap[finalName] = candidateCourses[existingIdx].id
             } else {
                 let newCourse = Course(
                     name: finalName,
@@ -1863,17 +1847,17 @@ public final class ClassroomManager: ObservableObject {
                     status: .active
                 )
                 colorIdx += 1
-                courses.append(newCourse)
+                candidateCourses.append(newCourse)
                 activeCourseIdMap[item.originalName] = newCourse.id
                 activeCourseIdMap[finalName] = newCourse.id
             }
         }
         
         let importedNames = Set(draft.items.filter { $0.isSelected }.map { $0.editedName.trimmingCharacters(in: .whitespacesAndNewlines) })
-        for i in 0..<courses.count {
-            if courses[i].source == .timetable && courses[i].semester == draft.semester {
-                if !importedNames.contains(courses[i].name) {
-                    courses[i].status = .historical
+        for i in 0..<candidateCourses.count {
+            if candidateCourses[i].source == .timetable && candidateCourses[i].semester == draft.semester {
+                if !importedNames.contains(candidateCourses[i].name) {
+                    candidateCourses[i].status = .historical
                 }
             }
         }
@@ -1894,15 +1878,26 @@ public final class ClassroomManager: ObservableObject {
         }
         
         let curWeek = SemesterCalendar.currentWeek()
-        self.timetable = TimetableData(
+        let candidateTimetable = TimetableData(
             currentWeek: self.timetable.currentWeek > 0 ? self.timetable.currentWeek : curWeek,
             slots: committedSlots,
             updatedAt: Date()
         )
         
-        saveCourses()
-        saveTimetable()
-        updateCourseSuggestion()
+        do {
+            let state = makeCourseTimetableState(courses: candidateCourses, timetable: candidateTimetable, previous: previous)
+            try state.write(to: courseTimetableURL)
+            lastCommittedCourses = previous.courses
+            lastCommittedTimetable = previous.timetable
+            courses = candidateCourses
+            timetable = candidateTimetable
+            errorMessage = ""
+            updateCourseSuggestion()
+            return true
+        } catch {
+            errorMessage = "课表导入保存失败，原课表保留：\(error.localizedDescription)"
+            return false
+        }
     }
     
     public func createCourse(name: String, teacher: String = "", room: String = "") {
@@ -1923,7 +1918,7 @@ public final class ClassroomManager: ObservableObject {
     public func syncCoursesFromTimetable() {
         let timetableCourses = TimetableEngine.coursesFrom(slots: timetable.slots)
         for pc in timetableCourses {
-            if let existingIdx = courses.firstIndex(where: { $0.name == pc.name }) {
+            if let existingIdx = courses.firstIndex(where: { $0.name == pc.name && $0.source == .timetable && $0.semester == pc.semester }) {
                 if !pc.teacher.isEmpty { courses[existingIdx].teacher = pc.teacher }
                 if !pc.room.isEmpty { courses[existingIdx].room = pc.room }
             } else {
@@ -1945,26 +1940,34 @@ public final class ClassroomManager: ObservableObject {
     }
 
     public func rollbackTimetableImport() {
-        if let prev = lastCommittedTimetable {
-            self.timetable = prev
-            saveTimetable()
-        }
-        if let prevCourses = lastCommittedCourses {
-            self.courses = prevCourses
-            saveCourses()
-        }
-        updateCourseSuggestion()
+        guard let oldCourses = lastCommittedCourses, let oldTable = lastCommittedTimetable else { return }
+        let state = CourseTimetableState(current: CourseTimetableSnapshot(courses: oldCourses, timetable: oldTable),
+            previousImport: nil, deletedCourses: deletedTimetableCourses)
+        do {
+            try state.write(to: courseTimetableURL)
+            courses = oldCourses
+            timetable = oldTable
+            lastCommittedCourses = nil
+            lastCommittedTimetable = nil
+            updateCourseSuggestion()
+        } catch { errorMessage = "撤销保存失败：\(error.localizedDescription)" }
     }
-    
+
     public func importTimetable(data: Data) throws {
         let draft = try parseTimetableDraft(data: data)
         let reconciled = reconcileCourses(draft: draft)
-        commitTimetableImport(draft: reconciled)
+        guard commitTimetableImport(draft: reconciled) else {
+            throw NSError(domain: "TimetableError", code: 4, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+        }
     }
 
     public func deleteCourse(course: Course, purgeAllData: Bool = false) {
+        if course.source == .timetable && !deletedTimetableCourses.contains(where: { $0.id == course.id }) {
+            deletedTimetableCourses.append(course)
+        }
         courses.removeAll { $0.id == course.id }
-        
+        timetable.slots.removeAll { $0.courseId == course.id || ($0.courseId == nil && $0.courseName == course.name && $0.semester == course.semester) }
+
         if purgeAllData {
             let sessionsToDelete = sessions.filter { $0.courseId == course.id }
             for session in sessionsToDelete {

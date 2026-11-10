@@ -3,6 +3,20 @@ import Foundation
 @main
 struct ClassroomContentTests {
     static func main() throws {
+        for provider in CloudTranscriptionProvider.allCases {
+            let key = provider == .siliconFlow ? "test-silicon-key" : "test-step-key"
+            let request = try ClassroomASRRequest.make(provider: provider, key: key, audioData: Data([1, 2, 3]))
+            precondition(request.url?.absoluteString == provider.endpoint)
+            precondition(request.value(forHTTPHeaderField: "Authorization") == "Bearer " + key)
+            let body = String(decoding: request.httpBody!, as: UTF8.self)
+            precondition(body.contains(provider.model))
+            let other: CloudTranscriptionProvider = provider == .siliconFlow ? .stepFun : .siliconFlow
+            precondition(!body.contains(other.model), "the selected provider must determine the request model")
+        }
+        do {
+            _ = try ClassroomASRRequest.make(provider: .stepFun, key: "  ", audioData: Data())
+            preconditionFailure("missing key must never fall back to another provider")
+        } catch { }
         let encoder = JSONEncoder()
         let decoder = JSONDecoder()
         var lesson = LessonSession(title: "中文测试课", status: .completed)
