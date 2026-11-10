@@ -31,7 +31,12 @@ struct ClassroomPDFTests {
             pdf.endPDFPage()
         }
         pdf.closePDF()
-        let draft = try TimetableEngine.parseTimetableDraft(data: bytes as Data)
+        let draft: TimetableImportDraft
+        do { draft = try TimetableEngine.parseTimetableDraft(data: bytes as Data) }
+        catch {
+            fflush(stdout)
+            throw error
+        }
         precondition(draft.semester == "2026-2027-1")
         precondition(draft.slots.count == 2, "must parse actual pages rather than a preset timetable")
         precondition(Set(draft.slots.map(\.day)) == Set([1, 2]), "weekday column coordinates must remain distinct")

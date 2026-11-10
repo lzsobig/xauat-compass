@@ -332,6 +332,13 @@ public struct TimetableEngine {
         }
         
         if allSlots.isEmpty {
+            #if CLASSROOM_PDF_DIAGNOSTICS
+            print("PDF_DIAGNOSTIC_RAW", rawPageString.debugDescription)
+            print("PDF_DIAGNOSTIC_HEADERS", headerX, "HEADER_Y", headerY, "BOTTOM_Y", bottomY)
+            for column in 0..<7 {
+                print("PDF_DIAGNOSTIC_COLUMN", column + 1, columns[column].map { "\($0.text)@\($0.x),\($0.y)" })
+            }
+            #endif
             throw NSError(domain: "TimetableError", code: 3, userInfo: [NSLocalizedDescriptionKey: "未能从该 PDF 中解析出课程节次，请确认文件是否为教务系统导出的课表 PDF"])
         }
         

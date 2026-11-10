@@ -35,7 +35,7 @@ jobs:
           /tmp/classroom-timetable-tests
       - name: Test actual multipage PDF timetable parsing
         run: |
-          swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/TimetableEngine.swift tests/classroom_pdf_tests.swift -o /tmp/classroom-pdf-tests
+          swiftc -D CLASSROOM_PDF_DIAGNOSTICS ios/ClassroomApp/Models.swift ios/ClassroomApp/TimetableEngine.swift tests/classroom_pdf_tests.swift -o /tmp/classroom-pdf-tests
           /tmp/classroom-pdf-tests
       - name: Test real bundled Silero model
         run: python3 tools/run-vad-tests.py
