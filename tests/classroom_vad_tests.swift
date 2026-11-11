@@ -106,6 +106,10 @@ struct ClassroomVADTests {
         let compressedAudio = try AVAudioFile(forReading: compressedURL)
         precondition(abs(Double(compressedAudio.length) / compressedAudio.processingFormat.sampleRate - originalDuration) < 0.15)
         let originalCompressedData = try Data(contentsOf: compressedURL)
+        let transitioned = try OfflineAudioSegmenter.prepare(audioURL: offlineDirectory.appendingPathComponent("retired-raw.caf"),
+            sessionChunkDirectory: offlineDirectory, modelURL: model, fallbackAudioURL: compressedURL)
+        precondition(!transitioned.isEmpty && abs(transitioned.last!.endTime - originalDuration) < 0.15,
+            "offline preparation must recover when compression retires the selected raw audio before opening")
         let corruptAudio = offlineDirectory.appendingPathComponent("corrupt.caf")
         try Data("not an audio file".utf8).write(to: corruptAudio)
         do {

@@ -1084,7 +1084,8 @@ public final class ClassroomManager: ObservableObject {
             var prepared: [ChunkTranscriptionTask] = []
             do {
                 prepared = try await Task.detached(priority: .utility) {
-                    try OfflineAudioSegmenter.prepare(audioURL: url, sessionChunkDirectory: folder, modelURL: modelURL)
+                    try OfflineAudioSegmenter.prepare(audioURL: url, sessionChunkDirectory: folder, modelURL: modelURL,
+                        fallbackAudioURL: url == raw ? compressed : nil)
                 }.value
                 guard let index = self.sessions.firstIndex(where: { $0.id == session.id }) else {
                     throw CocoaError(.fileNoSuchFile)

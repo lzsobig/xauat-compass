@@ -58,6 +58,7 @@ jobs:
             output/simulator-smoke/native-home.png
             output/simulator-smoke/result.json
             output/simulator-smoke/launch-diagnostics.txt
+            output/simulator-smoke/ClassroomApp*.ips
           if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:

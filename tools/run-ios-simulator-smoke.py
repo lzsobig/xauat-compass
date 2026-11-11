@@ -1,6 +1,7 @@
 """Launch the real native app on an isolated CI iPhone simulator and capture its home screen."""
 import json
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -65,6 +66,8 @@ def main():
             details.append("Simulator diagnostic log service did not respond within 45 seconds")
         diagnostic_text = "\n".join(details)
         (output / "launch-diagnostics.txt").write_text(diagnostic_text, encoding="utf-8")
+        for report in (Path.home() / "Library/Logs/DiagnosticReports").glob("ClassroomApp*.ips"):
+            shutil.copy2(report, output / report.name)
         print(diagnostic_text[-16000:], flush=True)
         raise
     finally:
