@@ -1,0 +1,19 @@
+name: Replay Chinese classroom audio
+on:
+  push:
+    branches: [codex/asr-acceptance-build24]
+permissions:
+  contents: read
+jobs:
+  replay:
+    runs-on: macos-15
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - run: python3 audit/replay.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: asr-replay
+          path: audit/result/
