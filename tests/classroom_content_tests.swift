@@ -47,6 +47,18 @@ struct ClassroomContentTests {
             flushCount += 1
         }
         precondition(flushedEnd == delayedCount && flushCount >= 4, "delayed UI timers must not create a huge final upload or lose the tail")
+        var delayedPause = ClassroomSliceBuffer()
+        delayedPause.append(Array(repeating: 3000, count: 48 * 16000)) { _ in true }
+        delayedPause.append(Array(repeating: 0, count: 2 * 16000)) { _ in false }
+        var delayedPauseEnd = 0
+        var delayedPauseCount = 0
+        while let slice = delayedPause.take() {
+            precondition(slice.samples.count <= 320000, "a delayed timer followed by silence must still obey the upload limit")
+            if delayedPauseCount > 0 { precondition(slice.startSample == delayedPauseEnd - 16000) }
+            delayedPauseEnd = slice.endSample
+            delayedPauseCount += 1
+        }
+        precondition(delayedPauseCount >= 3 && delayedPauseEnd >= 48 * 16000, "speech across delayed natural cuts must be retained")
         var shortWord = ClassroomSliceBuffer()
         shortWord.append(Array(repeating: 1200, count: 512)) { _ in true }
         precondition(shortWord.hasDetectedSpeech, "pending speech must be visible even before a chunk is sealed")

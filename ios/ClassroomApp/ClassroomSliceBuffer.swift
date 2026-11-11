@@ -67,12 +67,13 @@ struct ClassroomSliceBuffer {
         let terminal = final && samples.count <= configuration.maximumSamples
         if terminal { end = totalSamples }
         else if final { end = min(totalSamples, bufferStart + configuration.maximumSamples) }
-        else if naturalBreak { end = min(totalSamples, lastSpeechEnd + configuration.postRollSamples) }
+        else if naturalBreak { end = min(totalSamples, lastSpeechEnd + configuration.postRollSamples, bufferStart + configuration.maximumSamples) }
         else { end = min(totalSamples, bufferStart + configuration.maximumSamples) }
         let count = max(0, min(samples.count, end - bufferStart))
         guard count > 0 else { return nil }
         let output = ClassroomAudioSlice(samples: Array(samples.prefix(count)), startSample: bufferStart, endSample: end)
-        let hardBoundary = !terminal && (final || (forcedBreak && !naturalBreak))
+        let truncatedNaturalBreak = naturalBreak && end < min(totalSamples, lastSpeechEnd + configuration.postRollSamples)
+        let hardBoundary = !terminal && (final || truncatedNaturalBreak || (forcedBreak && !naturalBreak))
         retainedOverlap = hardBoundary ? min(configuration.overlapSamples, count) : 0
         let removeCount = count - retainedOverlap
         samples.removeFirst(removeCount)
