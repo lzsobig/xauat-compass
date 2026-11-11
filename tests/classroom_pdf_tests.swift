@@ -42,10 +42,20 @@ struct ClassroomPDFTests {
         precondition(Set(draft.slots.map(\.day)) == Set([1, 2]), "weekday column coordinates must remain distinct")
         precondition(draft.slots.contains { $0.courseName.contains("验收课程甲") })
         precondition(draft.slots.contains { $0.courseName.contains("验收课程乙") })
+        // Rasterize a real PDF page so this fixture has no selectable text layer.
+        let textDocument = PDFDocument(data: bytes as Data)!
+        let thumbnail = textDocument.page(at: 0)!.thumbnail(of: CGSize(width: 1224, height: 1584), for: .mediaBox)
+        let scannedDocument = PDFDocument()
+        let scannedPage = PDFPage(image: thumbnail)!
+        scannedDocument.insert(scannedPage, at: 0)
+        precondition(scannedPage.numberOfCharacters == 0)
+        let scanned = try TimetableEngine.parseTimetableDraft(data: scannedDocument.dataRepresentation()!)
+        precondition(!scanned.slots.isEmpty && scanned.slots.allSatisfy { $0.day == 1 })
+        precondition(scanned.warnings.contains { $0.contains("扫描页") }, "the scanned fixture must actually execute local OCR")
         let weeks = try TimetableEngine.parseWeeks("1-16(单),18～20(双)")
         precondition(weeks.count == 2 && weeks[0].parity == "odd" && weeks[1].parity == "even")
         do { _ = try TimetableEngine.parseTimetableDraft(data: Data("not a PDF".utf8)); preconditionFailure("invalid PDF must report failure") }
         catch { }
-        print("Production multipage PDF, real weekday columns, parity and no-preset checks passed")
+        print("Production multipage PDF, scanned-page OCR, weekday columns, parity and no-preset checks passed")
     }
 }
