@@ -8,6 +8,7 @@ import sys
 import tempfile
 import hashlib
 import json
+import platform
 from pathlib import Path
 from vad_build_support import ios_runtime_arguments
 
@@ -19,6 +20,7 @@ MINIMUM_IOS = "15.0"
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path, help="Path to a new .ipa file")
+    parser.add_argument("--simulator", action="store_true", help="Compile for a local iOS simulator instead of an iPhone")
     args = parser.parse_args()
     if sys.platform != "darwin":
         parser.exit(1, "An iPhoneOS SDK from Xcode on macOS is required. No IPA was written.\n")
@@ -26,11 +28,13 @@ def main():
     output = args.output.resolve()
     if output.suffix.lower() != ".ipa" or output.exists():
         parser.error("Output must be a new .ipa file.")
+    sdk_name = "iphonesimulator" if args.simulator else "iphoneos"
+    architecture = platform.machine() if args.simulator else "arm64"
     sdk = subprocess.check_output(
-        ["xcrun", "--sdk", "iphoneos", "--show-sdk-path"], text=True
+        ["xcrun", "--sdk", sdk_name, "--show-sdk-path"], text=True
     ).strip()
     subprocess.run([sys.executable, str(ROOT / "tools" / "prepare-vad-runtime.py")], check=True)
-    vad_arguments = ios_runtime_arguments(ROOT / "output" / "vad-runtime" / "sherpa-onnx-1.12.20-ios")
+    vad_arguments = ios_runtime_arguments(ROOT / "output" / "vad-runtime" / "sherpa-onnx-1.12.20-ios", args.simulator, architecture)
     model = SOURCE / "VADAssets" / "silero_vad.int8.onnx"
     if hashlib.sha256(model.read_bytes()).hexdigest() != "c36d490aff5ab924ca6c7aeec4d8f6bd3d22db6fa17611b9c5b17eae58ac3a20":
         raise RuntimeError("Silero model integrity check failed")
@@ -48,8 +52,8 @@ def main():
         try:
             subprocess.run(
                 [
-                    "xcrun", "--sdk", "iphoneos", "swiftc", "-sdk", sdk,
-                    "-target", f"arm64-apple-ios{MINIMUM_IOS}", "-O", "-parse-as-library",
+                    "xcrun", "--sdk", sdk_name, "swiftc", "-sdk", sdk,
+                    "-target", f"{architecture}-apple-ios{MINIMUM_IOS}" + ("-simulator" if args.simulator else ""), "-O", "-parse-as-library",
                     "-module-name", "ClassroomApp",
                     *swift_sources,
                     *vad_arguments,
@@ -66,7 +70,7 @@ def main():
             raise
         with (SOURCE / "Info.plist").open("rb") as file:
             info = plistlib.load(file)
-        info.update(MinimumOSVersion=MINIMUM_IOS, CFBundleSupportedPlatforms=["iPhoneOS"])
+        info.update(MinimumOSVersion=MINIMUM_IOS, CFBundleSupportedPlatforms=["iPhoneSimulator" if args.simulator else "iPhoneOS"])
         with (bundle / "Info.plist").open("wb") as file:
             plistlib.dump(info, file)
         manifest = {
@@ -78,8 +82,11 @@ def main():
             "baseline_version": "1.4.3 (22)",
             "silero_model_sha256": hashlib.sha256(model.read_bytes()).hexdigest(),
             "sherpa_onnx_version": "1.12.20",
+            "platform": sdk_name,
         }
         (bundle / "ClassroomBuild.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+        if args.simulator:
+            subprocess.run(["codesign", "--force", "--sign", "-", str(bundle)], check=True)
         subprocess.run(["xcrun", "vtool", "-show-build", str(executable)], check=True)
         archive = root / "classroom.ipa"
         subprocess.run(

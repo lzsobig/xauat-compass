@@ -10,6 +10,7 @@ on:
       - 'ios/Vendor/**'
       - 'tools/package-ios-app.py'
       - 'tools/*vad*'
+      - 'tools/run-ios-simulator-smoke.py'
       - 'tests/test_swift_logic.swift'
       - 'tests/classroom_*'
       - 'tests/verify_classroom_exports.py'
@@ -46,6 +47,16 @@ jobs:
           swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomExport.swift ios/Vendor/ZIPFoundation/*.swift tests/classroom_export_tests.swift -o /tmp/classroom-export-tests
           /tmp/classroom-export-tests output/export-fixtures
           python3 tests/verify_classroom_exports.py output/export-fixtures
+      - name: Launch native app on an iPhone simulator
+        run: python3 tools/run-ios-simulator-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: classroom-native-simulator
+          path: |
+            output/simulator-smoke/native-home.png
+            output/simulator-smoke/result.json
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: classroom-export-fixtures

@@ -3,7 +3,7 @@ import plistlib
 from pathlib import Path
 
 
-def ios_runtime_arguments(root: Path):
+def ios_runtime_arguments(root: Path, simulator=False, architecture="arm64"):
     libraries = []
     header = None
     for name in ["sherpa-onnx.xcframework", "onnxruntime.xcframework"]:
@@ -13,8 +13,9 @@ def ios_runtime_arguments(root: Path):
         framework = frameworks[0]
         info = plistlib.loads((framework / "Info.plist").read_bytes())
         variants = [item for item in info["AvailableLibraries"]
-                    if item["SupportedPlatform"] == "ios" and not item.get("SupportedPlatformVariant")
-                    and "arm64" in item["SupportedArchitectures"]]
+                    if item["SupportedPlatform"] == "ios"
+                    and (item.get("SupportedPlatformVariant") or None) == ("simulator" if simulator else None)
+                    and architecture in item["SupportedArchitectures"]]
         if len(variants) != 1:
             raise RuntimeError(f"Cannot identify the iPhone arm64 slice of {name}")
         variant = variants[0]
