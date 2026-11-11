@@ -7,6 +7,8 @@ struct ClassroomSegmentationConfig {
     var postRollSamples = 8000     // 0.5 s
     var maximumSamples = 320000    // 20 s, wait for pauses before this hard limit
     var overlapSamples = 16000     // 1 s
+    var pauseSearchSamples = 80000 // 5 s before a forced cut
+    var minimumCutPauseSamples = 3072 // 192 ms without detected speech
 }
 
 struct ClassroomAudioSlice {
@@ -28,6 +30,7 @@ struct ClassroomSliceBuffer {
     private var lastOutputEnd = 0
     private var retainedOverlap = 0
     private var noiseFloor: Float = 0.003
+    private var pauses: [Range<Int>] = []
     var hasDetectedSpeech: Bool { speechSinceCut }
 
     mutating func append(_ input: [Int16], voiceDetection: ([Float]) -> Bool?) {
@@ -42,6 +45,10 @@ struct ClassroomSliceBuffer {
             let speech = voiceDetection(window) ?? (rms >= threshold)
             classifiedUntil += 512
             if speech {
+                let silenceEnd = classifiedUntil - 512
+                if speechSinceCut && silenceEnd - lastSpeechEnd >= configuration.minimumCutPauseSamples {
+                    pauses.append(lastSpeechEnd..<silenceEnd)
+                }
                 speechSinceCut = true
                 lastSpeechEnd = classifiedUntil
             } else {
@@ -65,22 +72,38 @@ struct ClassroomSliceBuffer {
         guard (final && hasNewAudio) || naturalBreak || forcedBreak else { return nil }
         let end: Int
         let terminal = final && samples.count <= configuration.maximumSamples
+        let limit = min(totalSamples, bufferStart + configuration.maximumSamples)
+        let naturalEnd = min(totalSamples, lastSpeechEnd + configuration.postRollSamples)
+        let needsHardCut = !terminal && (final || !naturalBreak || naturalEnd > limit)
+        let pauseCut = needsHardCut ? cutInPause(before: limit) : nil
         if terminal { end = totalSamples }
-        else if final { end = min(totalSamples, bufferStart + configuration.maximumSamples) }
-        else if naturalBreak { end = min(totalSamples, lastSpeechEnd + configuration.postRollSamples, bufferStart + configuration.maximumSamples) }
-        else { end = min(totalSamples, bufferStart + configuration.maximumSamples) }
+        else if let pauseCut { end = pauseCut }
+        else if needsHardCut { end = limit }
+        else { end = naturalEnd }
         let count = max(0, min(samples.count, end - bufferStart))
         guard count > 0 else { return nil }
         let output = ClassroomAudioSlice(samples: Array(samples.prefix(count)), startSample: bufferStart, endSample: end)
-        let truncatedNaturalBreak = naturalBreak && end < min(totalSamples, lastSpeechEnd + configuration.postRollSamples)
-        let hardBoundary = !terminal && (final || truncatedNaturalBreak || (forcedBreak && !naturalBreak))
-        retainedOverlap = hardBoundary ? min(configuration.overlapSamples, count) : 0
+        retainedOverlap = needsHardCut && pauseCut == nil ? min(configuration.overlapSamples, count) : 0
         let removeCount = count - retainedOverlap
         samples.removeFirst(removeCount)
         bufferStart += removeCount
+        pauses.removeAll { $0.lowerBound < end }
         lastOutputEnd = end
         // Preserve speech already classified beyond a hard boundary; overlap alone cannot start a segment.
         speechSinceCut = !terminal && lastSpeechEnd > end
         return output
+    }
+
+    private func cutInPause(before limit: Int) -> Int? {
+        let searchStart = max(bufferStart, limit - configuration.pauseSearchSamples)
+        let ongoingPause = lastSpeechEnd..<classifiedUntil
+        for pause in [ongoingPause] + pauses.reversed() {
+            let start = max(pause.lowerBound, searchStart)
+            let end = min(pause.upperBound, limit)
+            if end - start >= configuration.minimumCutPauseSamples {
+                return start + (end - start) / 2
+            }
+        }
+        return nil
     }
 }
