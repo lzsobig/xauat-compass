@@ -77,6 +77,12 @@ private final class AudioCapture {
         return Double(totalFrames) / sampleRate
     }
 
+    var hasPendingSpeech: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return sliceBuffer.hasDetectedSpeech
+    }
+
     func close() {
         lock.lock()
         defer { lock.unlock() }
@@ -1480,6 +1486,12 @@ public final class ClassroomManager: ObservableObject {
         let end = currentSession?.id == session.id && isRecording
             ? currentRecordingTime : max(session.duration, session.segments.map(\.endTime).max() ?? 0)
         return ClassroomQuestionContext.recent(session.segments, end: end)
+    }
+
+    public func hasPendingTranscription(for session: LessonSession) -> Bool {
+        let queued = session.chunkTasks.contains { $0.status == .pending || $0.status == .transcribing }
+        let currentSpeech = currentSession?.id == session.id && isRecording && session.mode == .realtime && capture?.hasPendingSpeech == true
+        return queued || currentSpeech
     }
 
     public func askQuestion(for session: LessonSession, query: String, segment: TranscriptSegment? = nil, imageJPEG: Data? = nil, recentOnly: Bool = false) {

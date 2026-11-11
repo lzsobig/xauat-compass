@@ -11,7 +11,14 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def run(*arguments, **options):
-    return subprocess.run(arguments, text=True, check=True, **options)
+    try:
+        return subprocess.run(arguments, text=True, check=True, **options)
+    except subprocess.CalledProcessError as error:
+        if error.stdout:
+            print(error.stdout, flush=True)
+        if error.stderr:
+            print(error.stderr, file=sys.stderr, flush=True)
+        raise
 
 
 def main():
@@ -47,6 +54,13 @@ def main():
         (output / "result.json").write_text(json.dumps({"bundle_id": "top.lzso.classroom", "runtime": runtime,
             "device": template["name"], "launched": True, "process_alive_after_5_seconds": True}, indent=2), encoding="utf-8")
         print("Native iPhone simulator app launch and home screenshot passed")
+    except Exception:
+        diagnostic = subprocess.run(["xcrun", "simctl", "spawn", device, "log", "show", "--last", "3m",
+            "--style", "compact", "--predicate", 'eventMessage CONTAINS "top.lzso.classroom" OR process == "ClassroomApp"'],
+            text=True, capture_output=True, timeout=45)
+        (output / "launch-diagnostics.txt").write_text(diagnostic.stdout + diagnostic.stderr, encoding="utf-8")
+        print(diagnostic.stdout[-16000:], flush=True)
+        raise
     finally:
         subprocess.run(["xcrun", "simctl", "shutdown", device], check=False)
         subprocess.run(["xcrun", "simctl", "delete", device], check=False)

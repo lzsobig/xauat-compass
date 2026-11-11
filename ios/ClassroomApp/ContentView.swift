@@ -2900,8 +2900,8 @@ struct QATabView: View {
                     Label(usesRecentScope ? "最近 3 分钟" : "整节课", systemImage: "chevron.down")
                         .font(.footnote)
                 }
-                if usesRecentScope && manager.currentSession?.id == session.id && manager.isChunkTranscribing {
-                    Text("最新一段正在转写").font(.caption).foregroundStyle(.secondary)
+                if usesRecentScope && manager.hasPendingTranscription(for: session) {
+                    Text("最新语音尚未转写完成").font(.caption).foregroundStyle(.secondary)
                 }
                 if let photo {
                     HStack(spacing: 8) {

@@ -28,6 +28,7 @@ struct ClassroomSliceBuffer {
     private var lastOutputEnd = 0
     private var retainedOverlap = 0
     private var noiseFloor: Float = 0.003
+    var hasDetectedSpeech: Bool { speechSinceCut }
 
     mutating func append(_ input: [Int16], voiceDetection: ([Float]) -> Bool?) {
         samples.append(contentsOf: input)

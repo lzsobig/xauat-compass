@@ -49,8 +49,10 @@ struct ClassroomContentTests {
         precondition(flushedEnd == delayedCount && flushCount >= 4, "delayed UI timers must not create a huge final upload or lose the tail")
         var shortWord = ClassroomSliceBuffer()
         shortWord.append(Array(repeating: 1200, count: 512)) { _ in true }
+        precondition(shortWord.hasDetectedSpeech, "pending speech must be visible even before a chunk is sealed")
         shortWord.append(Array(repeating: 0, count: 17920)) { _ in false }
         let natural = shortWord.take()!
+        precondition(!shortWord.hasDetectedSpeech)
         precondition(natural.endSample == 512 + 8000, "preserve short words and the post-roll")
         var missingModel = ClassroomSliceBuffer()
         missingModel.append(Array(repeating: 8000, count: 512)) { _ in nil }

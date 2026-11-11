@@ -56,6 +56,7 @@ jobs:
           path: |
             output/simulator-smoke/native-home.png
             output/simulator-smoke/result.json
+            output/simulator-smoke/launch-diagnostics.txt
           if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
