@@ -30,18 +30,18 @@ public enum AudioCompressor {
             throw CompressionError.fileNotFound
         }
         
-        if FileManager.default.fileExists(atPath: destinationURL.path) {
-            try? FileManager.default.removeItem(at: destinationURL)
-        }
+        // Publish only a completed container. Playback and offline ASR must not open a partial M4A.
+        let temporaryURL = destinationURL.deletingLastPathComponent()
+            .appendingPathComponent("compression-" + UUID().uuidString + ".m4a")
+        defer { try? FileManager.default.removeItem(at: temporaryURL) }
         
         let asset = AVURLAsset(url: sourceURL)
         
         guard let exportSession = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetAppleM4A) else {
-            let rawSize = (try? FileManager.default.attributesOfItem(atPath: sourceURL.path)[.size] as? Int64) ?? 0
-            return rawSize
+            throw CompressionError.unsupportedFormat
         }
         
-        exportSession.outputURL = destinationURL
+        exportSession.outputURL = temporaryURL
         exportSession.outputFileType = AVFileType(rawValue: "com.apple.m4a-audio")
         exportSession.shouldOptimizeForNetworkUse = true
         
@@ -53,8 +53,14 @@ public enum AudioCompressor {
         
         switch exportSession.status {
         case .completed:
-            let attrs = try FileManager.default.attributesOfItem(atPath: destinationURL.path)
+            let attrs = try FileManager.default.attributesOfItem(atPath: temporaryURL.path)
             let size = attrs[.size] as? Int64 ?? 0
+            guard size > 0 else { throw CompressionError.exportFailed("导出文件为空") }
+            if FileManager.default.fileExists(atPath: destinationURL.path) {
+                _ = try FileManager.default.replaceItemAt(destinationURL, withItemAt: temporaryURL)
+            } else {
+                try FileManager.default.moveItem(at: temporaryURL, to: destinationURL)
+            }
             return size
         case .failed:
             throw CompressionError.exportFailed(exportSession.error?.localizedDescription ?? "未知错误")

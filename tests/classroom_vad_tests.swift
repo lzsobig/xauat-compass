@@ -3,7 +3,7 @@ import Foundation
 
 @main
 struct ClassroomVADTests {
-    static func main() throws {
+    static func main() async throws {
         #if CLASSROOM_SHERPA
         let model = URL(fileURLWithPath: CommandLine.arguments[1])
         guard let detector = SileroVoiceDetector(modelURL: model) else {
@@ -99,6 +99,24 @@ struct ClassroomVADTests {
         let remainingAttempts = try FileManager.default.contentsOfDirectory(atPath: offlineDirectory.path).count
         precondition(remainingAttempts == attempts)
         print("Offline audio decode, real-time slicing, WAV output and failure cleanup passed")
+        let compressedURL = offlineDirectory.appendingPathComponent("verified-recording.m4a")
+        let sourceURL = URL(fileURLWithPath: CommandLine.arguments[2])
+        let compressedSize = try await AudioCompressor.compressToM4A(sourceURL: sourceURL, destinationURL: compressedURL)
+        precondition(compressedSize > 0 && FileManager.default.fileExists(atPath: sourceURL.path))
+        let compressedAudio = try AVAudioFile(forReading: compressedURL)
+        precondition(abs(Double(compressedAudio.length) / compressedAudio.processingFormat.sampleRate - originalDuration) < 0.15)
+        let originalCompressedData = try Data(contentsOf: compressedURL)
+        let corruptAudio = offlineDirectory.appendingPathComponent("corrupt.caf")
+        try Data("not an audio file".utf8).write(to: corruptAudio)
+        do {
+            _ = try await AudioCompressor.compressToM4A(sourceURL: corruptAudio, destinationURL: compressedURL)
+            preconditionFailure("an unavailable exporter must not report success and cause the source to be deleted")
+        } catch { }
+        let preservedData = try Data(contentsOf: compressedURL)
+        precondition(preservedData == originalCompressedData)
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: offlineDirectory.path)
+        precondition(!leftovers.contains(where: { $0.hasPrefix("compression-") }))
+        print("Native AAC compression, complete-container publication and failed-export preservation passed")
         #else
         preconditionFailure("This test must link the real sherpa-onnx library")
         #endif

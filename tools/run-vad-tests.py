@@ -21,6 +21,7 @@ def main():
                     str(ROOT / "ios/ClassroomApp/SileroVoiceDetector.swift"), str(ROOT / "ios/ClassroomApp/ClassroomSliceBuffer.swift"),
                     str(ROOT / "ios/ClassroomApp/Models.swift"), str(ROOT / "ios/ClassroomApp/PCMUtilities.swift"),
                     str(ROOT / "ios/ClassroomApp/OfflineAudioSegmenter.swift"),
+                    str(ROOT / "ios/ClassroomApp/AudioCompressor.swift"),
                     str(ROOT / "tests/classroom_vad_tests.swift"),
                     "-L", str(library.parent), "-lsherpa-onnx-c-api", "-Xlinker", "-rpath", "-Xlinker", str(library.parent),
                     "-o", str(executable)], check=True)
