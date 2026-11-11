@@ -34,6 +34,20 @@ struct ClassroomContentTests {
         }
         precondition(slices.last?.endSample == original.count, "the last short tail must not be lost")
         precondition(slicer.take(final: true) == nil, "a second stop must not submit duplicate audio")
+        var pauseBeforeLimit = ClassroomSliceBuffer()
+        let voiceBeforePause = 560 * 512
+        let pauseDuration = 8 * 512
+        let voiceAfterPause = 70 * 512
+        pauseBeforeLimit.append(Array(repeating: 3000, count: voiceBeforePause)) { _ in true }
+        pauseBeforeLimit.append(Array(repeating: 0, count: pauseDuration)) { _ in false }
+        pauseBeforeLimit.append(Array(repeating: 3000, count: voiceAfterPause)) { _ in true }
+        let pauseCut = pauseBeforeLimit.take()!
+        precondition(pauseCut.endSample == voiceBeforePause + pauseDuration / 2,
+                     "prefer a detected pause shortly before the duration limit")
+        let afterPause = pauseBeforeLimit.take(final: true)!
+        precondition(afterPause.startSample == pauseCut.endSample,
+                     "a pause cut must neither duplicate speech nor skip audio")
+        precondition(afterPause.endSample == voiceBeforePause + pauseDuration + voiceAfterPause)
         var delayed = ClassroomSliceBuffer()
         let delayedCount = 62 * 16000 + 17
         delayed.append(Array(repeating: 3000, count: delayedCount)) { _ in true }
