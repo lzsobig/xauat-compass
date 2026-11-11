@@ -1071,7 +1071,8 @@ public final class ClassroomManager: ObservableObject {
         let compressed = audioURL(for: current)
         let raw = rawAudioURL(for: current)
         let url = FileManager.default.fileExists(atPath: compressed.path) ? compressed : raw
-        guard FileManager.default.fileExists(atPath: url.path) else {
+        guard FileManager.default.fileExists(atPath: url.path)
+                || (url == raw && FileManager.default.fileExists(atPath: compressed.path)) else {
             errorMessage = "本地录音不存在，如已备份到云端请先下载音频"
             return
         }
