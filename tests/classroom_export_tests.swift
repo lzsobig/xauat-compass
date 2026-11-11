@@ -39,6 +39,13 @@ struct ClassroomExportTests {
         try generate(.word, false, "sample-word-text.docx")
         try generate(.word, true, "minutes-only.docx", sections: [.minutes])
         try generate(.markdown, true, "minutes-only.zip", sections: [.minutes])
+        lesson.notes.append(LessonNote(style: .detailedOutline, content: "原有详细笔记需要保留并单独导出"))
+        let selectedNote = ClassroomExportOptions(sections: [.minutes], format: .txt, includeImages: false, noteStyle: .detailedOutline)
+        let selectedBlocks = try ClassroomExporter.blocks(session: lesson, options: selectedNote) { _ in slideURL }
+        let selectedText = ClassroomExporter.markdown(selectedBlocks, images: false, headings: false)
+        precondition(selectedText.contains("原有详细笔记需要保留并单独导出"))
+        precondition(!selectedText.contains("结构受力分析"), "single-note TXT must not accidentally include another style")
+        precondition(selectedText.contains("课件图 [00:12]"), "single-item exports must retain photo positions")
         let options = ClassroomExportOptions(sections: [.transcript], format: .word, includeImages: true)
         do {
             _ = try ClassroomExporter.export(session: lesson, options: options) { _ in output.appendingPathComponent("missing.jpg") }

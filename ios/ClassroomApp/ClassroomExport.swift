@@ -13,6 +13,7 @@ struct ClassroomExportOptions: Sendable {
     var sections: Set<ClassroomExportSection> = [.minutes]
     var format: ClassroomExportFormat = .word
     var includeImages = true
+    var noteStyle: NoteStyle? = nil
 }
 
 struct ClassroomExportImage {
@@ -82,11 +83,12 @@ enum ClassroomExporter {
             if segments.isEmpty { result.append(.text("尚无实录文字")) }
         }
         if options.sections.contains(.minutes) {
-            result.append(.heading("课堂纪要", 2))
-            if let note = session.notes.first(where: { $0.style == .minutes }) {
+            let selectedStyle = options.noteStyle ?? .minutes
+            result.append(.heading(options.noteStyle?.title ?? "课堂纪要", 2))
+            if let note = session.notes.first(where: { $0.style == selectedStyle }) {
                 result.append(.text(note.content))
             } else { result.append(.text("尚未生成纪要")) }
-            let previousNotes = session.notes.filter { $0.style != .minutes }
+            let previousNotes = options.noteStyle == nil ? session.notes.filter { $0.style != .minutes } : []
             for note in previousNotes {
                 result.append(.heading(note.style.title, 3))
                 result.append(.text(note.content))

@@ -1722,6 +1722,23 @@ func createTempTXT(filename: String, content: String) -> URL? {
     }
 }
 
+private struct ClassroomOperationNotice: View {
+    @EnvironmentObject var manager: ClassroomManager
+    var body: some View {
+        if !manager.errorMessage.isEmpty {
+            HStack(alignment: .top, spacing: 8) {
+                Text(manager.errorMessage).font(.footnote).frame(maxWidth: .infinity, alignment: .leading)
+                Button { manager.errorMessage = "" } label: {
+                    Image(systemName: "xmark").frame(width: 44, height: 36)
+                }.accessibilityLabel("关闭提示")
+            }
+            .padding(.leading, 14)
+            .padding(.vertical, 6)
+            .background(Color.orange.opacity(0.12))
+        }
+    }
+}
+
 struct LessonDetailView: View {
     @EnvironmentObject var manager: ClassroomManager
     @Environment(\.presentationMode) var presentationMode
@@ -1748,6 +1765,7 @@ struct LessonDetailView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                ClassroomOperationNotice()
                 if isLiveActive {
                     HStack {
                         Label(manager.isPaused ? "已暂停" : (activeSession.mode == .realtime ? manager.asrProvider.title : "仅录音"), systemImage: "waveform")
@@ -1955,10 +1973,10 @@ struct TranscriptTabView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                             .foregroundColor(.orange)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("因网络波动，尚有 \(max(1, pendingCount)) 个分片待补转写")
+                            Text("尚有 \(max(1, pendingCount)) 个分段待转写")
                                 .font(.caption.bold())
                                 .foregroundColor(.primary)
-                            Text("原始音频已安全缓存在本地，连网后点击即可补转")
+                            Text("原音频已保存在本地，未完成分段可继续识别或重试")
                                 .font(.system(size: 10))
                                 .foregroundColor(.secondary)
                         }
@@ -2060,24 +2078,11 @@ struct TranscriptTabView: View {
 
                             // 2. 导出为 TXT 文档
                             Button {
-                                let header = """
-========================================
-【课堂语音实录】
-课程：\(session.courseName)
-主题：\(session.title)
-录音时长：\(formatDuration(session.duration))
-实录分段：共 \(session.segments.count) 段
-========================================
-
-"""
-                                let body = session.segments
-                                    .sorted { $0.startTime < $1.startTime }
-                                    .map { "[\(formatDuration($0.startTime))] \($0.text)" }
-                                    .joined(separator: "\n\n")
-                                let name = "\(session.title)-语音实录"
-                                if let url = createTempTXT(filename: name, content: header + body) {
+                                do {
+                                    let options = ClassroomExportOptions(sections: [.transcript], format: .txt, includeImages: false)
+                                    let url = try ClassroomExporter.export(session: session, options: options) { manager.attachmentURL($0) }
                                     shareItem = ShareItem(fileURL: url)
-                                }
+                                } catch { manager.errorMessage = "导出失败：\(error.localizedDescription)" }
                             } label: {
                                 Label("导出 TXT", systemImage: "square.and.arrow.up")
                                     .font(.system(size: 12, weight: .medium))
@@ -2146,7 +2151,7 @@ struct TranscriptTabView: View {
                                     Button {
                                         manager.transcribeOffline(for: session)
                                     } label: {
-                                        Label("开始转写录音", systemImage: "sparkles")
+                                        Label(manager.offlineTranscriptionSessionId == session.id ? "正在准备与转写录音" : "开始转写录音", systemImage: "sparkles")
                                             .font(.headline)
                                             .padding(.horizontal, 20)
                                             .padding(.vertical, 10)
@@ -2620,19 +2625,11 @@ struct NotesTabView: View {
                             }
 
                             Button {
-                                let name = "\(session.title)-\(selectedStyle.title)"
-                                let header = """
-========================================
-【智能课堂笔记 - \(selectedStyle.title)】
-课程：\(session.courseName)
-主题：\(session.title)
-整理：DeepSeek AI
-========================================
-
-"""
-                                if let url = createTempTXT(filename: name, content: header + note.content) {
+                                do {
+                                    let options = ClassroomExportOptions(sections: [.minutes], format: .txt, includeImages: false, noteStyle: selectedStyle)
+                                    let url = try ClassroomExporter.export(session: session, options: options) { manager.attachmentURL($0) }
                                     shareItem = ShareItem(fileURL: url)
-                                }
+                                } catch { manager.errorMessage = "导出失败：\(error.localizedDescription)" }
                             } label: {
                                 Label("导出 TXT", systemImage: "square.and.arrow.up")
                                     .font(.system(size: 13, weight: .semibold))

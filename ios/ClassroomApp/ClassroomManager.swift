@@ -4,49 +4,6 @@ import CoreMedia
 import Foundation
 import SwiftUI
 
-// MARK: - PCM 转 WAV 工具函数
-
-public func pcmToWav(samples: [Int16], sampleRate: Int = 16000) -> Data {
-    var data = Data()
-    let byteRate = sampleRate * 2
-    let dataSize = samples.count * 2
-    let chunkSize = 36 + dataSize
-    
-    // RIFF
-    data.append(contentsOf: [0x52, 0x49, 0x46, 0x46])
-    var val32 = UInt32(chunkSize).littleEndian
-    data.append(Data(bytes: &val32, count: 4))
-    // WAVE
-    data.append(contentsOf: [0x57, 0x41, 0x56, 0x45])
-    
-    // fmt subchunk
-    data.append(contentsOf: [0x66, 0x6d, 0x74, 0x20])
-    var subchunk1Size = UInt32(16).littleEndian
-    data.append(Data(bytes: &subchunk1Size, count: 4))
-    var audioFormat = UInt16(1).littleEndian // PCM
-    data.append(Data(bytes: &audioFormat, count: 2))
-    var numChannels = UInt16(1).littleEndian // Mono
-    data.append(Data(bytes: &numChannels, count: 2))
-    var sr = UInt32(sampleRate).littleEndian
-    data.append(Data(bytes: &sr, count: 4))
-    var br = UInt32(byteRate).littleEndian
-    data.append(Data(bytes: &br, count: 4))
-    var blockAlign = UInt16(2).littleEndian
-    data.append(Data(bytes: &blockAlign, count: 2))
-    var bitsPerSample = UInt16(16).littleEndian
-    data.append(Data(bytes: &bitsPerSample, count: 2))
-    
-    // data subchunk
-    data.append(contentsOf: [0x64, 0x61, 0x74, 0x61])
-    var ds = UInt32(dataSize).littleEndian
-    data.append(Data(bytes: &ds, count: 4))
-    
-    samples.withUnsafeBufferPointer { ptr in
-        data.append(Data(buffer: ptr))
-    }
-    return data
-}
-
 private final class AudioCapture {
     private let lock = NSLock()
     private var file: AVAudioFile?
@@ -233,6 +190,7 @@ public final class ClassroomManager: ObservableObject {
     private var automaticMinutesQueue: [UUID] = []
     private var chunkQueue: [(sessionId: UUID, taskId: UUID)] = []
     private var chunkQueueWorker: Task<Void, Never>?
+    @Published public private(set) var offlineTranscriptionSessionId: UUID?
 
     public init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -757,7 +715,7 @@ public final class ClassroomManager: ObservableObject {
         if sess.status == .recording || sess.status == .paused { return }
         
         // 2. 仅录音模式绝不自动清理任何录音！
-        if sess.mode == .recordOnly {
+        if sess.mode == .recordOnly && sess.chunkTasks.isEmpty {
             sessions[idx].status = .recordOnlyCompleted
             saveSessions()
             return
@@ -776,6 +734,9 @@ public final class ClassroomManager: ObservableObject {
             sessions[idx].status = .completed
         }
         saveSessions()
+        if !sessions[idx].chunkTasks.contains(where: { $0.status == .pending || $0.status == .transcribing }) {
+            finishOfflineTranscription(sessionId: sessionId)
+        }
         if sessions[idx].status == .completed { enqueueAutomaticMinutes(sessionId: sessionId) }
     }
 
@@ -800,7 +761,10 @@ public final class ClassroomManager: ObservableObject {
         chunkQueueWorker = Task { [weak self] in
             guard let self else { return }
             while !self.chunkQueue.isEmpty {
-                let next = self.chunkQueue.removeFirst()
+                let liveIndex = self.chunkQueue.firstIndex { item in
+                    self.currentSession?.id == item.sessionId && self.currentSession?.mode == .realtime
+                } ?? 0
+                let next = self.chunkQueue.remove(at: liveIndex)
                 guard let session = self.sessions.first(where: { $0.id == next.sessionId }),
                       let task = session.chunkTasks.first(where: { $0.id == next.taskId }),
                       task.status == .pending || task.status == .failed else { continue }
@@ -1075,57 +1039,69 @@ public final class ClassroomManager: ObservableObject {
 
     // MARK: - 课后离线/云端 ASR 转写
     
-    public func transcribeOffline(for session: LessonSession) {
-        guard !isTranscribingOffline else { return }
-        let url = audioURL(for: session)
-        guard FileManager.default.fileExists(atPath: url.path) else {
-            errorMessage = "录音文件在本地不存在（如已上传云端，请点击下载后再转写）"
-            return
-        }
-        
-        errorMessage = ""
-        isTranscribingOffline = true
-        
-        Task {
-            // 云端课后转写
-            if !activeASRKey.isEmpty {
-                do {
-                    let transcribedText = try await callCloudASR(audioURL: url)
-                    if !transcribedText.isEmpty {
-                        var segs: [TranscriptSegment] = []
-                        let lines = transcribedText.components(separatedBy: "\n").filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
-                        let stepDur = session.duration / max(1.0, Double(lines.count))
-                        for (idx, line) in lines.enumerated() {
-                            let s = Double(idx) * stepDur
-                            let e = s + stepDur
-                            let isMarked = session.marks.contains { $0 >= s - 1 && $0 <= e + 1 }
-                            segs.append(TranscriptSegment(sequenceIndex: idx, startTime: s, endTime: e, text: line, isMarked: isMarked))
-                        }
-                        if segs.isEmpty {
-                            segs.append(TranscriptSegment(sequenceIndex: 0, startTime: 0, endTime: session.duration, text: transcribedText))
-                        }
-                        
-                        if let idx = self.sessions.firstIndex(where: { $0.id == session.id }) {
-                            self.sessions[idx].segments = segs
-                            self.saveSessions()
-                            self.enqueueAutomaticMinutes(sessionId: session.id)
-                            // 保持音频文件完整保留！严禁删除本地音频！
-                        }
-                        self.isTranscribingOffline = false
-                        return
-                    }
-                } catch {
-                    self.errorMessage = "云端转写失败：\(error.localizedDescription)"
-                }
-            }
-            
-            if self.errorMessage.isEmpty {
-                self.errorMessage = self.activeASRKey.isEmpty ? "请先填写当前转写引擎的 API Key" : "未识别到文字"
-            }
-            self.isTranscribingOffline = false
+    private func finishOfflineTranscription(sessionId: UUID) {
+        if offlineTranscriptionSessionId == sessionId {
+            offlineTranscriptionSessionId = nil
+            isTranscribingOffline = false
         }
     }
-    
+
+    public func transcribeOffline(for session: LessonSession) {
+        guard !isTranscribingOffline,
+              let current = sessions.first(where: { $0.id == session.id }),
+              currentSession?.id != session.id || !isRecording else { return }
+        if current.chunkTasks.contains(where: { $0.status == .transcribing }) { return }
+        if current.chunkTasks.contains(where: { $0.status == .pending || $0.status == .failed }) {
+            retryPendingChunks(for: current)
+            return
+        }
+        guard current.segments.isEmpty else {
+            errorMessage = "这节课已有实录，保留现有内容；失败分段可单独重试"
+            return
+        }
+        guard hasActiveASRKey else {
+            errorMessage = "请先填写首页所选转写服务的 API Key"
+            return
+        }
+        let compressed = audioURL(for: current)
+        let raw = rawAudioURL(for: current)
+        let url = FileManager.default.fileExists(atPath: compressed.path) ? compressed : raw
+        guard FileManager.default.fileExists(atPath: url.path) else {
+            errorMessage = "本地录音不存在，如已备份到云端请先下载音频"
+            return
+        }
+        let folder = chunksFolder(for: session.id)
+        let modelURL = Bundle.main.url(forResource: "silero_vad.int8", withExtension: "onnx")
+        errorMessage = ""
+        isTranscribingOffline = true
+        offlineTranscriptionSessionId = session.id
+        Task {
+            var prepared: [ChunkTranscriptionTask] = []
+            do {
+                prepared = try await Task.detached(priority: .utility) {
+                    try OfflineAudioSegmenter.prepare(audioURL: url, sessionChunkDirectory: folder, modelURL: modelURL)
+                }.value
+                guard let index = self.sessions.firstIndex(where: { $0.id == session.id }) else {
+                    throw CocoaError(.fileNoSuchFile)
+                }
+                var updated = self.sessions
+                updated[index].chunkTasks = prepared
+                updated[index].status = .pendingCatchUp
+                try JSONEncoder().encode(updated).write(to: self.sessionsURL, options: .atomic)
+                self.sessions = updated
+                for task in prepared { self.queueChunkTask(sessionId: session.id, taskId: task.id) }
+            } catch {
+                // Only remove this unpublished attempt, never the source recording or existing tasks.
+                if let first = prepared.first {
+                    let attemptDirectory = folder.appendingPathComponent(first.chunkFileName).deletingLastPathComponent()
+                    try? FileManager.default.removeItem(at: attemptDirectory)
+                }
+                self.finishOfflineTranscription(sessionId: session.id)
+                self.errorMessage = "课后转写准备失败，原录音已保留：\(error.localizedDescription)"
+            }
+        }
+    }
+
     private func callCloudASR(audioData: Data, filename: String = "audio.wav", mimeType: String = "audio/wav") async throws -> String {
         let provider = asrProvider
         let key = activeASRKey
@@ -1932,6 +1908,7 @@ public final class ClassroomManager: ObservableObject {
     }
     
     public func deleteSession(_ session: LessonSession, deleteCloudCopy: Bool = false) {
+        finishOfflineTranscription(sessionId: session.id)
         if playingSessionId == session.id {
             pauseAudio()
             audioPlayer = nil

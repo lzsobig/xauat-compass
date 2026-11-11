@@ -77,6 +77,28 @@ struct ClassroomVADTests {
         }
         precondition(lastEnd == totalSamples && sliceCount > 100)
         print("45-minute synthetic-audio stress passed: slices=\(sliceCount), quiet=\(quietDetections), noise=\(noiseDetections), execution_seconds=\(Date().timeIntervalSince(started))")
+        let offlineDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("classroom-offline-tests-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: offlineDirectory) }
+        let offlineTasks = try OfflineAudioSegmenter.prepare(audioURL: URL(fileURLWithPath: CommandLine.arguments[2]),
+            sessionChunkDirectory: offlineDirectory, modelURL: model)
+        precondition(!offlineTasks.isEmpty)
+        for (index, task) in offlineTasks.enumerated() {
+            let chunk = try AVAudioFile(forReading: offlineDirectory.appendingPathComponent(task.chunkFileName))
+            precondition(task.sequenceIndex == index + 1 && chunk.processingFormat.sampleRate == 16000)
+            precondition(chunk.processingFormat.channelCount == 1)
+            precondition(abs(Double(chunk.length) / 16000 - (task.endTime - task.startTime)) < 0.001)
+            precondition(task.endTime - task.startTime <= 20.001)
+        }
+        let originalDuration = Double(file.length) / file.processingFormat.sampleRate
+        precondition(abs(offlineTasks.last!.endTime - originalDuration) < 0.03, "offline timestamps must reach the real audio tail")
+        let attempts = try FileManager.default.contentsOfDirectory(atPath: offlineDirectory.path).count
+        do {
+            _ = try OfflineAudioSegmenter.prepare(audioURL: URL(fileURLWithPath: "/missing-classroom-audio"), sessionChunkDirectory: offlineDirectory, modelURL: model)
+            preconditionFailure("missing source audio must report a failure")
+        } catch { }
+        let remainingAttempts = try FileManager.default.contentsOfDirectory(atPath: offlineDirectory.path).count
+        precondition(remainingAttempts == attempts)
+        print("Offline audio decode, real-time slicing, WAV output and failure cleanup passed")
         #else
         preconditionFailure("This test must link the real sherpa-onnx library")
         #endif
