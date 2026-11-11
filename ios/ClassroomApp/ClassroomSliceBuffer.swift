@@ -28,7 +28,6 @@ struct ClassroomSliceBuffer {
     private var lastSpeechEnd = 0
     private var speechSinceCut = false
     private var lastOutputEnd = 0
-    private var retainedOverlap = 0
     private var noiseFloor: Float = 0.003
     private var pauses: [Range<Int>] = []
     var hasDetectedSpeech: Bool { speechSinceCut }
@@ -58,7 +57,7 @@ struct ClassroomSliceBuffer {
         }
         if offset > 0 { pendingDetection.removeFirst(offset) }
         // Keep a pre-roll for a quiet onset, never discard an already detected short word.
-        if !speechSinceCut && retainedOverlap == 0 && samples.count > configuration.preRollSamples {
+        if !speechSinceCut && samples.count > configuration.preRollSamples {
             let count = samples.count - configuration.preRollSamples
             samples.removeFirst(count)
             bufferStart += count
@@ -83,8 +82,8 @@ struct ClassroomSliceBuffer {
         let count = max(0, min(samples.count, end - bufferStart))
         guard count > 0 else { return nil }
         let output = ClassroomAudioSlice(samples: Array(samples.prefix(count)), startSample: bufferStart, endSample: end)
-        retainedOverlap = needsHardCut && pauseCut == nil ? min(configuration.overlapSamples, count) : 0
-        let removeCount = count - retainedOverlap
+        let overlap = needsHardCut && pauseCut == nil ? min(configuration.overlapSamples, count) : 0
+        let removeCount = count - overlap
         samples.removeFirst(removeCount)
         bufferStart += removeCount
         pauses.removeAll { $0.lowerBound < end }

@@ -48,6 +48,16 @@ struct ClassroomContentTests {
         precondition(afterPause.startSample == pauseCut.endSample,
                      "a pause cut must neither duplicate speech nor skip audio")
         precondition(afterPause.endSample == voiceBeforePause + pauseDuration + voiceAfterPause)
+        var silenceAfterLimit = ClassroomSliceBuffer()
+        silenceAfterLimit.append(Array(repeating: 3000, count: 320000)) { _ in true }
+        precondition(silenceAfterLimit.take()?.endSample == 320000)
+        for _ in 0..<200 {
+            silenceAfterLimit.append(Array(repeating: 0, count: 512)) { _ in false }
+            precondition(silenceAfterLimit.samples.count <= 32000,
+                         "overlap must not cause silence after a forced cut to accumulate")
+        }
+        let quietTail = silenceAfterLimit.take(final: true)!
+        precondition(quietTail.endSample == 320000 + 200 * 512)
         var delayed = ClassroomSliceBuffer()
         let delayedCount = 62 * 16000 + 17
         delayed.append(Array(repeating: 3000, count: delayedCount)) { _ in true }
