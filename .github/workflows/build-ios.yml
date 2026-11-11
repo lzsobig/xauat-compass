@@ -48,18 +48,6 @@ jobs:
           swiftc ios/ClassroomApp/Models.swift ios/ClassroomApp/ClassroomExport.swift ios/Vendor/ZIPFoundation/*.swift tests/classroom_export_tests.swift -o /tmp/classroom-export-tests
           /tmp/classroom-export-tests output/export-fixtures
           python3 tests/verify_classroom_exports.py output/export-fixtures
-      - name: Launch native app on an iPhone simulator
-        run: python3 tools/run-ios-simulator-smoke.py
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: classroom-native-simulator
-          path: |
-            output/simulator-smoke/native-home.png
-            output/simulator-smoke/result.json
-            output/simulator-smoke/launch-diagnostics.txt
-            output/simulator-smoke/ClassroomApp*.ips
-          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: classroom-export-fixtures
@@ -72,3 +60,15 @@ jobs:
             output/ClassroomApp.ipa
             output/ClassroomApp.json
           if-no-files-found: error
+      - name: Launch native app on an iPhone simulator
+        run: python3 tools/run-ios-simulator-smoke.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: classroom-native-simulator
+          path: |
+            output/simulator-smoke/native-home.png
+            output/simulator-smoke/result.json
+            output/simulator-smoke/launch-diagnostics.txt
+            output/simulator-smoke/ClassroomApp*.ips
+          if-no-files-found: warn
