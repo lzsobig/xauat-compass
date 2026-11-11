@@ -455,10 +455,9 @@ public final class ClassroomManager: ObservableObject {
             if sessionHasIncomplete && sessions[i].status != .recording && sessions[i].status != .paused {
                 sessions[i].status = .pendingCatchUp
                 modified = true
-            } else if !sessionHasIncomplete && sessions[i].mode == .realtime && !sessions[i].chunkTasks.isEmpty && !sessions[i].isTempAudioPurged && sessions[i].status != .recording {
-                // The main recording remains available for playback, photos and export after restart.
-                sessions[i].status = .completed
-                modified = true
+            } else if !sessionHasIncomplete {
+                // Preserve audio and finish durable record-only/realtime jobs interrupted at the final boundary.
+                if sessions[i].recoverCompletedTranscription() { modified = true }
             }
             
             if sessions[i].storageStatus == .uploading {

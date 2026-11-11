@@ -46,9 +46,11 @@ struct ClassroomPDFTests {
         let textDocument = PDFDocument(data: bytes as Data)!
         let thumbnail = textDocument.page(at: 0)!.thumbnail(of: CGSize(width: 1224, height: 1584), for: .mediaBox)
         let scannedDocument = PDFDocument()
-        let scannedPage = PDFPage(image: thumbnail)!
+        let bitmap = NSBitmapImageRep(cgImage: thumbnail.cgImage(forProposedRect: nil, context: nil, hints: nil)!)
+        let pixelsOnly = NSImage(data: bitmap.representation(using: .png, properties: [:])!)!
+        let scannedPage = PDFPage(image: pixelsOnly)!
         scannedDocument.insert(scannedPage, at: 0)
-        precondition(scannedPage.numberOfCharacters == 0)
+        precondition((scannedPage.string ?? "").rangeOfCharacter(from: .alphanumerics) == nil, "scanned fixture must contain pixels rather than selectable course text")
         let scanned = try TimetableEngine.parseTimetableDraft(data: scannedDocument.dataRepresentation()!)
         precondition(!scanned.slots.isEmpty && scanned.slots.allSatisfy { $0.day == 1 })
         precondition(scanned.warnings.contains { $0.contains("扫描页") }, "the scanned fixture must actually execute local OCR")

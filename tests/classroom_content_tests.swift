@@ -120,6 +120,15 @@ struct ClassroomContentTests {
         precondition(interrupted.recoverInterruptedMinutes())
         precondition(interrupted.notes[0].content == manualNote.content && interrupted.notes[0].id == manualNote.id)
         precondition(interrupted.minutesGenerationState == .failed)
+        var offlineRecovery = lesson
+        offlineRecovery.mode = .recordOnly
+        offlineRecovery.status = .pendingCatchUp
+        offlineRecovery.notes = []
+        offlineRecovery.automaticMinutesAttempted = false
+        offlineRecovery.minutesGenerationState = nil
+        precondition(offlineRecovery.recoverCompletedTranscription())
+        precondition(offlineRecovery.status == .completed && offlineRecovery.minutesGenerationState == .queued)
+        precondition(!offlineRecovery.recoverCompletedTranscription(), "recovery must not schedule duplicate jobs")
 
         for text in ["", "短句", String(repeating: "课堂中文内容。", count: 7000), String(repeating: "段落内容\n", count: 5000)] {
             let batches = ClassroomTextBatches.split(text, limit: 8000)

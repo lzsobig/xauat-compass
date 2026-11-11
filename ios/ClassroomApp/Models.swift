@@ -480,6 +480,22 @@ public enum LessonMinutesState: String, Codable, Sendable {
 }
 
 extension LessonSession {
+    mutating func recoverCompletedTranscription() -> Bool {
+        guard status != .recording && status != .paused, !chunkTasks.isEmpty,
+              chunkTasks.allSatisfy({ $0.status == .completed }) else { return false }
+        var changed = false
+        if status != .completed { status = .completed; changed = true }
+        // Only the new durable ASR pipeline schedules new jobs; legacy classrooms remain untouched.
+        if !automaticMinutesAttempted, !notes.contains(where: { $0.style == .minutes }),
+           chunkTasks.contains(where: { $0.rawRecognizedText != nil }),
+           segments.contains(where: { !$0.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }),
+           minutesGenerationState != .queued {
+            minutesGenerationState = .queued
+            changed = true
+        }
+        return changed
+    }
+
     mutating func recoverInterruptedMinutes() -> Bool {
         guard minutesGenerationState == .generating else { return false }
         if notes.contains(where: { $0.style == .minutes }) {
