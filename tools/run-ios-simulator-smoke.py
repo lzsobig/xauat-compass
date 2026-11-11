@@ -54,16 +54,25 @@ def main():
         (output / "result.json").write_text(json.dumps({"bundle_id": "top.lzso.classroom", "runtime": runtime,
             "device": template["name"], "launched": True, "process_alive_after_5_seconds": True}, indent=2), encoding="utf-8")
         print("Native iPhone simulator app launch and home screenshot passed")
-    except Exception:
-        diagnostic = subprocess.run(["xcrun", "simctl", "spawn", device, "log", "show", "--last", "3m",
-            "--style", "compact", "--predicate", 'eventMessage CONTAINS "top.lzso.classroom" OR process == "ClassroomApp"'],
-            text=True, capture_output=True, timeout=45)
-        (output / "launch-diagnostics.txt").write_text(diagnostic.stdout + diagnostic.stderr, encoding="utf-8")
-        print(diagnostic.stdout[-16000:], flush=True)
+    except Exception as error:
+        details = [str(error), str(getattr(error, "stdout", "") or ""), str(getattr(error, "stderr", "") or "")]
+        try:
+            diagnostic = subprocess.run(["xcrun", "simctl", "spawn", device, "log", "show", "--last", "3m",
+                "--style", "compact", "--predicate", 'eventMessage CONTAINS "top.lzso.classroom" OR process == "ClassroomApp"'],
+                text=True, capture_output=True, timeout=45)
+            details += [diagnostic.stdout, diagnostic.stderr]
+        except subprocess.TimeoutExpired:
+            details.append("Simulator diagnostic log service did not respond within 45 seconds")
+        diagnostic_text = "\n".join(details)
+        (output / "launch-diagnostics.txt").write_text(diagnostic_text, encoding="utf-8")
+        print(diagnostic_text[-16000:], flush=True)
         raise
     finally:
-        subprocess.run(["xcrun", "simctl", "shutdown", device], check=False)
-        subprocess.run(["xcrun", "simctl", "delete", device], check=False)
+        for operation in ["shutdown", "delete"]:
+            try:
+                subprocess.run(["xcrun", "simctl", operation, device], check=False, timeout=30)
+            except subprocess.TimeoutExpired:
+                print(f"Cleanup of isolated simulator timed out: {operation}", flush=True)
 
 
 if __name__ == "__main__":

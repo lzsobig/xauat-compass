@@ -22,6 +22,7 @@ permissions:
 jobs:
   build-ipa:
     runs-on: macos-15
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - name: Run Swift Logic Unit Tests
