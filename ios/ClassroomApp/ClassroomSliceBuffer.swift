@@ -6,6 +6,7 @@ struct ClassroomSegmentationConfig {
     var preRollSamples = 32000     // 2 s
     var postRollSamples = 8000     // 0.5 s
     var maximumSamples = 320000    // 20 s, wait for pauses before this hard limit
+    var firstChunkMaximumSamples: Int?
     var overlapSamples = 16000     // 1 s
     var pauseSearchSamples = 80000 // 5 s before a forced cut
     var minimumCutPauseSamples = 3072 // 192 ms without detected speech
@@ -31,6 +32,9 @@ struct ClassroomSliceBuffer {
     private var noiseFloor: Float = 0.003
     private var pauses: [Range<Int>] = []
     var hasDetectedSpeech: Bool { speechSinceCut }
+    private(set) var inputLevelDBFS: Float = -90
+    private(set) var isSpeechFrame = false
+    private(set) var fallbackThresholdDBFS: Float = -42
 
     mutating func append(_ input: [Int16], voiceDetection: ([Float]) -> Bool?) {
         samples.append(contentsOf: input)
@@ -42,6 +46,9 @@ struct ClassroomSliceBuffer {
             let rms = sqrt(window.reduce(Float(0)) { $0 + $1 * $1 } / 512)
             let threshold = max(0.006, min(0.04, noiseFloor * 2.8))
             let speech = voiceDetection(window) ?? (rms >= threshold)
+            inputLevelDBFS = Self.dbfs(rms)
+            fallbackThresholdDBFS = Self.dbfs(threshold)
+            isSpeechFrame = speech
             classifiedUntil += 512
             if speech {
                 let silenceEnd = classifiedUntil - 512
@@ -65,13 +72,16 @@ struct ClassroomSliceBuffer {
     }
 
     mutating func take(final: Bool = false) -> ClassroomAudioSlice? {
+        let maximumSamples = lastOutputEnd == 0 && !final
+            ? configuration.firstChunkMaximumSamples ?? configuration.maximumSamples
+            : configuration.maximumSamples
         let hasNewAudio = totalSamples > lastOutputEnd && !samples.isEmpty
         let naturalBreak = speechSinceCut && classifiedUntil - lastSpeechEnd >= configuration.endSilenceSamples
-        let forcedBreak = samples.count >= configuration.maximumSamples && speechSinceCut
+        let forcedBreak = samples.count >= maximumSamples && speechSinceCut
         guard (final && hasNewAudio) || naturalBreak || forcedBreak else { return nil }
         let end: Int
         let terminal = final && samples.count <= configuration.maximumSamples
-        let limit = min(totalSamples, bufferStart + configuration.maximumSamples)
+        let limit = min(totalSamples, bufferStart + maximumSamples)
         let naturalEnd = min(totalSamples, lastSpeechEnd + configuration.postRollSamples)
         let needsHardCut = !terminal && (final || !naturalBreak || naturalEnd > limit)
         let pauseCut = needsHardCut ? cutInPause(before: limit) : nil
@@ -82,7 +92,7 @@ struct ClassroomSliceBuffer {
         let count = max(0, min(samples.count, end - bufferStart))
         guard count > 0 else { return nil }
         let output = ClassroomAudioSlice(samples: Array(samples.prefix(count)), startSample: bufferStart, endSample: end)
-        let overlap = needsHardCut && pauseCut == nil ? min(configuration.overlapSamples, count) : 0
+        let overlap = needsHardCut && pauseCut == nil ? min(configuration.overlapSamples, count / 2) : 0
         let removeCount = count - overlap
         samples.removeFirst(removeCount)
         bufferStart += removeCount
@@ -93,8 +103,12 @@ struct ClassroomSliceBuffer {
         return output
     }
 
+    static func dbfs(_ rms: Float) -> Float {
+        max(-90, 20 * log10(max(rms, 0.000_001)))
+    }
+
     private func cutInPause(before limit: Int) -> Int? {
-        let searchStart = max(bufferStart, limit - configuration.pauseSearchSamples)
+        let searchStart = max(bufferStart + 32000, limit - configuration.pauseSearchSamples)
         let ongoingPause = lastSpeechEnd..<classifiedUntil
         for pause in [ongoingPause] + pauses.reversed() {
             let start = max(pause.lowerBound, searchStart)

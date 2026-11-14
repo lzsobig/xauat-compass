@@ -8,8 +8,10 @@ private final class AudioCapture {
     private let lock = NSLock()
     private var file: AVAudioFile?
     private var totalFrames: AVAudioFramePosition = 0
-    private var sampleRate: Double = 44100
+    private let sampleRate: Double
     private var writeFailed = false
+    private var converter: AVAudioConverter?
+    private var meterDBFS: Float = -90
     
     private var sliceBuffer = ClassroomSliceBuffer()
     private var sliceStepAccumulator: Double = 0
@@ -17,20 +19,31 @@ private final class AudioCapture {
 
     private let collectSlices: Bool
 
-    init(file: AVAudioFile, sampleRate: Double, collectSlices: Bool) {
+    init(file: AVAudioFile, sampleRate: Double, collectSlices: Bool, speechThreshold: Float) {
         self.collectSlices = collectSlices
-        self.voiceDetector = collectSlices ? SileroVoiceDetector() : nil
+        self.voiceDetector = collectSlices ? SileroVoiceDetector(threshold: speechThreshold) : nil
         self.file = file
         self.sampleRate = sampleRate
+        sliceBuffer.configuration.firstChunkMaximumSamples = collectSlices ? 96000 : nil
     }
 
-    func append(_ buffer: AVAudioPCMBuffer) -> Error? {
+    func append(_ input: AVAudioPCMBuffer) -> Error? {
         lock.lock()
         defer { lock.unlock() }
         guard let file = file, !writeFailed else { return nil }
         do {
+            let buffer = try recordingBuffer(input, format: file.processingFormat)
+            guard buffer.frameLength > 0 else { return nil }
             try file.write(from: buffer)
             totalFrames += AVAudioFramePosition(buffer.frameLength)
+            if let channel = buffer.floatChannelData?[0] {
+                let stride = buffer.stride
+                var energy: Float = 0
+                for index in 0..<Int(buffer.frameLength) {
+                    energy += channel[index * stride] * channel[index * stride]
+                }
+                meterDBFS = ClassroomSliceBuffer.dbfs(sqrt(energy / Float(buffer.frameLength)))
+            }
             
             // 重采样至 16kHz 单声道 PCM 供星辰 ASR 分段转写
             if collectSlices, let floatChannelData = buffer.floatChannelData {
@@ -43,7 +56,7 @@ private final class AudioCapture {
                 var idx: Double = sliceStepAccumulator
                 while idx < Double(frameCount) {
                     let sampleIdx = Int(idx)
-                    let rawFloat = channel0[sampleIdx]
+                    let rawFloat = channel0[sampleIdx * buffer.stride]
                     let clamped = max(-1.0, min(1.0, rawFloat))
                     let int16Sample = Int16(clamped * 32767.0)
                     resampled.append(int16Sample)
@@ -59,6 +72,43 @@ private final class AudioCapture {
             writeFailed = true
             return error
         }
+    }
+
+    private func recordingBuffer(_ input: AVAudioPCMBuffer, format: AVAudioFormat) throws -> AVAudioPCMBuffer {
+        guard input.format != format else { return input }
+        if converter?.inputFormat != input.format {
+            converter = AVAudioConverter(from: input.format, to: format)
+        }
+        let capacity = AVAudioFrameCount(ceil(Double(input.frameLength) * format.sampleRate / input.format.sampleRate)) + 64
+        guard let converter, let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else {
+            throw CocoaError(.fileWriteUnknown)
+        }
+        var provided = false
+        var error: NSError?
+        let status = converter.convert(to: output, error: &error) { _, inputStatus in
+            if provided {
+                inputStatus.pointee = .noDataNow
+                return nil
+            }
+            provided = true
+            inputStatus.pointee = .haveData
+            return input
+        }
+        if let error { throw error }
+        guard status != .error else { throw CocoaError(.fileWriteUnknown) }
+        return output
+    }
+
+    var diagnostics: (level: Float, speech: Bool, usingSilero: Bool, fallback: Float) {
+        lock.lock()
+        defer { lock.unlock() }
+        return (meterDBFS, sliceBuffer.isSpeechFrame, voiceDetector != nil, sliceBuffer.fallbackThresholdDBFS)
+    }
+
+    var canContinue: Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        return file != nil && !writeFailed
     }
 
     func takeSlice(final: Bool = false) -> (data: Data, start: Double, end: Double)? {
@@ -139,7 +189,6 @@ public final class ClassroomManager: ObservableObject {
     @Published public var siliconFlowApiKey: String {
         didSet { KeychainHelper.save(key: "siliconFlowApiKey", value: siliconFlowApiKey) }
     }
-    @Published public var isChunkTranscribing: Bool = false
 
     // 云端存储配置绑定
     public var r2StorageMode: AudioStorageMode {
@@ -184,7 +233,22 @@ public final class ClassroomManager: ObservableObject {
     @Published public private(set) var streamingAnswer = ""
 
     private let storageRoot: URL
-    private let engine = AVAudioEngine()
+    private var engine: AVAudioEngine?
+    private var isStartingRecording = false
+    private var interruptedRecordingID: UUID?
+    @Published public private(set) var recordingInterruption: String?
+    @Published public private(set) var inputLevelDBFS: Float = -90
+    @Published public private(set) var inputHasSpeech = false
+    @Published public private(set) var inputUsesSilero = false
+    @Published public private(set) var inputFallbackThresholdDBFS: Float = -42
+    @Published public var speechDetectionThreshold: Double = {
+        let defaults = UserDefaults.standard
+        guard defaults.object(forKey: "speechDetectionThreshold") != nil else { return 0.35 }
+        return min(0.9, max(0.1, defaults.double(forKey: "speechDetectionThreshold")))
+    }() {
+        didSet { UserDefaults.standard.set(speechDetectionThreshold, forKey: "speechDetectionThreshold") }
+    }
+    @Published public private(set) var activeSpeechThreshold: Double = 0.35
     private var capture: AudioCapture?
     private var currentChunkIndex: Int = 0
     private var recordingTimer: Timer?
@@ -194,8 +258,8 @@ public final class ClassroomManager: ObservableObject {
     private var streamingTimeObserver: Any?
     private var cancellables = Set<AnyCancellable>()
     private var automaticMinutesQueue: [UUID] = []
-    private var chunkQueue: [(sessionId: UUID, taskId: UUID)] = []
-    private var chunkQueueWorker: Task<Void, Never>?
+    private var chunkQueues: [UUID: [UUID]] = [:]
+    private var chunkQueueWorkers: [UUID: Task<Void, Never>] = [:]
     @Published public private(set) var offlineTranscriptionSessionId: UUID?
 
     public init() {
@@ -527,27 +591,94 @@ public final class ClassroomManager: ObservableObject {
     
     private func setupInterruptionObserver() {
         NotificationCenter.default.publisher(for: AVAudioSession.interruptionNotification)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
                 guard let self = self, let userInfo = notification.userInfo,
                       let typeValue = userInfo[AVAudioSessionInterruptionTypeKey] as? UInt,
                       let type = AVAudioSession.InterruptionType(rawValue: typeValue) else { return }
                 
                 if type == .began {
-                    if self.isRecording && !self.isPaused {
-                        self.pauseRecording()
-                    }
+                    self.suspendForAudioInterruption("其他应用或系统占用了音频")
                     if self.isPlayingAudio {
                         self.pauseAudio()
+                    }
+                } else if type == .ended, self.isPaused,
+                          self.interruptedRecordingID == self.currentSession?.id {
+                    let options = AVAudioSession.InterruptionOptions(rawValue: userInfo[AVAudioSessionInterruptionOptionKey] as? UInt ?? 0)
+                    if options.contains(.shouldResume) {
+                        self.resumeRecording()
+                    } else {
+                        self.recordingInterruption = "音频中断已结束，点继续恢复录音"
                     }
                 }
             }
             .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .AVAudioEngineConfigurationChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let self, let changed = notification.object as? AVAudioEngine,
+                      self.engine === changed, !changed.isRunning,
+                      self.isRecording, !self.isPaused else { return }
+                self.suspendForAudioInterruption("音频设备发生变化")
+                self.resumeRecording()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func suspendForAudioInterruption(_ message: String) {
+        guard isRecording, !isPaused, let id = currentSession?.id else { return }
+        pauseRecording()
+        interruptedRecordingID = id
+        recordingInterruption = message + "，录音已暂停"
+    }
+
+    private func activateRecordingAudio() throws {
+        let audioSession = AVAudioSession.sharedInstance()
+        try audioSession.setCategory(.playAndRecord, mode: .default,
+                                     options: [.defaultToSpeaker, .allowBluetooth, .mixWithOthers])
+        try audioSession.setActive(true)
+    }
+
+    private func inputFormat(for engine: AVAudioEngine) throws -> AVAudioFormat {
+        let node = engine.inputNode
+        let format = node.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0,
+              node.inputFormat(forBus: 0).sampleRate > 0 else {
+            throw NSError(domain: "ClassroomRecording", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: "麦克风输入格式不可用"])
+        }
+        return format
+    }
+
+    private func startAudioEngine(_ freshEngine: AVAudioEngine, format: AVAudioFormat,
+                                  sink: AudioCapture, sessionID: UUID) throws {
+        freshEngine.inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
+            if let error = sink.append(buffer) {
+                DispatchQueue.main.async {
+                    guard let self, self.currentSession?.id == sessionID else { return }
+                    self.suspendForAudioInterruption("录音写入失败")
+                    self.errorMessage = "录音写入失败：\(error.localizedDescription)"
+                }
+            }
+        }
+        engine = freshEngine
+        try freshEngine.start()
+    }
+
+    private func stopAudioEngine() {
+        guard let activeEngine = engine else { return }
+        engine = nil
+        activeEngine.stop()
+        activeEngine.inputNode.removeTap(onBus: 0)
     }
 
     // MARK: - 课堂录制控制
     
     public func startRecording(course: Course?, mode: RecordingMode) async {
-        guard !isRecording else { return }
+        guard !isRecording, !isStartingRecording else { return }
+        isStartingRecording = true
+        defer { isStartingRecording = false }
         errorMessage = ""
         
         let audioSession = AVAudioSession.sharedInstance()
@@ -586,15 +717,9 @@ public final class ClassroomManager: ObservableObject {
             streamingPlayer?.pause()
             isPlayingAudio = false
             
-            try audioSession.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetooth])
-            try audioSession.setActive(true)
-            
-            let inputNode = engine.inputNode
-            let format = inputNode.outputFormat(forBus: 0)
-            guard format.sampleRate > 0 && format.channelCount > 0 else {
-                errorMessage = "麦克风输入格式不可用"
-                return
-            }
+            try activateRecordingAudio()
+            let freshEngine = AVAudioEngine()
+            let format = try inputFormat(for: freshEngine)
             
             // 严谨工程架构：录制流实时写入原生 CAF 容器，彻底消除因突发断电断网导致的 MP4 MOOV 损坏隐患
             let rawURL = rawAudioURL(for: newSession)
@@ -603,19 +728,13 @@ public final class ClassroomManager: ObservableObject {
             }
             let file = try AVAudioFile(forWriting: rawURL, settings: format.settings, commonFormat: format.commonFormat, interleaved: format.isInterleaved)
             
-            let sink = AudioCapture(file: file, sampleRate: format.sampleRate, collectSlices: mode == .realtime)
+            activeSpeechThreshold = min(0.9, max(0.1, speechDetectionThreshold))
+            let sink = AudioCapture(file: file, sampleRate: format.sampleRate, collectSlices: mode == .realtime,
+                                    speechThreshold: Float(activeSpeechThreshold))
             self.capture = sink
             self.currentChunkIndex = 0
             
-            inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-                if let err = sink.append(buffer) {
-                    DispatchQueue.main.async {
-                        self?.errorMessage = "音频写入失败：\(err.localizedDescription)"
-                    }
-                }
-            }
-            
-            try engine.start()
+            try startAudioEngine(freshEngine, format: format, sink: sink, sessionID: newSession.id)
             
             self.currentSession = newSession
             self.sessions.insert(newSession, at: 0)
@@ -623,11 +742,21 @@ public final class ClassroomManager: ObservableObject {
             self.isRecording = true
             self.isPaused = false
             self.recordingElapsed = 0
+            recordingInterruption = nil
+            interruptedRecordingID = nil
+            inputLevelDBFS = -90
+            inputHasSpeech = false
+            inputUsesSilero = sink.diagnostics.usingSilero
             // 录音计时与停顿分段
             recordingTimer = Timer(timeInterval: 0.5, repeats: true) { [weak self] _ in
                 Task { @MainActor in
                     guard let self = self, self.isRecording, !self.isPaused else { return }
                     if let cap = self.capture {
+                        let diagnostics = cap.diagnostics
+                        self.inputLevelDBFS = diagnostics.level
+                        self.inputHasSpeech = diagnostics.speech
+                        self.inputUsesSilero = diagnostics.usingSilero
+                        self.inputFallbackThresholdDBFS = diagnostics.fallback
                         self.recordingElapsed = cap.recordedDuration
                         self.currentSession?.duration = self.recordingElapsed
                     }
@@ -641,10 +770,10 @@ public final class ClassroomManager: ObservableObject {
             }
             if let recordingTimer { RunLoop.main.add(recordingTimer, forMode: .common) }
         } catch {
+            stopAudioEngine()
             capture?.close()
             capture = nil
-            engine.inputNode.removeTap(onBus: 0)
-            try? audioSession.setActive(false)
+            try? audioSession.setActive(false, options: .notifyOthersOnDeactivation)
             errorMessage = "启动录音失败：\(error.localizedDescription)"
         }
     }
@@ -654,7 +783,7 @@ public final class ClassroomManager: ObservableObject {
 
     /// 真正的 async/await 顺序分片处理
     @discardableResult
-    public func processChunkTask(sessionId: UUID, task: ChunkTranscriptionTask) async -> Bool {
+    private func processChunkTask(sessionId: UUID, task: ChunkTranscriptionTask) async -> Bool {
         guard let sess = self.sessions.first(where: { $0.id == sessionId }) else { return false }
         guard let currentTask = sess.chunkTasks.first(where: { $0.id == task.id }) else { return false }
         if currentTask.status == .completed { return true }
@@ -664,7 +793,6 @@ public final class ClassroomManager: ObservableObject {
             $0.status = .transcribing
             $0.lastError = nil
         }
-        self.isChunkTranscribing = true
         
         let chunkURL = self.chunkFileURL(sessionId: sessionId, fileName: task.chunkFileName)
         guard FileManager.default.fileExists(atPath: chunkURL.path),
@@ -674,17 +802,14 @@ public final class ClassroomManager: ObservableObject {
                 $0.status = .failed
                 $0.lastError = "分片音频数据文件不存在或损坏"
             }
-            self.isChunkTranscribing = false
             return false
         }
         
         do {
             let transcribed = try await self.callCloudASR(audioData: audioData)
             guard try self.completeChunkTask(sessionId: sessionId, taskId: task.id, text: transcribed) else {
-                self.isChunkTranscribing = false
                 return false
             }
-            self.isChunkTranscribing = false
 
             // 只有转写确认成功后，才安全删除该分片本地临时文件
             try? FileManager.default.removeItem(at: chunkURL)
@@ -693,22 +818,36 @@ public final class ClassroomManager: ObservableObject {
             self.checkAndFinalizeSessionStorage(sessionId: sessionId)
             return true
         } catch {
-            self.isChunkTranscribing = false
             self.updateChunkTask(sessionId: sessionId, taskId: task.id) {
                 $0.status = .failed
                 $0.retryCount += 1
-                $0.lastError = error.localizedDescription
-            }
-            // 断网或异常：chunkURL 音频严禁删除！保留在本地供后续自动或手动补转写
-            if let sIdx = self.sessions.firstIndex(where: { $0.id == sessionId }) {
-                if self.sessions[sIdx].status != .recording && self.sessions[sIdx].status != .paused {
-                    let failedCount = self.sessions[sIdx].chunkTasks.filter { $0.status == .failed }.count
-                    self.sessions[sIdx].status = (failedCount >= 3) ? .transcriptionFailed : .pendingCatchUp
-                    self.saveSessions()
-                }
+                $0.lastError = Self.transcriptionFailureMessage(error)
             }
             return false
         }
+    }
+
+    private static func transcriptionFailureMessage(_ error: Error) -> String {
+        let failure = error as NSError
+        if failure.domain == NSURLErrorDomain {
+            switch failure.code {
+            case NSURLErrorTimedOut: return "转写服务响应超时，请重试"
+            case NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost:
+                return "网络连接中断，联网后可重试"
+            default: return "无法连接转写服务，请检查网络后重试"
+            }
+        }
+        if failure.domain == "CloudASR" {
+            switch failure.code {
+            case 401, 403: return "转写密钥无效或无权限，请检查设置"
+            case 402: return "转写服务额度不足，请检查账户"
+            case 429: return "转写请求过多，请稍后重试"
+            case 500...599: return "转写服务暂时不可用（HTTP \(failure.code)），请稍后重试"
+            default: return "转写服务返回错误（HTTP \(failure.code)）"
+            }
+        }
+        if error is DecodingError { return "转写服务返回格式异常，请重试" }
+        return "转写结果处理失败：\(error.localizedDescription)"
     }
 
     /// 根据持久化分段任务更新课堂状态，完整录音可供回听和补转写。
@@ -748,11 +887,20 @@ public final class ClassroomManager: ObservableObject {
     /// 真正的 async/await 顺序补转写队列
     public func retryPendingChunks(for session: LessonSession) {
         guard let idx = sessions.firstIndex(where: { $0.id == session.id }) else { return }
+        guard hasActiveASRKey else {
+            errorMessage = "请先填写「\(asrProvider.title)」的 API Key"
+            return
+        }
         let pendingTasks = sessions[idx].chunkTasks.filter { $0.status == .pending || $0.status == .failed }
-        guard !pendingTasks.isEmpty else { return }
-        
-        sessions[idx].status = .pendingCatchUp
-        saveSessions()
+        guard !pendingTasks.isEmpty else {
+            if sessions[idx].chunkTasks.isEmpty { transcribeOffline(for: sessions[idx]) }
+            return
+        }
+        errorMessage = ""
+        if sessions[idx].status != .recording && sessions[idx].status != .paused {
+            sessions[idx].status = .pendingCatchUp
+            saveSessions()
+        }
         
         for task in pendingTasks.sorted(by: { $0.sequenceIndex < $1.sequenceIndex }) {
             queueChunkTask(sessionId: session.id, taskId: task.id)
@@ -760,23 +908,21 @@ public final class ClassroomManager: ObservableObject {
     }
 
     private func queueChunkTask(sessionId: UUID, taskId: UUID) {
-        guard !chunkQueue.contains(where: { $0.taskId == taskId }) else { return }
-        chunkQueue.append((sessionId, taskId))
-        guard chunkQueueWorker == nil else { return }
-        chunkQueueWorker = Task { [weak self] in
+        guard chunkQueues[sessionId]?.contains(taskId) != true else { return }
+        chunkQueues[sessionId, default: []].append(taskId)
+        guard chunkQueueWorkers[sessionId] == nil else { return }
+        chunkQueueWorkers[sessionId] = Task { [weak self] in
             guard let self else { return }
-            while !self.chunkQueue.isEmpty {
-                let liveIndex = self.chunkQueue.firstIndex { item in
-                    self.currentSession?.id == item.sessionId && self.currentSession?.mode == .realtime
-                } ?? 0
-                let next = self.chunkQueue.remove(at: liveIndex)
-                guard let session = self.sessions.first(where: { $0.id == next.sessionId }),
-                      let task = session.chunkTasks.first(where: { $0.id == next.taskId }),
+            while let next = self.chunkQueues[sessionId]?.first {
+                self.chunkQueues[sessionId]?.removeFirst()
+                guard let session = self.sessions.first(where: { $0.id == sessionId }),
+                      let task = session.chunkTasks.first(where: { $0.id == next }),
                       task.status == .pending || task.status == .failed else { continue }
-                _ = await self.processChunkTask(sessionId: next.sessionId, task: task)
-                self.checkAndFinalizeSessionStorage(sessionId: next.sessionId)
+                _ = await self.processChunkTask(sessionId: sessionId, task: task)
+                self.checkAndFinalizeSessionStorage(sessionId: sessionId)
             }
-            self.chunkQueueWorker = nil
+            self.chunkQueues[sessionId] = nil
+            self.chunkQueueWorkers[sessionId] = nil
         }
     }
 
@@ -801,9 +947,23 @@ public final class ClassroomManager: ObservableObject {
 
     public var currentRecordingTime: TimeInterval { capture?.recordedDuration ?? recordingElapsed }
 
+    func liveTranscriptStatus(for session: LessonSession) -> String {
+        if session.chunkTasks.contains(where: { $0.status == .transcribing }) { return "正在识别首段语音" }
+        if session.chunkTasks.contains(where: { $0.status == .pending }) { return "首段语音等待转写" }
+        if session.chunkTasks.contains(where: { $0.status == .failed }) { return "转写失败，可重试原分段" }
+        guard currentSession?.id == session.id else { return "暂无转写文字" }
+        if isPaused { return "录音已暂停" }
+        if capture?.hasPendingSpeech == true { return "已检测到人声，等待停顿后转写" }
+        return "等待麦克风检测到人声"
+    }
+
     public func pauseRecording() {
         guard isRecording && !isPaused else { return }
-        engine.pause()
+        interruptedRecordingID = nil
+        recordingInterruption = nil
+        stopAudioEngine()
+        inputLevelDBFS = -90
+        inputHasSpeech = false
         if let sessionId = currentSession?.id {
             while let slice = capture?.takeSlice(final: true) { enqueueSlice(slice, sessionId: sessionId) }
         }
@@ -818,17 +978,28 @@ public final class ClassroomManager: ObservableObject {
     }
     
     public func resumeRecording() {
-        guard isRecording && isPaused else { return }
+        guard isRecording, isPaused, let sink = capture, let id = currentSession?.id else { return }
+        guard sink.canContinue else {
+            errorMessage = "当前录音无法继续写入，请先结束并保存已有音频"
+            return
+        }
         do {
-            try AVAudioSession.sharedInstance().setActive(true)
-            try engine.start()
+            try activateRecordingAudio()
+            let freshEngine = AVAudioEngine()
+            let format = try inputFormat(for: freshEngine)
+            try startAudioEngine(freshEngine, format: format, sink: sink, sessionID: id)
             isPaused = false
+            interruptedRecordingID = nil
+            recordingInterruption = nil
+            errorMessage = ""
             currentSession?.status = .recording
             if let id = currentSession?.id, let index = sessions.firstIndex(where: { $0.id == id }) {
                 sessions[index].status = .recording
             }
             saveSessions()
         } catch {
+            stopAudioEngine()
+            try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
             errorMessage = "恢复录音失败：\(error.localizedDescription)"
         }
     }
@@ -895,8 +1066,11 @@ public final class ClassroomManager: ObservableObject {
         recordingTimer?.invalidate()
         recordingTimer = nil
         
-        engine.stop()
-        engine.inputNode.removeTap(onBus: 0)
+        stopAudioEngine()
+        interruptedRecordingID = nil
+        recordingInterruption = nil
+        inputLevelDBFS = -90
+        inputHasSpeech = false
         
         if !discard {
             while let slice = capture?.takeSlice(final: true) { enqueueSlice(slice, sessionId: cur.id) }
@@ -1078,6 +1252,7 @@ public final class ClassroomManager: ObservableObject {
         }
         let folder = chunksFolder(for: session.id)
         let modelURL = Bundle.main.url(forResource: "silero_vad.int8", withExtension: "onnx")
+        let threshold = Float(speechDetectionThreshold)
         errorMessage = ""
         isTranscribingOffline = true
         offlineTranscriptionSessionId = session.id
@@ -1086,7 +1261,7 @@ public final class ClassroomManager: ObservableObject {
             do {
                 prepared = try await Task.detached(priority: .utility) {
                     try OfflineAudioSegmenter.prepare(audioURL: url, sessionChunkDirectory: folder, modelURL: modelURL,
-                        fallbackAudioURL: url == raw ? compressed : nil)
+                        fallbackAudioURL: url == raw ? compressed : nil, speechThreshold: threshold)
                 }.value
                 guard let index = self.sessions.firstIndex(where: { $0.id == session.id }) else {
                     throw CocoaError(.fileNoSuchFile)
@@ -1126,7 +1301,10 @@ public final class ClassroomManager: ObservableObject {
                     let text: String?
                 }
                 let res = try JSONDecoder().decode(ASRResult.self, from: data)
-                return res.text ?? ""
+                guard let text = res.text else {
+                    throw DecodingError.valueNotFound(String.self, .init(codingPath: [], debugDescription: "Missing ASR text"))
+                }
+                return text
             } else {
                 let errStr = String(data: data, encoding: .utf8) ?? "ASR HTTP Error"
                 if http.statusCode == 400 && (errStr.contains("no speech") || errStr.contains("silence")) {
@@ -1135,7 +1313,7 @@ public final class ClassroomManager: ObservableObject {
                 throw NSError(domain: "CloudASR", code: http.statusCode, userInfo: [NSLocalizedDescriptionKey: errStr])
             }
         }
-        return ""
+        throw URLError(.badServerResponse)
     }
 
     private func callCloudASR(audioURL: URL) async throws -> String {
@@ -1644,6 +1822,10 @@ public final class ClassroomManager: ObservableObject {
     }
 
     public func playAudio(session: LessonSession, seekTo: TimeInterval? = nil) {
+        guard !isRecording, !isStartingRecording else {
+            errorMessage = "请先结束当前录音，再回听课堂音频"
+            return
+        }
         let m4a = audioURL(for: session)
         let raw = rawAudioURL(for: session)
         let localURL = FileManager.default.fileExists(atPath: m4a.path) ? m4a : (FileManager.default.fileExists(atPath: raw.path) ? raw : nil)

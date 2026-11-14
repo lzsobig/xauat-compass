@@ -34,6 +34,15 @@ struct ClassroomContentTests {
         }
         precondition(slices.last?.endSample == original.count, "the last short tail must not be lost")
         precondition(slicer.take(final: true) == nil, "a second stop must not submit duplicate audio")
+        var liveStart = ClassroomSliceBuffer()
+        liveStart.configuration.firstChunkMaximumSamples = 6 * 16000
+        liveStart.append(Array(repeating: 0, count: 8 * 16000)) { _ in false }
+        precondition(liveStart.take() == nil, "initial silence must not be submitted")
+        liveStart.append(Array(repeating: 3000, count: 6 * 16000)) { _ in true }
+        let firstLive = liveStart.take()!
+        precondition(firstLive.endSample - firstLive.startSample == 6 * 16000)
+        liveStart.append(Array(repeating: 3000, count: 5 * 16000)) { _ in true }
+        precondition(liveStart.take() == nil, "the startup deadline must not shorten the rest of the lecture")
         var pauseBeforeLimit = ClassroomSliceBuffer()
         let voiceBeforePause = 560 * 512
         let pauseDuration = 8 * 512

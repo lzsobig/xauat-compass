@@ -1445,6 +1445,39 @@ struct CourseSlotDetailSheet: View {
 
 // MARK: - 设置页
 
+struct RecordingInputDiagnostics: View {
+    @EnvironmentObject var manager: ClassroomManager
+
+    var body: some View {
+        if manager.isRecording {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("麦克风电平")
+                    Spacer()
+                    Text(String(format: "%.0f dBFS", manager.inputLevelDBFS))
+                        .monospacedDigit()
+                }
+                ProgressView(value: Double(max(-60, min(0, manager.inputLevelDBFS)) + 60), total: 60)
+                    .accessibilityLabel("麦克风电平")
+                if manager.currentSession?.mode == .realtime && !manager.isPaused {
+                    Text(manager.inputHasSpeech ? "检测到人声" : "未检测到人声")
+                        .foregroundStyle(manager.inputHasSpeech ? Color.green : Color.secondary)
+                    if manager.inputUsesSilero {
+                        Text("Silero 阈值 \(String(format: "%.2f", manager.activeSpeechThreshold))")
+                    } else {
+                        Text("音量检测阈值 \(String(format: "%.0f", manager.inputFallbackThresholdDBFS)) dBFS")
+                    }
+                } else if manager.isPaused {
+                    Text("录音已暂停")
+                }
+            }
+        } else {
+            Text("开始录音后查看麦克风电平")
+                .foregroundStyle(.secondary)
+        }
+    }
+}
+
 struct SettingsScreen: View {
     @EnvironmentObject var manager: ClassroomManager
     @State private var showResetSuccess = false
@@ -1453,134 +1486,185 @@ struct SettingsScreen: View {
     var body: some View {
         NavigationView {
             List {
+                NavigationLink {
+                    List {
+                        Section(
+                            header: Text("AI 助教大模型 (DeepSeek 问答与笔记)"),
+                            footer: Text("用于课堂问答与纪要")
+                        ) {
+                            HStack {
+                                Text("当前模型")
+                                Spacer()
+                                Text(manager.llmModel)
+                                    .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                    .foregroundColor(.accentColor)
+                            }
 
-                Section(
-                    header: Text("AI 助教大模型 (DeepSeek 问答与笔记)"),
-                    footer: Text("使用 TokenRhythm 提供的 DeepSeek v4.1 Flash，针对课堂录音实录进行问答、解题推理与 Markdown 表格笔记生成。")
-                ) {
-                    HStack {
-                        Text("当前模型")
-                        Spacer()
-                        Text("deepseek-v4.1-flash-1017")
-                            .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.accentColor)
-                    }
+                            HStack {
+                                Text("接口地址")
+                                Spacer()
+                                TextField("Base URL", text: $manager.llmBaseURL)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.system(size: 13, design: .monospaced))
+                            }
 
-                    HStack {
-                        Text("接口地址")
-                        Spacer()
-                        TextField("Base URL", text: $manager.llmBaseURL)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 13, design: .monospaced))
-                    }
+                            HStack {
+                                Text("模型名称")
+                                Spacer()
+                                TextField("Model", text: $manager.llmModel)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.system(size: 13, design: .monospaced))
+                            }
 
-                    HStack {
-                        Text("模型名称")
-                        Spacer()
-                        TextField("Model", text: $manager.llmModel)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 13, design: .monospaced))
-                    }
-
-                    HStack {
-                        Text("API Key")
-                        Spacer()
-                        if showKey {
-                            TextField("API Key", text: $manager.llmApiKey)
-                                .multilineTextAlignment(.trailing)
-                                .font(.system(size: 11, design: .monospaced))
-                        } else {
-                            SecureField("API Key", text: $manager.llmApiKey)
-                                .multilineTextAlignment(.trailing)
-                                .font(.system(size: 11, design: .monospaced))
+                            HStack {
+                                Text("API Key")
+                                Spacer()
+                                if showKey {
+                                    TextField("API Key", text: $manager.llmApiKey)
+                                        .multilineTextAlignment(.trailing)
+                                        .font(.system(size: 11, design: .monospaced))
+                                } else {
+                                    SecureField("API Key", text: $manager.llmApiKey)
+                                        .multilineTextAlignment(.trailing)
+                                        .font(.system(size: 11, design: .monospaced))
+                                }
+                                Button {
+                                    showKey.toggle()
+                                } label: {
+                                    Image(systemName: showKey ? "eye.slash" : "eye")
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                         }
-                        Button {
-                            showKey.toggle()
-                        } label: {
-                            Image(systemName: showKey ? "eye.slash" : "eye")
-                                .foregroundColor(.secondary)
+
+                        Section {
+                            Button {
+                                manager.resetAIDefaults()
+                                showResetSuccess = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                                    showResetSuccess = false
+                                }
+                            } label: {
+                                HStack {
+                                    Spacer()
+                                    Label(showResetSuccess ? "已重置默认接口并清空本地密钥！" : "重置为默认配置 (清除敏感密钥)", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
+                                        .foregroundColor(showResetSuccess ? .green : .accentColor)
+                                    Spacer()
+                                }
+                            }
+                        }
+
+
+                    }
+                    .navigationTitle("AI 助教")
+                    .onDisappear { showKey = false }
+                } label: {
+                    Label("AI 助教", systemImage: "sparkles")
+                }
+                NavigationLink {
+                    List {
+                        Section(header: Text("语音转写密钥"),
+                                footer: Text("转写服务统一在首页选择，录音期间保持不变")) {
+                            SecureField("硅基流动 API Key", text: $manager.siliconFlowApiKey)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                            SecureField("阶跃 API Key", text: $manager.stepFunApiKey)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                        }
+
+                    }
+                    .navigationTitle("转写服务密钥")
+                } label: {
+                    Label("转写服务密钥", systemImage: "key")
+                }
+                NavigationLink {
+                    List {
+                        Section {
+                            Slider(value: $manager.speechDetectionThreshold, in: 0.10...0.90, step: 0.05) {
+                                Text("人声阈值")
+                            }
+                            HStack {
+                                Text("人声阈值")
+                                Spacer()
+                                Text(String(format: "%.2f", manager.speechDetectionThreshold)).monospacedDigit()
+                            }
+                            Button("恢复默认阈值") { manager.speechDetectionThreshold = 0.35 }
+                        } footer: {
+                            Text("调低更容易识别轻声，调高可减少噪音触发。下一次实时录音生效。")
+                        }
+                        Section("实时诊断") {
+                            RecordingInputDiagnostics()
                         }
                     }
+                    .navigationTitle("人声检测")
+                } label: {
+                    Label("人声检测", systemImage: "waveform")
                 }
+                NavigationLink {
+                    List {
+                        Section(
+                            header: Text("录音存储与 Cloudflare R2 云端同步"),
+                            footer: Text(manager.r2StorageMode.detailDescription)
+                        ) {
+                            Picker("存储策略", selection: $manager.r2StorageMode) {
+                                ForEach(AudioStorageMode.allCases, id: \.self) { mode in
+                                    Text(mode.title).tag(mode)
+                                }
+                            }
 
-                Section(header: Text("语音转写密钥"),
-                        footer: Text("转写服务统一在首页选择，录音期间保持不变")) {
-                    SecureField("硅基流动 API Key", text: $manager.siliconFlowApiKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    SecureField("阶跃 API Key", text: $manager.stepFunApiKey)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
+                            Toggle("允许使用蜂窝网络上传", isOn: $manager.r2AllowCellular)
+
+                            HStack {
+                                Text("云端同步 Worker")
+                                Spacer()
+                                TextField("https://compass.lzso.top", text: $manager.r2WorkerBaseURL)
+                                    .multilineTextAlignment(.trailing)
+                                    .font(.system(size: 13, design: .monospaced))
+                            }
+                        }
+
+                    }
+                    .navigationTitle("存储与同步")
+                } label: {
+                    Label("存储与同步", systemImage: "externaldrive")
                 }
+                NavigationLink {
+                    List {
+                        Section("本机存储用量") {
+                            HStack {
+                                Text("课堂总数")
+                                Spacer()
+                                Text("\(manager.sessions.count) 节")
+                                    .foregroundColor(.secondary)
+                            }
+                            HStack {
+                                Text("音频文件夹")
+                                Spacer()
+                                Text("ClassroomRecordings")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
 
-                Section(
-                    header: Text("录音存储与 Cloudflare R2 云端同步"),
-                    footer: Text(manager.r2StorageMode.detailDescription)
-                ) {
-                    Picker("存储策略", selection: $manager.r2StorageMode) {
-                        ForEach(AudioStorageMode.allCases, id: \.self) { mode in
-                            Text(mode.title).tag(mode)
+                        Section("关于") {
+                            HStack {
+                                Text("应用名称")
+                                Spacer()
+                                Text("建大课堂录音")
+                                    .foregroundColor(.secondary)
+                            }
+                            HStack {
+                                Text("版本")
+                                Spacer()
+                                Text("\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") · Build \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")")
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
-                    
-                    Toggle("允许使用蜂窝网络上传", isOn: $manager.r2AllowCellular)
-                    
-                    HStack {
-                        Text("云端同步 Worker")
-                        Spacer()
-                        TextField("https://compass.lzso.top", text: $manager.r2WorkerBaseURL)
-                            .multilineTextAlignment(.trailing)
-                            .font(.system(size: 13, design: .monospaced))
-                    }
-                }
-
-                Section {
-                    Button {
-                        manager.resetAIDefaults()
-                        showResetSuccess = true
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            showResetSuccess = false
-                        }
-                    } label: {
-                        HStack {
-                            Spacer()
-                            Label(showResetSuccess ? "已重置默认接口并清空本地密钥！" : "重置为默认配置 (清除敏感密钥)", systemImage: showResetSuccess ? "checkmark" : "arrow.counterclockwise")
-                                .foregroundColor(showResetSuccess ? .green : .accentColor)
-                            Spacer()
-                        }
-                    }
-                }
-
-
-                Section("本机存储用量") {
-                    HStack {
-                        Text("课堂总数")
-                        Spacer()
-                        Text("\(manager.sessions.count) 节")
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("音频文件夹")
-                        Spacer()
-                        Text("ClassroomRecordings")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-
-                Section("关于") {
-                    HStack {
-                        Text("应用名称")
-                        Spacer()
-                        Text("建大课堂录音")
-                            .foregroundColor(.secondary)
-                    }
-                    HStack {
-                        Text("版本")
-                        Spacer()
-                        Text("\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") · Build \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")")
-                            .foregroundColor(.secondary)
-                    }
+                    .navigationTitle("关于与本机存储")
+                } label: {
+                    Label("关于与本机存储", systemImage: "info.circle")
                 }
             }
             .navigationTitle("设置")
@@ -1985,7 +2069,7 @@ struct TranscriptTabView: View {
                             manager.retryPendingChunks(for: session)
                         } label: {
                             HStack(spacing: 4) {
-                                if manager.isChunkTranscribing {
+                                if session.chunkTasks.contains(where: { $0.status == .transcribing }) {
                                     ProgressView()
                                         .scaleEffect(0.7)
                                 } else {
@@ -2000,7 +2084,7 @@ struct TranscriptTabView: View {
                             .foregroundColor(.white)
                             .cornerRadius(8)
                         }
-                        .disabled(manager.isChunkTranscribing)
+                        .disabled(pendingCount == 0 && session.chunkTasks.contains { $0.status == .transcribing })
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
@@ -2131,12 +2215,24 @@ struct TranscriptTabView: View {
                             .cornerRadius(16)
                         }
 
+                        if isLive {
+                            DisclosureGroup("人声检测") { RecordingInputDiagnostics() }
+                                .font(.caption)
+                            if let interruption = manager.recordingInterruption {
+                                Label(interruption, systemImage: "pause.circle")
+                                    .font(.caption)
+                                    .foregroundStyle(.orange)
+                            }
+                        }
+
                         if isLive && session.mode == .realtime,
                            let failed = session.chunkTasks.last(where: { $0.status == .failed }) {
-                            Label("转写分段失败，录音仍在保存。可在结束后补转写。", systemImage: "exclamationmark.triangle")
-                                .font(.caption)
-                                .foregroundStyle(.orange)
-                                .accessibilityHint(failed.lastError ?? "")
+                            VStack(alignment: .leading, spacing: 6) {
+                                Label(failed.lastError ?? "转写分段失败", systemImage: "exclamationmark.triangle")
+                                    .foregroundStyle(.orange)
+                                Button("重试未完成分段") { manager.retryPendingChunks(for: session) }
+                            }
+                            .font(.caption)
                         }
 
                         if session.segments.isEmpty {
@@ -2144,7 +2240,7 @@ struct TranscriptTabView: View {
                                 Image(systemName: "waveform.slash")
                                     .font(.system(size: 40))
                                     .foregroundColor(.secondary.opacity(0.5))
-                                Text(session.mode == .recordOnly ? "仅录音模式：课后可一键离线补转写" : "等待语音输入中...")
+                                Text(session.mode == .recordOnly ? "仅录音模式：课后可一键离线补转写" : manager.liveTranscriptStatus(for: session))
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 if session.mode == .recordOnly && !isLive {

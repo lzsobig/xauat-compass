@@ -5,14 +5,14 @@ final class SileroVoiceDetector {
     #if CLASSROOM_SHERPA
     private let detector: OpaquePointer
 
-    init?(modelURL: URL? = Bundle.main.url(forResource: "silero_vad.int8", withExtension: "onnx")) {
+    init?(modelURL: URL? = Bundle.main.url(forResource: "silero_vad.int8", withExtension: "onnx"), threshold: Float = 0.35) {
         guard let modelURL, FileManager.default.fileExists(atPath: modelURL.path) else { return nil }
         let pointer = modelURL.path.withCString { modelPath in
             "cpu".withCString { provider in
                 var config = SherpaOnnxVadModelConfig()
                 config.silero_vad.model = modelPath
-                config.silero_vad.threshold = 0.35
-                // Outer slice buffer owns the 0.8 s endpoint; avoid counting that silence twice.
+                config.silero_vad.threshold = min(0.9, max(0.1, threshold))
+                // The slice buffer owns the endpoint wait.
                 config.silero_vad.min_silence_duration = 0.032
                 config.silero_vad.min_speech_duration = 0.032
                 config.silero_vad.window_size = 512
@@ -40,7 +40,7 @@ final class SileroVoiceDetector {
 
     deinit { SherpaOnnxDestroyVoiceActivityDetector(detector) }
     #else
-    init?(modelURL: URL? = nil) { return nil }
+    init?(modelURL: URL? = nil, threshold: Float = 0.35) { return nil }
     func isSpeech(_ window: [Float]) -> Bool { false }
     #endif
 }

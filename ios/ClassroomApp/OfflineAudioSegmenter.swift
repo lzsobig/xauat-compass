@@ -5,18 +5,21 @@ enum OfflineAudioSegmenter {
     /// All task metadata is committed together only after the complete audio was read successfully.
     static func prepare(audioURL: URL, sessionChunkDirectory: URL,
                         modelURL: URL? = Bundle.main.url(forResource: "silero_vad.int8", withExtension: "onnx"),
-                        fallbackAudioURL: URL? = nil) throws -> [ChunkTranscriptionTask] {
+                        fallbackAudioURL: URL? = nil, speechThreshold: Float = 0.35) throws -> [ChunkTranscriptionTask] {
         do {
-            return try prepareAttempt(audioURL: audioURL, sessionChunkDirectory: sessionChunkDirectory, modelURL: modelURL)
+            return try prepareAttempt(audioURL: audioURL, sessionChunkDirectory: sessionChunkDirectory,
+                                      modelURL: modelURL, speechThreshold: speechThreshold)
         } catch {
             // Compression may publish the complete M4A and retire the CAF before this task opens it.
             guard !(error is CancellationError), let fallbackAudioURL, fallbackAudioURL != audioURL,
                   FileManager.default.fileExists(atPath: fallbackAudioURL.path) else { throw error }
-            return try prepareAttempt(audioURL: fallbackAudioURL, sessionChunkDirectory: sessionChunkDirectory, modelURL: modelURL)
+            return try prepareAttempt(audioURL: fallbackAudioURL, sessionChunkDirectory: sessionChunkDirectory,
+                                      modelURL: modelURL, speechThreshold: speechThreshold)
         }
     }
 
-    private static func prepareAttempt(audioURL: URL, sessionChunkDirectory: URL, modelURL: URL?) throws -> [ChunkTranscriptionTask] {
+    private static func prepareAttempt(audioURL: URL, sessionChunkDirectory: URL,
+                                       modelURL: URL?, speechThreshold: Float) throws -> [ChunkTranscriptionTask] {
         let attempt = "offline-" + UUID().uuidString
         let directory = sessionChunkDirectory.appendingPathComponent(attempt, isDirectory: true)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -28,7 +31,7 @@ enum OfflineAudioSegmenter {
                   let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 4096) else {
                 throw CocoaError(.fileReadCorruptFile)
             }
-            let detector = SileroVoiceDetector(modelURL: modelURL)
+            let detector = SileroVoiceDetector(modelURL: modelURL, threshold: speechThreshold)
             var slicer = ClassroomSliceBuffer()
             var tasks: [ChunkTranscriptionTask] = []
             var inputError: Error?
