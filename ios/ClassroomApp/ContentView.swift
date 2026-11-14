@@ -1478,14 +1478,55 @@ struct RecordingInputDiagnostics: View {
     }
 }
 
+struct RecordingTranscriptionDiagnostics: View {
+    @EnvironmentObject var manager: ClassroomManager
+
+    var body: some View {
+        if manager.isRecording, let session = manager.currentSession, session.mode == .realtime {
+            let tasks = session.chunkTasks
+            let queued = tasks.filter { $0.status == .pending }.count
+            let processing = tasks.filter { $0.status == .transcribing }.count
+            let completed = tasks.filter { $0.status == .completed }.count
+            let failed = tasks.filter { $0.status == .failed }.count
+            VStack(alignment: .leading, spacing: 8) {
+                LabeledContent("等待发送", value: "\(queued) 段")
+                LabeledContent("请求处理中", value: "\(processing) 段")
+                LabeledContent("已处理", value: "\(completed) 段")
+                if failed > 0 {
+                    LabeledContent("失败 · 保留原音频", value: "\(failed) 段")
+                        .foregroundStyle(.orange)
+                }
+                if tasks.isEmpty {
+                    Text("音频成段后才会发送转写")
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .monospacedDigit()
+        }
+    }
+}
+
 struct SettingsScreen: View {
     @EnvironmentObject var manager: ClassroomManager
     @State private var showResetSuccess = false
     @State private var showKey = false
 
+    private var versionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—"
+        return "版本 \(version) · Build \(build)"
+    }
+
+    private func settingsRow(_ title: String, icon: String) -> some View {
+        Label(title, systemImage: icon)
+            .frame(minHeight: 44, alignment: .leading)
+            .padding(.vertical, 5)
+    }
+
     var body: some View {
         NavigationView {
             List {
+                Section("服务") {
                 NavigationLink {
                     List {
                         Section(
@@ -1559,7 +1600,7 @@ struct SettingsScreen: View {
                     .navigationTitle("AI 助教")
                     .onDisappear { showKey = false }
                 } label: {
-                    Label("AI 助教", systemImage: "sparkles")
+                    settingsRow("AI 助教", icon: "sparkles")
                 }
                 NavigationLink {
                     List {
@@ -1576,8 +1617,10 @@ struct SettingsScreen: View {
                     }
                     .navigationTitle("转写服务密钥")
                 } label: {
-                    Label("转写服务密钥", systemImage: "key")
+                    settingsRow("转写服务密钥", icon: "key")
                 }
+                }
+                Section {
                 NavigationLink {
                     List {
                         Section {
@@ -1596,10 +1639,15 @@ struct SettingsScreen: View {
                         Section("实时诊断") {
                             RecordingInputDiagnostics()
                         }
+                        if manager.isRecording && manager.currentSession?.mode == .realtime {
+                            Section("转写队列") {
+                                RecordingTranscriptionDiagnostics()
+                            }
+                        }
                     }
                     .navigationTitle("人声检测")
                 } label: {
-                    Label("人声检测", systemImage: "waveform")
+                    settingsRow("人声检测", icon: "waveform")
                 }
                 NavigationLink {
                     List {
@@ -1627,7 +1675,7 @@ struct SettingsScreen: View {
                     }
                     .navigationTitle("存储与同步")
                 } label: {
-                    Label("存储与同步", systemImage: "externaldrive")
+                    settingsRow("存储与同步", icon: "externaldrive")
                 }
                 NavigationLink {
                     List {
@@ -1647,25 +1695,23 @@ struct SettingsScreen: View {
                             }
                         }
 
-                        Section("关于") {
-                            HStack {
-                                Text("应用名称")
-                                Spacer()
-                                Text("建大课堂录音")
-                                    .foregroundColor(.secondary)
-                            }
-                            HStack {
-                                Text("版本")
-                                Spacer()
-                                Text("\(Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—") · Build \(Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "—")")
-                                    .foregroundColor(.secondary)
-                            }
-                        }
                     }
-                    .navigationTitle("关于与本机存储")
+                    .navigationTitle("本机存储")
                 } label: {
-                    Label("关于与本机存储", systemImage: "info.circle")
+                    settingsRow("本机存储", icon: "internaldrive")
                 }
+                } header: {
+                    Text("录音与存储")
+                }
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                Text(versionText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color(UIColor.systemGroupedBackground))
             }
             .navigationTitle("设置")
         }
@@ -2216,7 +2262,10 @@ struct TranscriptTabView: View {
                         }
 
                         if isLive {
-                            DisclosureGroup("人声检测") { RecordingInputDiagnostics() }
+                            DisclosureGroup("录音与转写诊断") {
+                                RecordingInputDiagnostics()
+                                RecordingTranscriptionDiagnostics()
+                            }
                                 .font(.caption)
                             if let interruption = manager.recordingInterruption {
                                 Label(interruption, systemImage: "pause.circle")
