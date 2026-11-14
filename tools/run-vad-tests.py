@@ -17,11 +17,16 @@ def main():
     fixture = output / "synthetic-speech.aiff"
     subprocess.run(["say", "-o", str(fixture), "This is a synthetic classroom test. We explain the important concepts and then discuss the assignment. Please check the recording and the final sentence."], check=True)
     executable = output / "vad-tests"
+    manager = (ROOT / "ios/ClassroomApp/ClassroomManager.swift").read_text(encoding="utf-8")
+    capture_source = manager.split("private final class AudioCapture", 1)[1].split("// MARK: - 主业务管理器", 1)[0]
+    capture = output / "AudioCapture-under-test.swift"
+    capture.write_text("import AVFoundation\nimport Foundation\nfinal class AudioCapture" + capture_source, encoding="utf-8")
     subprocess.run(["swiftc", "-D", "CLASSROOM_SHERPA", "-import-objc-header", str(header),
                     str(ROOT / "ios/ClassroomApp/SileroVoiceDetector.swift"), str(ROOT / "ios/ClassroomApp/ClassroomSliceBuffer.swift"),
                     str(ROOT / "ios/ClassroomApp/Models.swift"), str(ROOT / "ios/ClassroomApp/PCMUtilities.swift"),
                     str(ROOT / "ios/ClassroomApp/OfflineAudioSegmenter.swift"),
                     str(ROOT / "ios/ClassroomApp/AudioCompressor.swift"),
+                    str(capture),
                     str(ROOT / "tests/classroom_vad_tests.swift"),
                     "-L", str(library.parent), "-lsherpa-onnx-c-api", "-Xlinker", "-rpath", "-Xlinker", str(library.parent),
                     "-o", str(executable)], check=True)

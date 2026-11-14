@@ -39,6 +39,20 @@ struct ClassroomVADTests {
             if quietDetector.isSpeech(quiet) { quietDetections += 1 }
         }
         precondition(quietDetections > 5, "quiet speech must still activate the neural detector")
+        let firstDetector = SileroVoiceDetector(modelURL: model)!
+        var firstBuffer = ClassroomSliceBuffer()
+        firstBuffer.configuration.firstChunkMaximumSamples = 96000
+        var firstSlice: ClassroomAudioSlice?
+        for offset in stride(from: 0, to: 96512, by: 512) {
+            let samples = (offset..<(offset + 512)).map { index in
+                Int16(max(-1, min(1, speech[index % speech.count] * 0.12)) * 32767)
+            }
+            firstBuffer.append(samples) { firstDetector.isSpeech($0) }
+            firstSlice = firstBuffer.take()
+            if firstSlice != nil { break }
+        }
+        precondition(firstSlice != nil && firstSlice!.endSample <= 96000,
+                     "quiet speech at startup must produce a first upload within the six-second audio budget")
         let noiseDetector = SileroVoiceDetector(modelURL: model)!
         var seed: UInt32 = 42
         var noiseDetections = 0
@@ -77,6 +91,7 @@ struct ClassroomVADTests {
         }
         precondition(lastEnd == totalSamples && sliceCount > 100)
         print("45-minute synthetic-audio stress passed: slices=\(sliceCount), quiet=\(quietDetections), noise=\(noiseDetections), execution_seconds=\(Date().timeIntervalSince(started))")
+        try verifyCaptureAcrossInputFormats()
         let offlineDirectory = FileManager.default.temporaryDirectory.appendingPathComponent("classroom-offline-tests-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: offlineDirectory) }
         let offlineTasks = try OfflineAudioSegmenter.prepare(audioURL: URL(fileURLWithPath: CommandLine.arguments[2]),
@@ -124,5 +139,35 @@ struct ClassroomVADTests {
         #else
         preconditionFailure("This test must link the real sherpa-onnx library")
         #endif
+    }
+
+    private static func verifyCaptureAcrossInputFormats() throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".caf")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let recordingFormat = AVAudioFormat(standardFormatWithSampleRate: 48000, channels: 1)!
+        let capture = AudioCapture(file: try AVAudioFile(forWriting: url, settings: recordingFormat.settings),
+                                   sampleRate: recordingFormat.sampleRate, collectSlices: false, speechThreshold: 0.35)
+        let inputRates: [Double] = [48000, 44100, 48000, 44100]
+        for (index, rate) in inputRates.enumerated() {
+            let format = AVAudioFormat(standardFormatWithSampleRate: rate, channels: 1)!
+            let frames = AVAudioFrameCount(rate / 10)
+            let input = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames)!
+            input.frameLength = frames
+            let level: Float = index.isMultiple(of: 2) ? 0.1 : 0.4
+            for frame in 0..<Int(frames) { input.floatChannelData![0][frame] = level }
+            for _ in 0..<10 {
+                if let error = capture.append(input) { throw error }
+            }
+            precondition(capture.canContinue)
+            precondition(abs(capture.recordedDuration - Double(index + 1)) < 0.03,
+                         "input format switches must preserve the recorded duration")
+            precondition(abs(capture.diagnostics.level - 20 * log10(level)) < 2,
+                         "the meter must reflect the new input")
+        }
+        capture.close()
+        let saved = try AVAudioFile(forReading: url)
+        precondition(abs(Double(saved.length) / saved.processingFormat.sampleRate - 4) < 0.03,
+                     "one CAF must retain the audio from all four input phases")
+        print("Audio capture accepted 48 → 44.1 → 48 → 44.1 kHz and retained the recording duration")
     }
 }
