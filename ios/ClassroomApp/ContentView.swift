@@ -1481,6 +1481,14 @@ struct RecordingInputDiagnostics: View {
 struct RecordingTranscriptionDiagnostics: View {
     @EnvironmentObject var manager: ClassroomManager
 
+    private func diagnosticRow(_ label: String, value: String) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            Text(value)
+        }
+    }
+
     var body: some View {
         if manager.isRecording, let session = manager.currentSession, session.mode == .realtime {
             let tasks = session.chunkTasks
@@ -1489,11 +1497,11 @@ struct RecordingTranscriptionDiagnostics: View {
             let completed = tasks.filter { $0.status == .completed }.count
             let failed = tasks.filter { $0.status == .failed }.count
             VStack(alignment: .leading, spacing: 8) {
-                LabeledContent("等待发送", value: "\(queued) 段")
-                LabeledContent("请求处理中", value: "\(processing) 段")
-                LabeledContent("已处理", value: "\(completed) 段")
+                diagnosticRow("等待发送", value: "\(queued) 段")
+                diagnosticRow("请求处理中", value: "\(processing) 段")
+                diagnosticRow("已处理", value: "\(completed) 段")
                 if failed > 0 {
-                    LabeledContent("失败 · 保留原音频", value: "\(failed) 段")
+                    diagnosticRow("失败 · 保留原音频", value: "\(failed) 段")
                         .foregroundStyle(.orange)
                 }
                 if tasks.isEmpty {
